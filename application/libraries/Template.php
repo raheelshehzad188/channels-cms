@@ -236,15 +236,13 @@ class Template {
 
         	{
 
-        		$data['title'] = 'Tadhaman';
+        		$data['title'] = config_item('app_name');
 
         	}
 
-        	if(!isset($data['assets']))
+          $data['assets'] = base_url('/assets/'.config_item('app_theme')).'/';
 
-          $data['assets'] = base_url('/assets/shiri/');
-
-        	$CI->load->view('fpages/'.$view,$data);
+        	$CI->load->view(config_item('app_theme').'/fpages/'.$view,$data);
 
         }
 
@@ -334,7 +332,7 @@ class Template {
 
                 {
 
-                        $data['title'] = 'Tadhaman';
+                        $data['title'] = config_item('app_name');
 
                 }
 
@@ -346,15 +344,15 @@ class Template {
 
                 $data['modal'] = $CI->Common_model;
 
-                $data['assets'] = base_url('/assets').'/';
+                $data['assets'] = base_url('/assets/'.config_item('app_theme')).'/';
 
-                echo $v = $CI->load->view('includes/header',$data,true);
+                echo $v = $CI->load->view(config_item('app_theme').'/includes/header',$data,true);
 
-                echo $CI->load->view('admin/'.$view,$data,true);
+                echo $CI->load->view(config_item('app_theme').'/admin/'.$view,$data,true);
 
                 
 
-                echo $fot =  $CI->load->view('includes/footer',$data,true);
+                echo $fot =  $CI->load->view(config_item('app_theme').'/includes/footer',$data,true);
 
                 
 

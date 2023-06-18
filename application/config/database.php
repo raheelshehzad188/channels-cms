@@ -1,8 +1,11 @@
 <?php
 
 defined('BASEPATH') OR exit('No direct script access allowed');
-
-
+$local_config = array();
+if(isset($_SESSION['local_config']) && is_array($_SESSION['local_config']))
+{
+	$local_config =  $_SESSION['local_config'];
+	}
 
 /*
 
@@ -152,13 +155,13 @@ $db['default'] = array(
 
 	'dsn'	=> '',
 
-	'hostname' => 'localhost',
+	'hostname' => (isset($local_config['db_host'])?$local_config['db_host']:'localhost'),
 
-	'username' => 'messejaa',
+	'username' => (isset($local_config['db_user'])?$local_config['db_user']:'root'),
 
-	'password' => 'Khurram@2021',
+	'password' => (isset($local_config['db_pass'])?$local_config['db_pass']:'root'),
 
-	'database' => 'messejaa_tadhaman',
+	'database' => (isset($local_config['db_name'])?$local_config['db_name']:'cms'),
 
 	'dbdriver' => 'mysqli',
 
@@ -189,56 +192,4 @@ $db['default'] = array(
 	'save_queries' => TRUE
 
 );
-
-$ip_server = $_SERVER['SERVER_ADDR'];
-
-if($ip_server == '::1' || $ip_server == "127.0.0.1")
-
-{
-
-	
-
-	$db['default'] = array(
-
-	'dsn'	=> '',
-
-	'hostname' => 'localhost',
-
-	'username' => 'root',
-
-	'password' => '',
-
-	'database' => 'bak_pay',
-
-	'dbdriver' => 'mysqli',
-
-	'dbprefix' => '',
-
-	'pconnect' => FALSE,
-
-	'db_debug' => (ENVIRONMENT !== 'production'),
-
-	'cache_on' => FALSE,
-
-	'cachedir' => '',
-
-	'char_set' => 'utf8',
-
-	'dbcollat' => 'utf8_general_ci',
-
-	'swap_pre' => '',
-
-	'encrypt' => FALSE,
-
-	'compress' => FALSE, 
-
-	'stricton' => FALSE,
-
-	'failover' => array(),
-
-	'save_queries' => TRUE
-
-);
-
-}
 

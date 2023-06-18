@@ -11,7 +11,7 @@
                     <?php
 
                 $user = $this->session->userdata('knet_login');
-                $logo = 'https://tadhamn.org/wp-content/uploads/2022/03/1.png';
+                $logo = config_item('app_logo');
 
         ?>
 

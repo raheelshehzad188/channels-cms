@@ -1,5 +1,8 @@
 <?php
-/** 
+session_start();
+include "config.php";
+$_SESSION['local_config'] = $local_config;
+/**
  * CodeIgniter
  * I m testing
  *
