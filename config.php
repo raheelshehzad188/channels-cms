@@ -6,7 +6,7 @@ $local_config = array(
 'db_host' =>'localhost',
 'db_name' =>'cms',
 'db_user' =>'root',
-'app_theme' =>'vuexy',
+'app_theme' =>'inspinia',
 'db_pass' =>'root',
 'base_url' =>'http://localhost:8888/cms'
 );
