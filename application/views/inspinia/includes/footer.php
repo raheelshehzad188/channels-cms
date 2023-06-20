@@ -1,143 +1,186 @@
+<!-- Mainly scripts -->
+    <script src="<?= $assets ?>/js/jquery-3.1.1.min.js"></script>
+    <script src="<?= $assets ?>/js/bootstrap.min.js"></script>
+    <script src="<?= $assets ?>/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="<?= $assets ?>/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
 
-    <!-- Mainly scripts -->
-    <script src="<?= $assets ?>js/jquery-3.1.1.min.js"></script>
-    <script src="<?= $assets ?>js/bootstrap.min.js"></script>
-    <script src="<?= $assets ?>js/plugins/metisMenu/jquery.metisMenu.js"></script>
-    <script src="<?= $assets ?>js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+    <!-- jquery UI -->
+    <script src="<?= $assets ?>/js/plugins/jquery-ui/jquery-ui.min.js"></script>
 
-    <!-- Flot -->
-    <script src="<?= $assets ?>js/plugins/flot/jquery.flot.js"></script>
-    <script src="<?= $assets ?>js/plugins/flot/jquery.flot.tooltip.min.js"></script>
-    <script src="<?= $assets ?>js/plugins/flot/jquery.flot.spline.js"></script>
-    <script src="<?= $assets ?>js/plugins/flot/jquery.flot.resize.js"></script>
-    <script src="<?= $assets ?>js/plugins/flot/jquery.flot.pie.js"></script>
-
-    <!-- Peity -->
-    <script src="<?= $assets ?>js/plugins/peity/jquery.peity.min.js"></script>
-    <script src="<?= $assets ?>js/demo/peity-demo.js"></script>
+    <!-- Touch Punch - Touch Event Support for jQuery UI -->
+    <script src="<?= $assets ?>/js/plugins/touchpunch/jquery.ui.touch-punch.min.js"></script>
 
     <!-- Custom and plugin javascript -->
-    <script src="<?= $assets ?>js/inspinia.js"></script>
-    <script src="<?= $assets ?>js/plugins/pace/pace.min.js"></script>
+    <script src="<?= $assets ?>/js/inspinia.js"></script>
+    <script src="<?= $assets ?>/js/plugins/pace/pace.min.js"></script>
 
-    <!-- jQuery UI -->
-    <script src="<?= $assets ?>js/plugins/jquery-ui/jquery-ui.min.js"></script>
+    <!-- iCheck -->
+    <script src="<?= $assets ?>/js/plugins/iCheck/icheck.min.js"></script>
 
-    <!-- GITTER -->
-    <script src="<?= $assets ?>js/plugins/gritter/jquery.gritter.min.js"></script>
+    <!-- Jvectormap -->
+    <script src="<?= $assets ?>/js/plugins/jvectormap/jquery-jvectormap-2.0.2.min.js"></script>
+    <script src="<?= $assets ?>/js/plugins/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
 
-    <!-- Sparkline -->
-    <script src="<?= $assets ?>js/plugins/sparkline/jquery.sparkline.min.js"></script>
-
-    <!-- Sparkline demo data  -->
-    <script src="<?= $assets ?>js/demo/sparkline-demo.js"></script>
-
-    <!-- ChartJS-->
-    <script src="<?= $assets ?>js/plugins/chartJs/Chart.min.js"></script>
-
-    <!-- Toastr -->
-    <script src="<?= $assets ?>js/plugins/toastr/toastr.min.js"></script>
-
-
+    <!-- Flot -->
+    <script src="<?= $assets ?>/js/plugins/flot/jquery.flot.js"></script>
+    <script src="<?= $assets ?>/js/plugins/flot/jquery.flot.tooltip.min.js"></script>
+    <script src="<?= $assets ?>/js/plugins/flot/jquery.flot.resize.js"></script>
     <script>
-        $(document).ready(function() {
-            setTimeout(function() {
-                toastr.options = {
-                    closeButton: true,
-                    progressBar: true,
-                    showMethod: 'slideDown',
-                    timeOut: 4000
-                };
-                toastr.success('Responsive Admin Theme', 'Welcome to INSPINIA');
-
-            }, 1300);
-
+        $(document).ready(function(){
+            var d1 = [[1262304000000, 6], [1264982400000, 3057], [1267401600000, 20434], [1270080000000, 31982], [1272672000000, 26602], [1275350400000, 27826], [1277942400000, 24302], [1280620800000, 24237], [1283299200000, 21004], [1285891200000, 12144], [1288569600000, 10577], [1291161600000, 10295]];
+            var d2 = [[1262304000000, 5], [1264982400000, 200], [1267401600000, 1605], [1270080000000, 6129], [1272672000000, 11643], [1275350400000, 19055], [1277942400000, 30062], [1280620800000, 39197], [1283299200000, 37000], [1285891200000, 27000], [1288569600000, 21000], [1291161600000, 17000]];
 
             var data1 = [
-                [0,4],[1,8],[2,5],[3,10],[4,4],[5,16],[6,5],[7,11],[8,6],[9,11],[10,30],[11,10],[12,13],[13,4],[14,3],[15,3],[16,6]
+                { label: "Data 1", data: d1, color: '#17a084'},
+                { label: "Data 2", data: d2, color: '#127e68' }
             ];
-            var data2 = [
-                [0,1],[1,0],[2,2],[3,0],[4,1],[5,3],[6,1],[7,5],[8,2],[9,3],[10,2],[11,1],[12,0],[13,2],[14,8],[15,0],[16,0]
-            ];
-            $("#flot-dashboard-chart").length && $.plot($("#flot-dashboard-chart"), [
-                data1, data2
-            ],
-                    {
-                        series: {
-                            lines: {
-                                show: false,
-                                fill: true
-                            },
-                            splines: {
-                                show: true,
-                                tension: 0.4,
-                                lineWidth: 1,
-                                fill: 0.4
-                            },
-                            points: {
-                                radius: 0,
-                                show: true
-                            },
-                            shadowSize: 2
-                        },
-                        grid: {
-                            hoverable: true,
-                            clickable: true,
-                            tickColor: "#d5d5d5",
-                            borderWidth: 1,
-                            color: '#d5d5d5'
-                        },
-                        colors: ["#1ab394", "#1C84C6"],
-                        xaxis:{
-                        },
-                        yaxis: {
-                            ticks: 4
-                        },
-                        tooltip: false
+            $.plot($("#flot-chart1"), data1, {
+                xaxis: {
+                    tickDecimals: 0
+                },
+                series: {
+                    lines: {
+                        show: true,
+                        fill: true,
+                        fillColor: {
+                            colors: [{
+                                opacity: 1
+                            }, {
+                                opacity: 1
+                            }]
+                        }
+                    },
+                    points: {
+                        width: 0.1,
+                        show: false
                     }
-            );
-
-            var doughnutData = {
-                labels: ["App","Software","Laptop" ],
-                datasets: [{
-                    data: [300,50,100],
-                    backgroundColor: ["#a3e1d4","#dedede","#9CC3DA"]
-                }]
-            } ;
-
-
-            var doughnutOptions = {
-                responsive: false,
+                },
+                grid: {
+                    show: false,
+                    borderWidth: 0
+                },
                 legend: {
-                    display: false
+                    show: false
                 }
+            });
+
+            var data2 = [
+                { label: "Data 1", data: d1, color: '#19a0a1'}
+            ];
+            $.plot($("#flot-chart2"), data2, {
+                xaxis: {
+                    tickDecimals: 0
+                },
+                series: {
+                    lines: {
+                        show: true,
+                        fill: true,
+                        fillColor: {
+                            colors: [{
+                                opacity: 1
+                            }, {
+                                opacity: 1
+                            }]
+                        }
+                    },
+                    points: {
+                        width: 0.1,
+                        show: false
+                    }
+                },
+                grid: {
+                    show: false,
+                    borderWidth: 0
+                },
+                legend: {
+                    show: false
+                }
+            });
+
+            var data3 = [
+                { label: "Data 1", data: d1, color: '#fbbe7b'},
+                { label: "Data 2", data: d2, color: '#f8ac59' }
+            ];
+            $.plot($("#flot-chart3"), data3, {
+                xaxis: {
+                    tickDecimals: 0
+                },
+                series: {
+                    lines: {
+                        show: true,
+                        fill: true,
+                        fillColor: {
+                            colors: [{
+                                opacity: 1
+                            }, {
+                                opacity: 1
+                            }]
+                        }
+                    },
+                    points: {
+                        width: 0.1,
+                        show: false
+                    }
+                },
+                grid: {
+                    show: false,
+                    borderWidth: 0
+                },
+                legend: {
+                    show: false
+                }
+            });
+
+            $('.i-checks').iCheck({
+                checkboxClass: 'icheckbox_square-green',
+                radioClass: 'iradio_square-green'
+            });
+
+            $(".todo-list").sortable({
+                placeholder: "sort-highlight",
+                handle: ".handle",
+                forcePlaceholderSize: true,
+                zIndex: 999999
+            }).disableSelection();
+
+            var mapData = {
+                "US": 498,
+                "SA": 200,
+                "CA": 1300,
+                "DE": 220,
+                "FR": 540,
+                "CN": 120,
+                "AU": 760,
+                "BR": 550,
+                "IN": 200,
+                "GB": 120,
+                "RU": 2000
             };
 
-
-            var ctx4 = document.getElementById("doughnutChart").getContext("2d");
-            new Chart(ctx4, {type: 'doughnut', data: doughnutData, options:doughnutOptions});
-
-            var doughnutData = {
-                labels: ["App","Software","Laptop" ],
-                datasets: [{
-                    data: [70,27,85],
-                    backgroundColor: ["#a3e1d4","#dedede","#9CC3DA"]
-                }]
-            } ;
-
-
-            var doughnutOptions = {
-                responsive: false,
-                legend: {
-                    display: false
+            $('#world-map').vectorMap({
+                map: 'world_mill_en',
+                backgroundColor: "transparent",
+                regionStyle: {
+                    initial: {
+                        fill: '#e4e4e4',
+                        "fill-opacity": 1,
+                        stroke: 'none',
+                        "stroke-width": 0,
+                        "stroke-opacity": 0
+                    }
+                },
+                series: {
+                    regions: [{
+                        values: mapData,
+                        scale: ["#1ab394", "#22d6b1"],
+                        normalizeFunction: 'polynomial'
+                    }]
                 }
-            };
-
-
-            var ctx4 = document.getElementById("doughnutChart2").getContext("2d");
-            new Chart(ctx4, {type: 'doughnut', data: doughnutData, options:doughnutOptions});
-
+            });
         });
     </script>
+
+
 </body>
+
 </html>
