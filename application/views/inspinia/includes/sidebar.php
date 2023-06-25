@@ -24,6 +24,9 @@
                             IN+
                         </div>
                     </li>
+                    <li class="">
+                        <a href="<?= base_url('admin/admin/page/calender'); ?>"><i class="fa fa-th-large"></i> <span class="nav-label">Calender</span> </a>
+                    </li>.
 
                     <li class="">
                         <a href="#"><i class="fa fa-th-large"></i> <span class="nav-label">Pre Award</span> <span class="fa arrow"></span></a>

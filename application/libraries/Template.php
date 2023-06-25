@@ -242,7 +242,7 @@ class Template {
 
           $data['assets'] = base_url('/assets/'.config_item('app_theme')).'/';
 
-                echo $v = $CI->load->view(config_item('app_theme').'/includes/header',$data,true);
+                // echo $v = $CI->load->view(config_item('app_theme').'/includes/header',$data,true);
 
         	$CI->load->view(config_item('app_theme').'/fpages/'.$view,$data);
 

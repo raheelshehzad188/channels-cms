@@ -28,6 +28,8 @@
     <link href="<?= $assets ?>css/animate.css" rel="stylesheet">
     <link href="<?= $assets ?>css/style.css" rel="stylesheet">
 
+    <script src="<?= $assets ?>/js/jquery-3.1.1.min.js"></script>
+
 </head>
 
 <body>
