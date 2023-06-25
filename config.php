@@ -6,7 +6,7 @@ $local_config = array(
 'db_host' =>'localhost',
 'db_name' =>'cms',
 'db_user' =>'root',
-'app_theme' =>'inspinia',
+'app_theme' =>'dashcode',
 'db_pass' =>'root',
 'base_url' =>'http://localhost:8888/cms'
 );
