@@ -355,7 +355,7 @@ class Template {
 
                 
 // 
-                // echo $fot =  $CI->load->view(config_item('app_theme').'/includes/footer',$data,true);
+                echo $fot =  $CI->load->view(config_item('app_theme').'/includes/footer',$data,true);
 
                 
 

@@ -1,5 +1,4 @@
-
-                <button class="smallDeviceMenuController md:hidden block leading-0">
+<button class="smallDeviceMenuController md:hidden block leading-0">
                   <iconify-icon class="cursor-pointer text-slate-900 dark:text-white text-2xl" icon="heroicons-outline:menu-alt-3"></iconify-icon>
                 </button>
                 <!-- end mobile menu -->
@@ -32,17 +31,17 @@
             <div class="transition-all duration-150 container-fluid" id="page_layout">
               <div id="content_layout">
 
-                <div>
+                <div class="space-y-5">
                   <div class="flex justify-between flex-wrap items-center mb-6">
-                    <h4 class="font-medium lg:text-2xl text-xl capitalize text-slate-900 inline-block ltr:pr-4 rtl:pl-4 mb-4 sm:mb-0 flex space-x-3 rtl:space-x-reverse">Dashboard</h4>
+                    <h4 class="font-medium lg:text-2xl text-xl capitalize text-slate-900 inline-block ltr:pr-4 rtl:pl-4 mb-1 sm:mb-0">Project</h4>
                     <div class="flex sm:space-x-4 space-x-2 sm:justify-end items-center rtl:space-x-reverse">
-                      <button class="btn leading-0 inline-flex justify-center bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 !font-normal">
+                      <button class="btn inline-flex justify-center bg-white text-slate-700 dark:bg-slate-700 !font-normal dark:text-white ">
                         <span class="flex items-center">
                         <iconify-icon class="text-xl ltr:mr-2 rtl:ml-2 font-light" icon="heroicons-outline:calendar"></iconify-icon>
                         <span>Weekly</span>
                         </span>
                       </button>
-                      <button class="btn leading-0 inline-flex justify-center bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 !font-normal">
+                      <button class="btn inline-flex justify-center bg-white text-slate-700 dark:bg-slate-700 !font-normal dark:text-white ">
                         <span class="flex items-center">
                         <iconify-icon class="text-xl ltr:mr-2 rtl:ml-2 font-light" icon="heroicons-outline:filter"></iconify-icon>
                         <span>Select Date</span>
@@ -50,97 +49,848 @@
                       </button>
                     </div>
                   </div>
-                  <div class="grid grid-cols-12 gap-5 mb-5">
-                    <div class="2xl:col-span-3 lg:col-span-4 col-span-12">
-                      <div class="bg-no-repeat bg-cover bg-center p-4 rounded-[6px] relative" style="background-image: url(<?= $assets ?>assets/images/all-img/widget-bg-1.png)">
-                        <div class="max-w-[180px]">
-                          <div class="text-xl font-medium text-slate-900 mb-2">
-                            Upgrade your Dashcode
+                  <div class="grid grid-cols-12 gap-5">
+                    <div class="lg:col-span-8 col-span-12 space-y-5">
+                      <div class="card p-6">
+                        <div class="grid grid-cols-12 gap-5">
+                          <div class="xl:col-span-8 col-span-12">
+                            <div class="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-3">
+
+                              <!-- BEGIN: Group Chart5 -->
+
+
+                              <div class=" bg-info-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                                <div class="text-info-500 mx-auto h-10 w-10 flex flex-col items-center justify-center rounded-full bg-white text-2xl mb-4">
+                                  <iconify-icon icon=heroicons-outline:menu-alt-1></iconify-icon>
+                                </div>
+                                <span class="block text-sm text-slate-600 font-medium dark:text-white mb-1">
+            Total Task
+        </span>
+                                <span class="block mb- text-2xl text-slate-900 dark:text-white font-medium">
+            64
+        </span>
+                              </div>
+
+                              <div class=" bg-warning-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                                <div class="text-warning-500 mx-auto h-10 w-10 flex flex-col items-center justify-center rounded-full bg-white text-2xl mb-4">
+                                  <iconify-icon icon=heroicons-outline:chart-pie></iconify-icon>
+                                </div>
+                                <span class="block text-sm text-slate-600 font-medium dark:text-white mb-1">
+            Completed 
+        </span>
+                                <span class="block mb- text-2xl text-slate-900 dark:text-white font-medium">
+            45
+        </span>
+                              </div>
+
+                              <div class=" bg-primary-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                                <div class="text-primary-500 mx-auto h-10 w-10 flex flex-col items-center justify-center rounded-full bg-white text-2xl mb-4">
+                                  <iconify-icon icon=heroicons-outline:clock></iconify-icon>
+                                </div>
+                                <span class="block text-sm text-slate-600 font-medium dark:text-white mb-1">
+            Hours
+        </span>
+                                <span class="block mb- text-2xl text-slate-900 dark:text-white font-medium">
+            190
+        </span>
+                              </div>
+
+                              <div class=" bg-success-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                                <div class="text-success-500 mx-auto h-10 w-10 flex flex-col items-center justify-center rounded-full bg-white text-2xl mb-4">
+                                  <iconify-icon icon=heroicons-outline:calculator></iconify-icon>
+                                </div>
+                                <span class="block text-sm text-slate-600 font-medium dark:text-white mb-1">
+            Spendings
+        </span>
+                                <span class="block mb- text-2xl text-slate-900 dark:text-white font-medium">
+            $3,564
+        </span>
+                              </div>
+
+                              <!-- END: Group Chart5 -->
+                            </div>
                           </div>
-                          <p class="text-sm text-slate-800">
-                            Pro plan for better results
-                          </p>
+                          <div class="xl:col-span-4 col-span-12">
+                            <div class="bg-slate-50 dark:bg-slate-900 rounded-md p-4">
+                              <span class="block dark:text-slate-400 text-sm text-slate-600">
+                                    Progress
+                                </span>
+                              <div class="donut-chart" height="110" colors="#0CE7FA,#E2F6FD"></div>
+                            </div>
+                          </div>
                         </div>
-                        <div class="absolute top-1/2 -translate-y-1/2 ltr:right-6 rtl:left-6 mt-2 h-12 w-12 bg-white rounded-full text-xs font-medium
-                            flex flex-col items-center justify-center">
-                          Now
+                      </div>
+                      <div class="card">
+                        <div class="card-header">
+                          <h4 class="card-title">Deal distribution by stage</h4>
+                        </div>
+                        <div class="card-body p-6">
+                          <div id="areaChart" height="310"></div>
                         </div>
                       </div>
                     </div>
-                    <div class="2xl:col-span-9 lg:col-span-8 col-span-12">
-                      <div class="p-4 card">
-                        <div class="grid md:grid-cols-3 col-span-1 gap-4">
-
-                          <!-- BEGIN: Group Chart2 -->
-
-
-                          <div class="py-[18px] px-4 rounded-[6px] bg-[#E5F9FF] dark:bg-slate-900    ">
-                            <div class="flex items-center space-x-6 rtl:space-x-reverse">
-                              <div class="flex-none">
-                                <div id="wline1"></div>
-                              </div>
-                              <div class="flex-1">
-                                <div class="text-slate-800 dark:text-slate-300 text-sm mb-1 font-medium">
-                                  Totel revenue
-                                </div>
-                                <div class="text-slate-900 dark:text-white text-lg font-medium">
-                                  3,564
-                                </div>
-                              </div>
-                            </div>
+                    <div class="xl:col-span-4 col-span-12">
+                      <div class="card">
+                        <div class="card-header">
+                          <h4 class="card-title">Notes</h4>
+                        </div>
+                        <div class="card-body p-6">
+                          <div class="mb-12">
+                            <div id="dashcode-mini-calendar"></div>
                           </div>
 
-                          <div class="py-[18px] px-4 rounded-[6px] bg-[#FFEDE5] dark:bg-slate-900    ">
-                            <div class="flex items-center space-x-6 rtl:space-x-reverse">
-                              <div class="flex-none">
-                                <div id="wline2"></div>
-                              </div>
-                              <div class="flex-1">
-                                <div class="text-slate-800 dark:text-slate-300 text-sm mb-1 font-medium">
-                                  Products sold
-                                </div>
-                                <div class="text-slate-900 dark:text-white text-lg font-medium">
-                                  564
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          <!-- BEGIN: Meets -->
 
-                          <div class="py-[18px] px-4 rounded-[6px] bg-[#EAE5FF] dark:bg-slate-900    ">
-                            <div class="flex items-center space-x-6 rtl:space-x-reverse">
-                              <div class="flex-none">
-                                <div id="wline3"></div>
-                              </div>
-                              <div class="flex-1">
-                                <div class="text-slate-800 dark:text-slate-300 text-sm mb-1 font-medium">
-                                  Growth
-                                </div>
-                                <div class="text-slate-900 dark:text-white text-lg font-medium">
-                                  +5.0%
-                                </div>
-                              </div>
-                            </div>
-                          </div>
 
-                          <!-- END: Group Chart2 -->
+                          <ul class="divide-y divide-slate-100 dark:divide-slate-700">
+
+
+                            <li class="block py-[10px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/svg/sk.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300 mb-1 font-medium">
+                                            Meeting with client
+                                        </span>
+                                    <span class="flex font-normal text-xs dark:text-slate-400 text-slate-500">
+                                            <span class="text-base inline-block mr-1">
+                                                <iconify-icon icon="heroicons-outline:video-camera"></iconify-icon>
+                                            </span>
+                                    Zoom meeting
+                                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <span class="block text-xs text-slate-600 dark:text-slate-400">
+                                        01 Nov 2021
+                                    </span>
+                                </div>
+                              </div>
+                            </li>
+
+
+                            <li class="block py-[10px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/svg/path.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300 mb-1 font-medium">
+                                            Design meeting (team)
+                                        </span>
+                                    <span class="flex font-normal text-xs dark:text-slate-400 text-slate-500">
+                                            <span class="text-base inline-block mr-1">
+                                                <iconify-icon icon="heroicons-outline:video-camera"></iconify-icon>
+                                            </span>
+                                    Skyp meeting
+                                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <span class="block text-xs text-slate-600 dark:text-slate-400">
+                                        01 Nov 2021
+                                    </span>
+                                </div>
+                              </div>
+                            </li>
+
+
+                            <li class="block py-[10px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/svg/dc.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300 mb-1 font-medium">
+                                            Background research
+                                        </span>
+                                    <span class="flex font-normal text-xs dark:text-slate-400 text-slate-500">
+                                            <span class="text-base inline-block mr-1">
+                                                <iconify-icon icon="heroicons-outline:video-camera"></iconify-icon>
+                                            </span>
+                                    Google meeting
+                                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <span class="block text-xs text-slate-600 dark:text-slate-400">
+                                        01 Nov 2021
+                                    </span>
+                                </div>
+                              </div>
+                            </li>
+
+
+                            <li class="block py-[10px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/svg/sk.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300 mb-1 font-medium">
+                                            Meeting with client
+                                        </span>
+                                    <span class="flex font-normal text-xs dark:text-slate-400 text-slate-500">
+                                            <span class="text-base inline-block mr-1">
+                                                <iconify-icon icon="heroicons-outline:video-camera"></iconify-icon>
+                                            </span>
+                                    Zoom meeting
+                                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <span class="block text-xs text-slate-600 dark:text-slate-400">
+                                        01 Nov 2021
+                                    </span>
+                                </div>
+                              </div>
+                            </li>
+
+                          </ul>
+                          <!-- END: Meets -->
+
                         </div>
                       </div>
                     </div>
                   </div>
+                  <div class="grid xl:grid-cols-3 grid-cols-1 gap-5">
+                    <div class="card">
+                      <div class="card-header">
+                        <h4 class="card-title">Task list</h4>
+                        <div>
+                          <!-- BEGIN: Card Dropdown -->
+                          <div class="relative">
+                            <div class="dropdown relative">
+                              <button class="text-xl text-center block w-full " type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="text-lg inline-flex h-6 w-6 flex-col items-center justify-center border border-slate-200 dark:border-slate-700
+                    rounded dark:text-slate-400">
+                <iconify-icon icon="heroicons-outline:dots-horizontal"></iconify-icon>
+            </span>
+                              </button>
+                              <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
+                shadow z-[2] overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last 28 Days</a>
+                                </li>
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last Month</a>
+                                </li>
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last Year</a>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                          <!-- END: Card Droopdown -->
+                        </div>
+                      </div>
+                      <div class="card-body p-6">
+
+                        <!-- BEGIN: Task List -->
+
+
+
+
+
+
+
+                        <div>
+                          <ul class="divide-y divide-slate-100 dark:divide-slate-700 -mx-6 -mb-6">
+
+
+                            <li class="flex items-center px-6 space-x-4 py-4 rtl:space-x-reverse">
+                              <div class="flex-none flex space-x-2 items-center rtl:space-x-reverse">
+                                <div class="checkbox-area">
+                                  <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="hidden" name="tasklist">
+                                    <span class="h-4 w-4 border flex-none border-slate-100 dark:border-slate-800 rounded inline-flex ltr:mr-3 rtl:ml-3 relative
+                                            transition-all duration-150 bg-slate-100 dark:bg-slate-900">
+                                        <img src="<?= $assets; ?>assets/images/icon/ck-white.svg" alt="" class="h-[10px] w-[10px] block m-auto opacity-0"></span>
+
+                                  </label>
+                                </div>
+                                <div class="img-active
+                    
+                  h-8 w-8 rounded-full text-white">
+                                  <img src="<?= $assets; ?>assets/images/users/user-1.jpg" alt="" class="block w-full h-full object-cover rounded-full">
+                                </div>
+                              </div>
+                              <div class="flex-1 flex bar-active">
+                                <span class="flex-1 text-sm text-slate-600 dark:text-slate-300">
+                Amet minim mollit no...
+              </span>
+                                <span class="flex-none space-x-2 text-base text-secondary-500 rtl:space-x-reverse">
+
+                <button
+                  type="button"
+                  
+                  class="transition duration-150 hover:text-danger-500"
+                >
+                  <iconify-icon icon="heroicons-outline:trash"></iconify-icon>
+                </button>
+                 
+              </span>
+                              </div>
+                            </li>
+
+
+                            <li class="flex items-center px-6 space-x-4 py-4 rtl:space-x-reverse">
+                              <div class="flex-none flex space-x-2 items-center rtl:space-x-reverse">
+                                <div class="checkbox-area">
+                                  <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="hidden" name="tasklist">
+                                    <span class="h-4 w-4 border flex-none border-slate-100 dark:border-slate-800 rounded inline-flex ltr:mr-3 rtl:ml-3 relative
+                                            transition-all duration-150 bg-slate-100 dark:bg-slate-900">
+                                        <img src="<?= $assets; ?>assets/images/icon/ck-white.svg" alt="" class="h-[10px] w-[10px] block m-auto opacity-0"></span>
+
+                                  </label>
+                                </div>
+                                <div class="img-active
+                    
+                  h-8 w-8 rounded-full text-white">
+                                  <img src="<?= $assets; ?>assets/images/users/user-2.jpg" alt="" class="block w-full h-full object-cover rounded-full">
+                                </div>
+                              </div>
+                              <div class="flex-1 flex bar-active">
+                                <span class="flex-1 text-sm text-slate-600 dark:text-slate-300">
+                Amet minim mollit no...
+              </span>
+                                <span class="flex-none space-x-2 text-base text-secondary-500 rtl:space-x-reverse">
+
+                <button
+                  type="button"
+                  
+                  class="transition duration-150 hover:text-danger-500"
+                >
+                  <iconify-icon icon="heroicons-outline:trash"></iconify-icon>
+                </button>
+                 
+              </span>
+                              </div>
+                            </li>
+
+
+                            <li class="flex items-center px-6 space-x-4 py-4 rtl:space-x-reverse">
+                              <div class="flex-none flex space-x-2 items-center rtl:space-x-reverse">
+                                <div class="checkbox-area">
+                                  <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="hidden" name="tasklist">
+                                    <span class="h-4 w-4 border flex-none border-slate-100 dark:border-slate-800 rounded inline-flex ltr:mr-3 rtl:ml-3 relative
+                                            transition-all duration-150 bg-slate-100 dark:bg-slate-900">
+                                        <img src="<?= $assets; ?>assets/images/icon/ck-white.svg" alt="" class="h-[10px] w-[10px] block m-auto opacity-0"></span>
+
+                                  </label>
+                                </div>
+                                <div class="img-active
+                    
+                  h-8 w-8 rounded-full text-white">
+                                  <img src="<?= $assets; ?>assets/images/users/user-3.jpg" alt="" class="block w-full h-full object-cover rounded-full">
+                                </div>
+                              </div>
+                              <div class="flex-1 flex bar-active">
+                                <span class="flex-1 text-sm text-slate-600 dark:text-slate-300">
+                Amet minim mollit no...
+              </span>
+                                <span class="flex-none space-x-2 text-base text-secondary-500 rtl:space-x-reverse">
+
+                <button
+                  type="button"
+                  
+                  class="transition duration-150 hover:text-danger-500"
+                >
+                  <iconify-icon icon="heroicons-outline:trash"></iconify-icon>
+                </button>
+                 
+              </span>
+                              </div>
+                            </li>
+
+
+                            <li class="flex items-center px-6 space-x-4 py-4 rtl:space-x-reverse">
+                              <div class="flex-none flex space-x-2 items-center rtl:space-x-reverse">
+                                <div class="checkbox-area">
+                                  <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="hidden" name="tasklist">
+                                    <span class="h-4 w-4 border flex-none border-slate-100 dark:border-slate-800 rounded inline-flex ltr:mr-3 rtl:ml-3 relative
+                                            transition-all duration-150 bg-slate-100 dark:bg-slate-900">
+                                        <img src="<?= $assets; ?>assets/images/icon/ck-white.svg" alt="" class="h-[10px] w-[10px] block m-auto opacity-0"></span>
+
+                                  </label>
+                                </div>
+                                <div class="img-active
+                    
+                  h-8 w-8 rounded-full text-white">
+                                  <img src="<?= $assets; ?>assets/images/users/user-4.jpg" alt="" class="block w-full h-full object-cover rounded-full">
+                                </div>
+                              </div>
+                              <div class="flex-1 flex bar-active">
+                                <span class="flex-1 text-sm text-slate-600 dark:text-slate-300">
+                Amet minim mollit no...
+              </span>
+                                <span class="flex-none space-x-2 text-base text-secondary-500 rtl:space-x-reverse">
+
+                <button
+                  type="button"
+                  
+                  class="transition duration-150 hover:text-danger-500"
+                >
+                  <iconify-icon icon="heroicons-outline:trash"></iconify-icon>
+                </button>
+                 
+              </span>
+                              </div>
+                            </li>
+
+
+                            <li class="flex items-center px-6 space-x-4 py-4 rtl:space-x-reverse">
+                              <div class="flex-none flex space-x-2 items-center rtl:space-x-reverse">
+                                <div class="checkbox-area">
+                                  <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="hidden" name="tasklist">
+                                    <span class="h-4 w-4 border flex-none border-slate-100 dark:border-slate-800 rounded inline-flex ltr:mr-3 rtl:ml-3 relative
+                                            transition-all duration-150 bg-slate-100 dark:bg-slate-900">
+                                        <img src="<?= $assets; ?>assets/images/icon/ck-white.svg" alt="" class="h-[10px] w-[10px] block m-auto opacity-0"></span>
+
+                                  </label>
+                                </div>
+                                <div class="img-active
+                    
+                  h-8 w-8 rounded-full text-white">
+                                  <img src="<?= $assets; ?>assets/images/users/user-5.jpg" alt="" class="block w-full h-full object-cover rounded-full">
+                                </div>
+                              </div>
+                              <div class="flex-1 flex bar-active">
+                                <span class="flex-1 text-sm text-slate-600 dark:text-slate-300">
+                Amet minim mollit no...
+              </span>
+                                <span class="flex-none space-x-2 text-base text-secondary-500 rtl:space-x-reverse">
+
+                <button
+                  type="button"
+                  
+                  class="transition duration-150 hover:text-danger-500"
+                >
+                  <iconify-icon icon="heroicons-outline:trash"></iconify-icon>
+                </button>
+                 
+              </span>
+                              </div>
+                            </li>
+
+
+                            <li class="flex items-center px-6 space-x-4 py-4 rtl:space-x-reverse">
+                              <div class="flex-none flex space-x-2 items-center rtl:space-x-reverse">
+                                <div class="checkbox-area">
+                                  <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="hidden" name="tasklist">
+                                    <span class="h-4 w-4 border flex-none border-slate-100 dark:border-slate-800 rounded inline-flex ltr:mr-3 rtl:ml-3 relative
+                                            transition-all duration-150 bg-slate-100 dark:bg-slate-900">
+                                        <img src="<?= $assets; ?>assets/images/icon/ck-white.svg" alt="" class="h-[10px] w-[10px] block m-auto opacity-0"></span>
+
+                                  </label>
+                                </div>
+                                <div class="img-active
+                    
+                  h-8 w-8 rounded-full text-white">
+                                  <img src="<?= $assets; ?>assets/images/users/user-6.jpg" alt="" class="block w-full h-full object-cover rounded-full">
+                                </div>
+                              </div>
+                              <div class="flex-1 flex bar-active">
+                                <span class="flex-1 text-sm text-slate-600 dark:text-slate-300">
+                Amet minim mollit no...
+              </span>
+                                <span class="flex-none space-x-2 text-base text-secondary-500 rtl:space-x-reverse">
+
+                <button
+                  type="button"
+                  
+                  class="transition duration-150 hover:text-danger-500"
+                >
+                  <iconify-icon icon="heroicons-outline:trash"></iconify-icon>
+                </button>
+                 
+              </span>
+                              </div>
+                            </li>
+
+                          </ul>
+                        </div>
+                        <!-- END: Task List -->
+
+                      </div>
+                    </div>
+                    <!-- end task -->
+                    <div class="card">
+                      <div class="card-header">
+                        <h4 class="card-title">Messages</h4>
+                        <div>
+                          <!-- BEGIN: Card Dropdown -->
+                          <div class="relative">
+                            <div class="dropdown relative">
+                              <button class="text-xl text-center block w-full " type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="text-lg inline-flex h-6 w-6 flex-col items-center justify-center border border-slate-200 dark:border-slate-700
+                    rounded dark:text-slate-400">
+                <iconify-icon icon="heroicons-outline:dots-horizontal"></iconify-icon>
+            </span>
+                              </button>
+                              <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
+                shadow z-[2] overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last 28 Days</a>
+                                </li>
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last Month</a>
+                                </li>
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last Year</a>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                          <!-- END: Card Droopdown -->
+                        </div>
+                      </div>
+                      <div class="card-body p-6">
+
+                        <!-- BEGIN: Message -->
+
+
+                        <div>
+                          <ul class="divide-y divide-slate-100 dark:divide-slate-700 -mx-6 -mb-6">
+
+
+                            <li>
+                              <a href="chat.html" class="hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:bg-opacity-70 hover:text-slate-800 text-slate-600 dark:text-slate-300 block w-full px-4 py-3 text-sm mb-2 last:mb-0 cursor-pointer">
+                                <div class="flex ltr:text-left rtl:text-right">
+                                  <div class="flex-none ltr:mr-3 rtl:ml-3">
+                                    <div class="h-8 w-8 bg-white dark:bg-slate-700 rounded-full relative">
+                                      <span
+                      class="
+                         bg-secondary-500 
+                       w-[10px] h-[10px] rounded-full border border-white dark:border-slate-700  inline-block absolute right-0 top-0"
+                    ></span>
+                                      <img src="<?= $assets; ?>assets/images/all-img/user.png" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <div class="text-slate-800 dark:text-slate-300 text-sm font-medium mb-1`">
+                                      Wade Warren
+                                    </div>
+                                    <div class="text-xs hover:text-[#68768A] font-normal text-slate-600 dark:text-slate-300">
+                                      Hi! How are you doing?.....
+                                    </div>
+                                    <div class="text-slate-400 dark:text-slate-400 text-xs mt-1">
+                                      3 min ago
+                                    </div>
+                                  </div>
+
+
+
+                                  <div class="flex-0">
+                                    <span class="h-4 w-4 bg-danger-500 border border-none rounded-full text-[10px] flex items-center justify-center text-white">
+                      1
+                    </span>
+                                  </div>
+
+                                </div>
+                              </a>
+                            </li>
+
+
+                            <li>
+                              <a href="chat.html" class="hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:bg-opacity-70 hover:text-slate-800 text-slate-600 dark:text-slate-300 block w-full px-4 py-3 text-sm mb-2 last:mb-0 cursor-pointer">
+                                <div class="flex ltr:text-left rtl:text-right">
+                                  <div class="flex-none ltr:mr-3 rtl:ml-3">
+                                    <div class="h-8 w-8 bg-white dark:bg-slate-700 rounded-full relative">
+                                      <span
+                      class="
+                          bg-success-500 
+                       w-[10px] h-[10px] rounded-full border border-white dark:border-slate-700  inline-block absolute right-0 top-0"
+                    ></span>
+                                      <img src="<?= $assets; ?>assets/images/all-img/user3.png" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <div class="text-slate-800 dark:text-slate-300 text-sm font-medium mb-1`">
+                                      Savannah Nguyen
+                                    </div>
+                                    <div class="text-xs hover:text-[#68768A] font-normal text-slate-600 dark:text-slate-300">
+                                      Hi! How are you doing?.....
+                                    </div>
+                                    <div class="text-slate-400 dark:text-slate-400 text-xs mt-1">
+                                      3 min ago
+                                    </div>
+                                  </div>
+
+                                </div>
+                              </a>
+                            </li>
+
+
+                            <li>
+                              <a href="chat.html" class="hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:bg-opacity-70 hover:text-slate-800 text-slate-600 dark:text-slate-300 block w-full px-4 py-3 text-sm mb-2 last:mb-0 cursor-pointer">
+                                <div class="flex ltr:text-left rtl:text-right">
+                                  <div class="flex-none ltr:mr-3 rtl:ml-3">
+                                    <div class="h-8 w-8 bg-white dark:bg-slate-700 rounded-full relative">
+                                      <span
+                      class="
+                          bg-success-500 
+                       w-[10px] h-[10px] rounded-full border border-white dark:border-slate-700  inline-block absolute right-0 top-0"
+                    ></span>
+                                      <img src="<?= $assets; ?>assets/images/all-img/user3.png" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <div class="text-slate-800 dark:text-slate-300 text-sm font-medium mb-1`">
+                                      Ralph Edwards
+                                    </div>
+                                    <div class="text-xs hover:text-[#68768A] font-normal text-slate-600 dark:text-slate-300">
+                                      Hi! How are you doing?.....
+                                    </div>
+                                    <div class="text-slate-400 dark:text-slate-400 text-xs mt-1">
+                                      3 min ago
+                                    </div>
+                                  </div>
+
+
+
+                                  <div class="flex-0">
+                                    <span class="h-4 w-4 bg-danger-500 border border-none rounded-full text-[10px] flex items-center justify-center text-white">
+                      8
+                    </span>
+                                  </div>
+
+                                </div>
+                              </a>
+                            </li>
+
+
+                            <li>
+                              <a href="chat.html" class="hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:bg-opacity-70 hover:text-slate-800 text-slate-600 dark:text-slate-300 block w-full px-4 py-3 text-sm mb-2 last:mb-0 cursor-pointer">
+                                <div class="flex ltr:text-left rtl:text-right">
+                                  <div class="flex-none ltr:mr-3 rtl:ml-3">
+                                    <div class="h-8 w-8 bg-white dark:bg-slate-700 rounded-full relative">
+                                      <span
+                      class="
+                         bg-secondary-500 
+                       w-[10px] h-[10px] rounded-full border border-white dark:border-slate-700  inline-block absolute right-0 top-0"
+                    ></span>
+                                      <img src="<?= $assets; ?>assets/images/all-img/user4.png" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <div class="text-slate-800 dark:text-slate-300 text-sm font-medium mb-1`">
+                                      Cody Fisher
+                                    </div>
+                                    <div class="text-xs hover:text-[#68768A] font-normal text-slate-600 dark:text-slate-300">
+                                      Hi! How are you doing?.....
+                                    </div>
+                                    <div class="text-slate-400 dark:text-slate-400 text-xs mt-1">
+                                      3 min ago
+                                    </div>
+                                  </div>
+
+                                </div>
+                              </a>
+                            </li>
+
+
+                            <li>
+                              <a href="chat.html" class="hover:bg-slate-100 dark:hover:bg-slate-600 dark:hover:bg-opacity-70 hover:text-slate-800 text-slate-600 dark:text-slate-300 block w-full px-4 py-3 text-sm mb-2 last:mb-0 cursor-pointer">
+                                <div class="flex ltr:text-left rtl:text-right">
+                                  <div class="flex-none ltr:mr-3 rtl:ml-3">
+                                    <div class="h-8 w-8 bg-white dark:bg-slate-700 rounded-full relative">
+                                      <span
+                      class="
+                          bg-success-500 
+                       w-[10px] h-[10px] rounded-full border border-white dark:border-slate-700  inline-block absolute right-0 top-0"
+                    ></span>
+                                      <img src="<?= $assets; ?>assets/images/all-img/user3.png" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <div class="text-slate-800 dark:text-slate-300 text-sm font-medium mb-1`">
+                                      Savannah Nguyen
+                                    </div>
+                                    <div class="text-xs hover:text-[#68768A] font-normal text-slate-600 dark:text-slate-300">
+                                      Hi! How are you doing?.....
+                                    </div>
+                                    <div class="text-slate-400 dark:text-slate-400 text-xs mt-1">
+                                      3 min ago
+                                    </div>
+                                  </div>
+
+                                </div>
+                              </a>
+                            </li>
+
+                          </ul>
+                        </div>
+                        <!-- END: Message  -->
+
+                      </div>
+                    </div>
+                    <!-- end message -->
+                    <div class="card">
+                      <div class="card-header">
+                        <h4 class="card-title">Activity</h4>
+                        <div>
+                          <!-- BEGIN: Card Dropdown -->
+                          <div class="relative">
+                            <div class="dropdown relative">
+                              <button class="text-xl text-center block w-full " type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="text-lg inline-flex h-6 w-6 flex-col items-center justify-center border border-slate-200 dark:border-slate-700
+                    rounded dark:text-slate-400">
+                <iconify-icon icon="heroicons-outline:dots-horizontal"></iconify-icon>
+            </span>
+                              </button>
+                              <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
+                shadow z-[2] overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last 28 Days</a>
+                                </li>
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last Month</a>
+                                </li>
+                                <li>
+                                  <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                        dark:hover:text-white">
+                                    Last Year</a>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                          <!-- END: Card Droopdown -->
+                        </div>
+                      </div>
+                      <div class="card-body p-6">
+
+                        <!-- BEGIN: Activity Card -->
+
+
+                        <ul class="relative ltr:pl-2 rtl:pr-2">
+
+
+                          <li class="ltr:border-l-2 rtl:border-r-2 border-slate-100 dark:border-slate-700 pb-4 
+                 last:border-none ltr:pl-[22px] rtl:pr-[22px] relative before:absolute ltr:before:left-[-8px] 
+                 rtl:before:-right-2 before:top-[0px] before:rounded-full before:w-4 before:h-4
+                  before:bg-slate-900 dark:before:bg-slate-600 before:leading-[2px] 
+                  before:content-[url('../images/all-img/ck.svg')]">
+                            <div class="p-[10px] relative top-[-20px]">
+                              <h2 class="text-sm font-medium dark:text-slate-400-900 mb-1 text-slate-600">
+                                Project start date
+                              </h2>
+                              <p class="text-xs capitalize dark:text-slate-400">
+                                Sep 20, 2021
+                              </p>
+                            </div>
+                          </li>
+
+
+                          <li class="ltr:border-l-2 rtl:border-r-2 border-slate-100 dark:border-slate-700 pb-4 
+                 last:border-none ltr:pl-[22px] rtl:pr-[22px] relative before:absolute ltr:before:left-[-8px] 
+                 rtl:before:-right-2 before:top-[0px] before:rounded-full before:w-4 before:h-4
+                  before:bg-slate-900 dark:before:bg-slate-600 before:leading-[2px] 
+                  before:content-[url('../images/all-img/ck.svg')]">
+                            <div class="p-[10px] relative top-[-20px]">
+                              <h2 class="text-sm font-medium dark:text-slate-400-900 mb-1 text-slate-600">
+                                Project start date
+                              </h2>
+                              <p class="text-xs capitalize dark:text-slate-400">
+                                Sep 20, 2021
+                              </p>
+                            </div>
+                          </li>
+
+
+                          <li class="ltr:border-l-2 rtl:border-r-2 border-slate-100 dark:border-slate-700 pb-4 
+                 last:border-none ltr:pl-[22px] rtl:pr-[22px] relative before:absolute ltr:before:left-[-8px] 
+                 rtl:before:-right-2 before:top-[0px] before:rounded-full before:w-4 before:h-4
+                  before:bg-slate-900 dark:before:bg-slate-600 before:leading-[2px] 
+                  before:content-[url('../images/all-img/ck.svg')]">
+                            <div class="p-[10px] relative top-[-20px]">
+                              <h2 class="text-sm font-medium dark:text-slate-400-900 mb-1 text-slate-600">
+                                Project start date
+                              </h2>
+                              <p class="text-xs capitalize dark:text-slate-400">
+                                Sep 20, 2021
+                              </p>
+                            </div>
+                          </li>
+
+
+                          <li class="ltr:border-l-2 rtl:border-r-2 border-slate-100 dark:border-slate-700 pb-4 
+                 last:border-none ltr:pl-[22px] rtl:pr-[22px] relative before:absolute ltr:before:left-[-8px] 
+                 rtl:before:-right-2 before:top-[0px] before:rounded-full before:w-4 before:h-4
+                  before:bg-slate-900 dark:before:bg-slate-600 before:leading-[2px] 
+                  before:content-[url('../images/all-img/ck.svg')]">
+                            <div class="p-[10px] relative top-[-20px]">
+                              <h2 class="text-sm font-medium dark:text-slate-400-900 mb-1 text-slate-600">
+                                Project start date
+                              </h2>
+                              <p class="text-xs capitalize dark:text-slate-400">
+                                Sep 20, 2021
+                              </p>
+                            </div>
+                          </li>
+
+
+                          <li class="ltr:border-l-2 rtl:border-r-2 border-slate-100 dark:border-slate-700 pb-4 
+                 last:border-none ltr:pl-[22px] rtl:pr-[22px] relative before:absolute ltr:before:left-[-8px] 
+                 rtl:before:-right-2 before:top-[0px] before:rounded-full before:w-4 before:h-4
+                  before:bg-slate-900 dark:before:bg-slate-600 before:leading-[2px] 
+                  before:content-[url('../images/all-img/ck.svg')]">
+                            <div class="p-[10px] relative top-[-20px]">
+                              <h2 class="text-sm font-medium dark:text-slate-400-900 mb-1 text-slate-600">
+                                Project start date
+                              </h2>
+                              <p class="text-xs capitalize dark:text-slate-400">
+                                Sep 20, 2021
+                              </p>
+                            </div>
+                          </li>
+
+                        </ul>
+                        <!-- END: Activity Card -->
+                      </div>
+                    </div>
+                    <!-- end activity -->
+                  </div>
                   <div class="grid grid-cols-12 gap-5">
-                    <div class="lg:col-span-8 col-span-12">
+                    <div class="xl:col-span-8 lg:col-span-7 col-span-12">
                       <div class="card">
-                        <div class="card-body p-6">
-                          <div class="legend-ring">
-                            <div id="revenue-barchart"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="lg:col-span-4 col-span-12">
-                      <div class="card">
-                        <header class="card-header">
-                          <h4 class="card-title">Overview</h4>
+                        <div class="card-header noborder">
+                          <h4 class="card-title ">Team members</h4>
                           <div>
                             <!-- BEGIN: Card Dropdown -->
                             <div class="relative">
@@ -173,79 +923,37 @@
                             </div>
                             <!-- END: Card Droopdown -->
                           </div>
-                        </header>
-                        <div class="card-body p-6">
-                          <div id="radial-bar"></div>
                         </div>
-                      </div>
-                    </div>
-                    <div class="lg:col-span-8 col-span-12">
-                      <div class="card">
-                        <header class="card-header noborder">
-                          <h4 class="card-title">All Company</h4>
-                          <div>
-                            <!-- BEGIN: Card Dropdown -->
-                            <div class="relative">
-                              <div class="dropdown relative">
-                                <button class="text-xl text-center block w-full " type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                  <span class="text-lg inline-flex h-6 w-6 flex-col items-center justify-center border border-slate-200 dark:border-slate-700
-                    rounded dark:text-slate-400">
-                <iconify-icon icon="heroicons-outline:dots-horizontal"></iconify-icon>
-            </span>
-                                </button>
-                                <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
-                shadow z-[2] overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last 28 Days</a>
-                                  </li>
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last Month</a>
-                                  </li>
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last Year</a>
-                                  </li>
-                                </ul>
-                              </div>
-                            </div>
-                            <!-- END: Card Droopdown -->
-                          </div>
-                        </header>
                         <div class="card-body p-6">
 
-                          <!-- BEGIN: Company Table -->
+                          <!-- BEGIN: Team Table -->
 
 
                           <div class="overflow-x-auto -mx-6">
                             <div class="inline-block min-w-full align-middle">
                               <div class="overflow-hidden ">
                                 <table class="min-w-full divide-y divide-slate-100 table-fixed dark:divide-slate-700">
-                                  <thead class="  bg-slate-200 dark:bg-slate-700">
+                                  <thead class=" bg-slate-200 dark:bg-slate-700">
                                     <tr>
 
                                       <th scope="col" class=" table-th ">
-                                        Company
+                                        ASSIGNEE
                                       </th>
 
                                       <th scope="col" class=" table-th ">
-                                        Category
+                                        STATUS
                                       </th>
 
                                       <th scope="col" class=" table-th ">
-                                        Sales
+                                        TIME
                                       </th>
 
                                       <th scope="col" class=" table-th ">
-                                        Views
+                                        CHART
                                       </th>
 
                                       <th scope="col" class=" table-th ">
-                                        revenue
+                                        ACTION
                                       </th>
 
                                     </tr>
@@ -257,33 +965,55 @@
                                         <div class="flex items-center">
                                           <div class="flex-none">
                                             <div class="w-8 h-8 rounded-[100%] ltr:mr-3 rtl:ml-3">
-                                              <img src=assets/images/users/user-1.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
+                                              <img src="<?= $assets; ?>assets/images/users/user-1.jpg" alt="" class="w-full h-full rounded-[100%] object-cover">
                                             </div>
                                           </div>
                                           <div class="flex-1 text-start">
                                             <h4 class="text-sm font-medium text-slate-600 whitespace-nowrap">
-                                              Biffco Enterprises Ltd.
+                                              Arlene McCoy
                                             </h4>
-                                            <div class="text-xs font-normal text-slate-600 dark:text-slate-400">
-                                              Biffco@example.com
-                                            </div>
                                           </div>
                                         </div>
                                       </td>
-                                      <td class="table-td">Technology</td>
                                       <td class="table-td ">
-                                        <div class="flex space-x-6 items-center rtl:space-x-reverse">
-                                          <span>
-                                        95%</span>
-                                          <span class=" text-xl  text-danger-500 ">
-
-                                            <iconify-icon icon="heroicons-outline:trending-down"></iconify-icon>
+                                        <span class="block min-w-[140px] text-left">
+                                    <span class="inline-block text-center mx-auto py-1">
                                         
-                                    </span>
+                                            <span class="flex items-center space-x-3 rtl:space-x-reverse">
+                                                <span class="h-[6px] w-[6px] bg-danger-500 rounded-full inline-block ring-4 ring-opacity-30 ring-danger-500"></span>
+                                        <span>In progress</span>
+                                        </span>
+
+                                      </td>
+                                      <td class="table-td">42.5 hours</td>
+                                      <td class="table-td"></td>
+                                      <td class="table-td">
+                                        <div class="relative">
+                                          <div class="dropdown relative">
+                                            <button class="text-xl text-center block w-full " type="button" id="teamDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                              <iconify-icon icon="heroicons-outline:dots-vertical"></iconify-icon>
+                                            </button>
+                                            <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
+                                                shadow z-[2] float-left overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  View</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Edit</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Delete</a>
+                                              </li>
+                                            </ul>
+                                          </div>
                                         </div>
                                       </td>
-                                      <td class="table-td ">343</td>
-                                      <td class="table-td ">$231.26</td>
                                     </tr>
 
                                     <tr>
@@ -291,33 +1021,57 @@
                                         <div class="flex items-center">
                                           <div class="flex-none">
                                             <div class="w-8 h-8 rounded-[100%] ltr:mr-3 rtl:ml-3">
-                                              <img src=assets/images/users/user-2.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
+                                              <img src="<?= $assets; ?>assets/images/users/user-2.jpg" alt="" class="w-full h-full rounded-[100%] object-cover">
                                             </div>
                                           </div>
                                           <div class="flex-1 text-start">
                                             <h4 class="text-sm font-medium text-slate-600 whitespace-nowrap">
-                                              Biffco Enterprises Ltd.
+                                              Arlene McCoy
                                             </h4>
-                                            <div class="text-xs font-normal text-slate-600 dark:text-slate-400">
-                                              Biffco@example.com
-                                            </div>
                                           </div>
                                         </div>
                                       </td>
-                                      <td class="table-td">Technology</td>
                                       <td class="table-td ">
-                                        <div class="flex space-x-6 items-center rtl:space-x-reverse">
-                                          <span>
-                                        197%</span>
-                                          <span class=" text-xl  text-success-500 ">
-
-                                            <iconify-icon icon="heroicons-outline:trending-up"></iconify-icon>
+                                        <span class="block min-w-[140px] text-left">
+                                    <span class="inline-block text-center mx-auto py-1">
                                         
-                                    </span>
+                                            <span class="flex items-center space-x-3 rtl:space-x-reverse">
+                                                <span class="h-[6px] w-[6px] bg-success-500 rounded-full inline-block ring-4 ring-opacity-30 ring-success-500"></span>
+                                        <span>Complete</span>
+                                        </span>
+                                        </span>
+                                        </span>
+
+                                      </td>
+                                      <td class="table-td">42.5 hours</td>
+                                      <td class="table-td"></td>
+                                      <td class="table-td">
+                                        <div class="relative">
+                                          <div class="dropdown relative">
+                                            <button class="text-xl text-center block w-full " type="button" id="teamDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                              <iconify-icon icon="heroicons-outline:dots-vertical"></iconify-icon>
+                                            </button>
+                                            <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
+                                                shadow z-[2] float-left overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  View</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Edit</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Delete</a>
+                                              </li>
+                                            </ul>
+                                          </div>
                                         </div>
                                       </td>
-                                      <td class="table-td ">315</td>
-                                      <td class="table-td ">$432.81</td>
                                     </tr>
 
                                     <tr>
@@ -325,33 +1079,55 @@
                                         <div class="flex items-center">
                                           <div class="flex-none">
                                             <div class="w-8 h-8 rounded-[100%] ltr:mr-3 rtl:ml-3">
-                                              <img src=assets/images/users/user-3.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
+                                              <img src="<?= $assets; ?>assets/images/users/user-3.jpg" alt="" class="w-full h-full rounded-[100%] object-cover">
                                             </div>
                                           </div>
                                           <div class="flex-1 text-start">
                                             <h4 class="text-sm font-medium text-slate-600 whitespace-nowrap">
-                                              Biffco Enterprises Ltd.
+                                              Arlene McCoy
                                             </h4>
-                                            <div class="text-xs font-normal text-slate-600 dark:text-slate-400">
-                                              Biffco@example.com
-                                            </div>
                                           </div>
                                         </div>
                                       </td>
-                                      <td class="table-td">Technology</td>
                                       <td class="table-td ">
-                                        <div class="flex space-x-6 items-center rtl:space-x-reverse">
-                                          <span>
-                                        137%</span>
-                                          <span class=" text-xl  text-success-500 ">
-
-                                            <iconify-icon icon="heroicons-outline:trending-up"></iconify-icon>
+                                        <span class="block min-w-[140px] text-left">
+                                    <span class="inline-block text-center mx-auto py-1">
                                         
-                                    </span>
+                                            <span class="flex items-center space-x-3 rtl:space-x-reverse">
+                                                <span class="h-[6px] w-[6px] bg-danger-500 rounded-full inline-block ring-4 ring-opacity-30 ring-danger-500"></span>
+                                        <span>In progress</span>
+                                        </span>
+
+                                      </td>
+                                      <td class="table-td">42.5 hours</td>
+                                      <td class="table-td"></td>
+                                      <td class="table-td">
+                                        <div class="relative">
+                                          <div class="dropdown relative">
+                                            <button class="text-xl text-center block w-full " type="button" id="teamDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                              <iconify-icon icon="heroicons-outline:dots-vertical"></iconify-icon>
+                                            </button>
+                                            <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
+                                                shadow z-[2] float-left overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  View</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Edit</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Delete</a>
+                                              </li>
+                                            </ul>
+                                          </div>
                                         </div>
                                       </td>
-                                      <td class="table-td ">329</td>
-                                      <td class="table-td ">$437.65</td>
                                     </tr>
 
                                     <tr>
@@ -359,101 +1135,57 @@
                                         <div class="flex items-center">
                                           <div class="flex-none">
                                             <div class="w-8 h-8 rounded-[100%] ltr:mr-3 rtl:ml-3">
-                                              <img src=assets/images/users/user-4.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
+                                              <img src="<?= $assets; ?>assets/images/users/user-4.jpg" alt="" class="w-full h-full rounded-[100%] object-cover">
                                             </div>
                                           </div>
                                           <div class="flex-1 text-start">
                                             <h4 class="text-sm font-medium text-slate-600 whitespace-nowrap">
-                                              Biffco Enterprises Ltd.
+                                              Arlene McCoy
                                             </h4>
-                                            <div class="text-xs font-normal text-slate-600 dark:text-slate-400">
-                                              Biffco@example.com
-                                            </div>
                                           </div>
                                         </div>
                                       </td>
-                                      <td class="table-td">Technology</td>
                                       <td class="table-td ">
-                                        <div class="flex space-x-6 items-center rtl:space-x-reverse">
-                                          <span>
-                                        101%</span>
-                                          <span class=" text-xl  text-success-500 ">
-
-                                            <iconify-icon icon="heroicons-outline:trending-up"></iconify-icon>
+                                        <span class="block min-w-[140px] text-left">
+                                    <span class="inline-block text-center mx-auto py-1">
                                         
-                                    </span>
-                                        </div>
-                                      </td>
-                                      <td class="table-td ">336</td>
-                                      <td class="table-td ">$387.55</td>
-                                    </tr>
+                                            <span class="flex items-center space-x-3 rtl:space-x-reverse">
+                                                <span class="h-[6px] w-[6px] bg-success-500 rounded-full inline-block ring-4 ring-opacity-30 ring-success-500"></span>
+                                        <span>Complete</span>
+                                        </span>
+                                        </span>
+                                        </span>
 
-                                    <tr>
+                                      </td>
+                                      <td class="table-td">42.5 hours</td>
+                                      <td class="table-td"></td>
                                       <td class="table-td">
-                                        <div class="flex items-center">
-                                          <div class="flex-none">
-                                            <div class="w-8 h-8 rounded-[100%] ltr:mr-3 rtl:ml-3">
-                                              <img src=assets/images/users/user-5.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                            </div>
-                                          </div>
-                                          <div class="flex-1 text-start">
-                                            <h4 class="text-sm font-medium text-slate-600 whitespace-nowrap">
-                                              Biffco Enterprises Ltd.
-                                            </h4>
-                                            <div class="text-xs font-normal text-slate-600 dark:text-slate-400">
-                                              Biffco@example.com
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </td>
-                                      <td class="table-td">Technology</td>
-                                      <td class="table-td ">
-                                        <div class="flex space-x-6 items-center rtl:space-x-reverse">
-                                          <span>
-                                        99%</span>
-                                          <span class=" text-xl  text-danger-500 ">
-
-                                            <iconify-icon icon="heroicons-outline:trending-down"></iconify-icon>
-                                        
-                                    </span>
-                                        </div>
-                                      </td>
-                                      <td class="table-td ">375</td>
-                                      <td class="table-td ">$489.80</td>
-                                    </tr>
-
-                                    <tr>
-                                      <td class="table-td">
-                                        <div class="flex items-center">
-                                          <div class="flex-none">
-                                            <div class="w-8 h-8 rounded-[100%] ltr:mr-3 rtl:ml-3">
-                                              <img src=assets/images/users/user-6.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                            </div>
-                                          </div>
-                                          <div class="flex-1 text-start">
-                                            <h4 class="text-sm font-medium text-slate-600 whitespace-nowrap">
-                                              Biffco Enterprises Ltd.
-                                            </h4>
-                                            <div class="text-xs font-normal text-slate-600 dark:text-slate-400">
-                                              Biffco@example.com
-                                            </div>
+                                        <div class="relative">
+                                          <div class="dropdown relative">
+                                            <button class="text-xl text-center block w-full " type="button" id="teamDropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                              <iconify-icon icon="heroicons-outline:dots-vertical"></iconify-icon>
+                                            </button>
+                                            <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
+                                                shadow z-[2] float-left overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  View</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Edit</a>
+                                              </li>
+                                              <li>
+                                                <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
+                                                        dark:hover:text-white">
+                                                  Delete</a>
+                                              </li>
+                                            </ul>
                                           </div>
                                         </div>
                                       </td>
-                                      <td class="table-td">Technology</td>
-                                      <td class="table-td ">
-                                        <div class="flex space-x-6 items-center rtl:space-x-reverse">
-                                          <span>
-                                        101%</span>
-                                          <span class=" text-xl  text-success-500 ">
-
-                                            <iconify-icon icon="heroicons-outline:trending-up"></iconify-icon>
-                                        
-                                    </span>
-                                        </div>
-                                      </td>
-                                      <td class="table-td ">490</td>
-                                      <td class="table-td ">$421.45</td>
                                     </tr>
 
                                   </tbody>
@@ -461,239 +1193,15 @@
                               </div>
                             </div>
                           </div>
-                          <!-- END: Company Table -->
-                        </div>
-                      </div>
-                    </div>
-                    <div class="lg:col-span-4 col-span-12">
-                      <div class="card ">
-                        <div class="card-header ">
-                          <h4 class="card-title">Recent Activity</h4>
-                          <div>
-                            <!-- BEGIN: Card Dropdown -->
-                            <div class="relative">
-                              <div class="dropdown relative">
-                                <button class="text-xl text-center block w-full " type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                  <span class="text-lg inline-flex h-6 w-6 flex-col items-center justify-center border border-slate-200 dark:border-slate-700
-                    rounded dark:text-slate-400">
-                <iconify-icon icon="heroicons-outline:dots-horizontal"></iconify-icon>
-            </span>
-                                </button>
-                                <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
-                shadow z-[2] overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last 28 Days</a>
-                                  </li>
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last Month</a>
-                                  </li>
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last Year</a>
-                                  </li>
-                                </ul>
-                              </div>
-                            </div>
-                            <!-- END: Card Droopdown -->
-                          </div>
-                        </div>
-                        <div class="card-body p-6">
-
-                          <!-- BEGIN: Activity Card -->
-
-                          <div>
-                            <ul class="list-item space-y-3 h-full overflow-x-auto">
-
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-1.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-2.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-3.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-4.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-5.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-6.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-1.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-2.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-
-                              <li class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
-                                <div>
-                                  <div class="w-8 h-8 rounded-[100%]">
-                                    <img src=assets/images/users/user-3.jpg alt="" class="w-full h-full rounded-[100%] object-cover">
-                                  </div>
-                                </div>
-                                <div class="text-start overflow-hidden text-ellipsis whitespace-nowrap max-w-[63%]">
-                                  <div class="text-sm text-slate-600 dark:text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    Finance KPI Mobile app launch preparion meeting.
-                                  </div>
-                                </div>
-                                <div class="flex-1 ltr:text-right rtl:text-left">
-                                  <div class="text-sm font-light text-slate-400 dark:text-slate-400">
-                                    1 hours
-                                  </div>
-                                </div>
-                              </li>
-
-                            </ul>
-                          </div>
-                          <!-- END: Activity Card -->
-
-
+                          <!-- END: Team table -->
 
                         </div>
                       </div>
                     </div>
-                    <div class="lg:col-span-8 col-span-12">
-                      <div class="card">
+                    <div class="xl:col-span-4 lg:col-span-5 col-span-12">
+                      <div class="card h-full">
                         <div class="card-header">
-                          <h4 class="card-title">Most Sales</h4>
+                          <h4 class="card-title">Files</h4>
                           <div>
                             <!-- BEGIN: Card Dropdown -->
                             <div class="relative">
@@ -729,185 +1237,138 @@
                         </div>
                         <div class="card-body p-6">
 
-                          <!-- BEGIN: Most Sale -->
+                          <!-- BEGIN: Files Card -->
 
 
+                          <ul class="divide-y divide-slate-100 dark:divide-slate-700">
 
-                          <div class="md:flex items-center">
-                            <div class="grow-0">
-                              <h4 class="text-slate-600 dark:text-slate-200 text-sm font-normal mb-[6px]">
-                                Total earnings
-                              </h4>
-
-                              <div class="text-lg font-medium mb-[6px] dark:text-white text-slate-900">
-                                $12,65,64787.00
+                            <li class="block py-[8px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/icon/file-1.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300">
+                        Dashboard.fig
+                    </span>
+                                    <span class="block font-normal text-xs text-slate-500 mt-1">
+                        06 June 2021 / 155MB
+                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <button type="button" class="text-xs text-slate-900 dark:text-white">
+                                    Download
+                                  </button>
+                                </div>
                               </div>
+                            </li>
 
-
-                              <div class="text-xs font-light dark:text-slate-200">
-                                <span class="text-primary-500">+08%</span> From last month
+                            <li class="block py-[8px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/icon/pdf-1.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300">
+                        Ecommerce.pdf
+                    </span>
+                                    <span class="block font-normal text-xs text-slate-500 mt-1">
+                        06 June 2021 / 155MB
+                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <button type="button" class="text-xs text-slate-900 dark:text-white">
+                                    Download
+                                  </button>
+                                </div>
                               </div>
-                              <ul class="bg-slate-50 dark:bg-slate-900 rounded p-4 min-w-[184px] space-y-5 mt-4">
+                            </li>
 
-
-
-                                <li class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
-                                  <span class="flex space-x-2 rtl:space-x-reverse items-center">
-                <span
-                  class="inline-flex h-[6px] w-[6px] bg-primary-500 ring-opacity-25 rounded-full ring-4
-                        bg-primary-500 ring-primary-500
-                        "
-                ></span>
-                                  <span>Nevada</span>
-                                  </span>
-                                  <span>$125k</span>
-                                </li>
-
-
-                                <li class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
-                                  <span class="flex space-x-2 rtl:space-x-reverse items-center">
-                <span
-                  class="inline-flex h-[6px] w-[6px] bg-primary-500 ring-opacity-25 rounded-full ring-4
-                        bg-success-500 ring-success-500
-                        "
-                ></span>
-                                  <span>Colorado</span>
-                                  </span>
-                                  <span>$$325k</span>
-                                </li>
-
-
-                                <li class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
-                                  <span class="flex space-x-2 rtl:space-x-reverse items-center">
-                <span
-                  class="inline-flex h-[6px] w-[6px] bg-primary-500 ring-opacity-25 rounded-full ring-4
-                        bg-info-500 ring-info-500
-                        "
-                ></span>
-                                  <span>Iowa</span>
-                                  </span>
-                                  <span>$67</span>
-                                </li>
-
-
-                                <li class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
-                                  <span class="flex space-x-2 rtl:space-x-reverse items-center">
-                <span
-                  class="inline-flex h-[6px] w-[6px] bg-primary-500 ring-opacity-25 rounded-full ring-4
-                        bg-warning-500 ring-warning-500
-                        "
-                ></span>
-                                  <span>Arkansas</span>
-                                  </span>
-                                  <span>$354k</span>
-                                </li>
-
-
-                                <li class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
-                                  <span class="flex space-x-2 rtl:space-x-reverse items-center">
-                <span
-                  class="inline-flex h-[6px] w-[6px] bg-primary-500 ring-opacity-25 rounded-full ring-4
-                        bg-success-500 ring-success-500
-                        "
-                ></span>
-                                  <span>Wyoming</span>
-                                  </span>
-                                  <span>$195k</span>
-                                </li>
-
-
-                                <li class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
-                                  <span class="flex space-x-2 rtl:space-x-reverse items-center">
-                <span
-                  class="inline-flex h-[6px] w-[6px] bg-primary-500 ring-opacity-25 rounded-full ring-4
-                        bg-secondary-500 ring-secondary-500
-                        "
-                ></span>
-                                  <span>Other countries</span>
-                                  </span>
-                                  <span>$295k</span>
-                                </li>
-
-                              </ul>
-                            </div>
-                            <div class=" grow">
-                              <div class="h-[360px] w-full bg-white dark:bg-slate-800 ltr:pl-10 rtl:pr-10">
-                                <div id="world-map" class="h-full w-full"></div>
+                            <li class="block py-[8px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/icon/zip-1.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300">
+                        Job portal_app.zip
+                    </span>
+                                    <span class="block font-normal text-xs text-slate-500 mt-1">
+                        06 June 2021 / 155MB
+                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <button type="button" class="text-xs text-slate-900 dark:text-white">
+                                    Download
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                          <!-- END: Most Sale -->
-                        </div>
-                      </div>
-                    </div>
-                    <div class="lg:col-span-4 col-span-12">
-                      <div class="card">
-                        <div class="card-header">
-                          <h4 class="card-title">Overview</h4>
-                          <div>
-                            <!-- BEGIN: Card Dropdown -->
-                            <div class="relative">
-                              <div class="dropdown relative">
-                                <button class="text-xl text-center block w-full " type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                  <span class="text-lg inline-flex h-6 w-6 flex-col items-center justify-center border border-slate-200 dark:border-slate-700
-                    rounded dark:text-slate-400">
-                <iconify-icon icon="heroicons-outline:dots-horizontal"></iconify-icon>
-            </span>
-                                </button>
-                                <ul class=" dropdown-menu min-w-[120px] absolute text-sm text-slate-700 dark:text-white hidden bg-white dark:bg-slate-700
-                shadow z-[2] overflow-hidden list-none text-left rounded-lg mt-1 m-0 bg-clip-padding border-none">
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last 28 Days</a>
-                                  </li>
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last Month</a>
-                                  </li>
-                                  <li>
-                                    <a href="#" class="text-slate-600 dark:text-white block font-Inter font-normal px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600
-                        dark:hover:text-white">
-                                      Last Year</a>
-                                  </li>
-                                </ul>
+                            </li>
+
+                            <li class="block py-[8px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/icon/pdf-2.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300">
+                        Ecommerce.pdf
+                    </span>
+                                    <span class="block font-normal text-xs text-slate-500 mt-1">
+                        06 June 2021 / 155MB
+                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <button type="button" class="text-xs text-slate-900 dark:text-white">
+                                    Download
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                            <!-- END: Card Droopdown -->
-                          </div>
-                        </div>
-                        <div class="card-body p-6">
-                          <div id="radar-home-chart"></div>
-                          <div class="bg-slate-50 dark:bg-slate-900 rounded p-4 mt-8 flex justify-between flex-wrap">
-                            <div class="space-y-1">
-                              <h4 class="text-slate-600 dark:text-slate-200 text-xs font-normal">
-                                Invested amount
-                              </h4>
-                              <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                $8264.35
+                            </li>
+
+                            <li class="block py-[8px]">
+                              <div class="flex space-x-2 rtl:space-x-reverse">
+                                <div class="flex-1 flex space-x-2 rtl:space-x-reverse">
+                                  <div class="flex-none">
+                                    <div class="h-8 w-8">
+                                      <img src="<?= $assets; ?>assets/images/icon/scr-1.svg" alt="" class="block w-full h-full object-cover rounded-full border hover:border-white border-transparent">
+                                    </div>
+                                  </div>
+                                  <div class="flex-1">
+                                    <span class="block text-slate-600 text-sm dark:text-slate-300">
+                        Screenshot.jpg
+                    </span>
+                                    <span class="block font-normal text-xs text-slate-500 mt-1">
+                        06 June 2021 / 155MB
+                    </span>
+                                  </div>
+                                </div>
+                                <div class="flex-none">
+                                  <button type="button" class="text-xs text-slate-900 dark:text-white">
+                                    Download
+                                  </button>
+                                </div>
                               </div>
-                              <div class="text-slate-500 dark:text-slate-300 text-xs font-normal">
-                                +0.001.23 (0.2%)
-                              </div>
-                            </div>
-                            <div class="space-y-1">
-                              <h4 class="text-slate-600 dark:text-slate-200 text-xs font-normal">
-                                Invested amount
-                              </h4>
-                              <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                $8264.35
-                              </div>
-                            </div>
-                            <div class="space-y-1">
-                              <h4 class="text-slate-600 dark:text-slate-200 text-xs font-normal">
-                                Invested amount
-                              </h4>
-                              <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                $8264.35
-                              </div>
-                            </div>
-                          </div>
+                            </li>
+
+                          </ul>
+                          <!-- END: FIles Card -->
                         </div>
                       </div>
                     </div>
@@ -919,71 +1380,3 @@
           </div>
         </div>
       </div>
-
-      <!-- BEGIN: Footer For Desktop and tab -->
-      <footer class="md:block hidden" id="footer">
-        <div class="site-footer px-6 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 py-4 ltr:ml-[248px] rtl:mr-[248px]">
-          <div class="grid md:grid-cols-2 grid-cols-1 md:gap-5">
-            <div class="text-center ltr:md:text-start rtl:md:text-right text-sm">
-              COPYRIGHT ©
-              <span id="thisYear"></span>
-              DashCode, All rights Reserved
-            </div>
-            <div class="ltr:md:text-right rtl:md:text-end text-center text-sm">
-              Hand-crafted &amp; Made by
-              <a href="https://codeshaper.net" target="_blank" class="text-primary-500 font-semibold">
-                Codeshaper
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
-      <!-- END: Footer For Desktop and tab -->
-
-      <div class="bg-white bg-no-repeat custom-dropshadow footer-bg dark:bg-slate-700 flex justify-around items-center
-    backdrop-filter backdrop-blur-[40px] fixed left-0 bottom-0 w-full z-[9999] bothrefm-0 py-[12px] px-4 md:hidden">
-        <a href="chat.html">
-          <div>
-            <span class="relative cursor-pointer rounded-full text-[20px] flex flex-col items-center justify-center mb-1 dark:text-white
-          text-slate-900 ">
-        <iconify-icon icon="heroicons-outline:mail"></iconify-icon>
-        <span class="absolute right-[5px] lg:hrefp-0 -hrefp-2 h-4 w-4 bg-red-500 text-[8px] font-semibold flex flex-col items-center
-            justify-center rounded-full text-white z-[99]">
-          10
-        </span>
-            </span>
-            <span class="block text-[11px] text-slate-600 dark:text-slate-300">
-        Messages
-      </span>
-          </div>
-        </a>
-        <a href="profile.html" class="relative bg-white bg-no-repeat backdrop-filter backdrop-blur-[40px] rounded-full footer-bg dark:bg-slate-700
-      h-[65px] w-[65px] z-[-1] -mt-[40px] flex justify-center items-center">
-          <div class="h-[50px] w-[50px] rounded-full relative left-[0px] hrefp-[0px] custom-dropshadow">
-            <img src="<?= $assets; ?>assets/images/users/user-1.jpg" alt="" class="w-full h-full rounded-full border-2 border-slate-100">
-          </div>
-        </a>
-        <a href="#">
-          <div>
-            <span class=" relative cursor-pointer rounded-full text-[20px] flex flex-col items-center justify-center mb-1 dark:text-white
-          text-slate-900">
-        <iconify-icon icon="heroicons-outline:bell"></iconify-icon>
-        <span class="absolute right-[17px] lg:hrefp-0 -hrefp-2 h-4 w-4 bg-red-500 text-[8px] font-semibold flex flex-col items-center
-            justify-center rounded-full text-white z-[99]">
-          2
-        </span>
-            </span>
-            <span class=" block text-[11px] text-slate-600 dark:text-slate-300">
-        Notifications
-      </span>
-          </div>
-        </a>
-      </div>
-    </div>
-  </main>
-  <!-- scripts -->
-  <script src="<?= $assets; ?>assets/js/jquery-3.6.0.min.js"></script>
-  <script src="<?= $assets; ?>assets/js/rt-plugins.js"></script>
-  <script src="<?= $assets; ?>assets/js/app.js"></script>
-</body>
-</html>
