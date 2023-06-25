@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="">
-  <title>Dashcode - HTML Template</title>
+  <title><?= $title; ?></title>
   <link rel="icon" type="image/png" href="<?= $assets; ?>assets/images/logo/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,22 +62,17 @@
             </div>
 
             <!-- BEGIN: Registration Form -->
-            <form class="space-y-4" action='#'>
+            <form class="m-t" method="post" role="form" action="<?=base_url('/login/post')?>">
+                <?php $this->load->view('flash') ?>
               <div class="fromGroup">
-                <label class="block capitalize form-label">Name</label>
+                <label class="block capitalize form-label">Username / email</label>
                 <div class="relative ">
-                  <input type="text" name="name" class="  form-control py-2" placeholder="Enter your name">
-                </div>
-              </div>
-              <div class="fromGroup">
-                <label class="block capitalize form-label">email</label>
-                <div class="relative ">
-                  <input type="email" name="email" class="  form-control py-2" placeholder="Enter your email">
+                  <input type="text"  name="uname" class="  form-control py-2" placeholder="Enter your email">
                 </div>
               </div>
               <div class="fromGroup       ">
                 <label class="block capitalize form-label  ">passwrod</label>
-                <div class="relative "><input type="password" name="password" class="  form-control py-2   " placeholder="Enter your password">
+                <div class="relative "><input type="password" name="upass" class="  form-control py-2   " placeholder="Enter your password">
                 </div>
               </div>
               <div class="flex justify-between">
@@ -87,7 +82,7 @@
                 Privacy Policy</span>
                 </label>
               </div>
-              <button class="btn btn-dark block w-full text-center">Create an account</button>
+              <button  type="submit" class="btn btn-dark block w-full text-center">Login</button>
             </form>
             <!-- END: Registration Form -->
             <div class="relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">

@@ -666,7 +666,7 @@ if($user->roleID == 4)
 
 		{
 
-		$this->template->admin('dash',$data);
+		$this->template->admin('index',$data);
 
 		}
 

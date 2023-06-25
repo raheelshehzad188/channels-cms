@@ -349,12 +349,13 @@ class Template {
                 $data['assets'] = base_url('/assets/'.config_item('app_theme')).'/';
 
                 echo $v = $CI->load->view(config_item('app_theme').'/includes/header',$data,true);
+                // die(config_item('app_theme').'/admin/'.$view);
 
                 echo $CI->load->view(config_item('app_theme').'/admin/'.$view,$data,true);
 
                 
-
-                echo $fot =  $CI->load->view(config_item('app_theme').'/includes/footer',$data,true);
+// 
+                // echo $fot =  $CI->load->view(config_item('app_theme').'/includes/footer',$data,true);
 
                 
 
