@@ -57,6 +57,12 @@ if(isset($_SESSION['local_config']) && is_array($_SESSION['local_config']))
 	}
 }
 
+$host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
+if ($host !== '' && !in_array($host, array('localhost', '127.0.0.1'), true)) {
+	$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+	$config['base_url'] = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/';
+}
+
 //HMVC
 
 $config['modules_locations'] = array(

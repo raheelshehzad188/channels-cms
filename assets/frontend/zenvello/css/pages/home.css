@@ -1,0 +1,163 @@
+/* ==========================================================================
+   Homepage
+   ========================================================================== */
+
+/* ---------- Hero slider ---------- */
+.hero {
+  position: relative;
+  margin-top: 7px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--hero-sand);
+}
+
+.hero__track {
+  display: flex;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero__slide {
+  --slide-bg: var(--hero-sand);
+  position: relative;
+  flex: 0 0 100%;
+  min-height: 315px;
+  display: flex;
+  align-items: center;
+  isolation: isolate;
+  background: var(--slide-bg);
+}
+
+/* photo occupies the right side of the slide … */
+.hero__bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 54%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: -2;
+}
+
+/* … and is blended into the flat colour on the left */
+.hero__slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg,
+    var(--slide-bg) 0%,
+    var(--slide-bg) 34%,
+    color-mix(in srgb, var(--slide-bg) 55%, transparent) 46%,
+    transparent 60%);
+}
+
+.hero__body {
+  padding: 24px 40px 24px 84px;
+  max-width: 480px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero__kicker {
+  font-size: var(--fs-15);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a4237;
+  margin-bottom: 10px;
+}
+
+.hero__title {
+  font-size: clamp(2rem, 3.8vw, 3rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--brand-black);
+  margin-bottom: 14px;
+}
+
+.hero__text {
+  font-size: var(--fs-15);
+  color: #4d4a45;
+  line-height: 1.55;
+  max-width: 372px;
+  margin-bottom: 22px;
+}
+
+/* Discount medallion */
+.hero__disc {
+  position: absolute;
+  top: 50%;
+  right: 78px;
+  transform: translateY(-50%);
+  width: 118px;
+  height: 118px;
+  border-radius: var(--r-pill);
+  background: var(--brand-black);
+  color: #fff;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  line-height: 1.15;
+  z-index: 2;
+}
+
+.hero__disc small { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; }
+.hero__disc b { display: block; font-size: 31px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.hero__disc span { display: block; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; }
+
+/* Arrows + dots */
+.hero__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  place-items: center;
+  z-index: 4;
+  color: var(--text-primary);
+  transition: background var(--t-fast);
+}
+
+.hero__arrow:hover { background: #fff; }
+.hero__arrow--prev { left: 12px; }
+.hero__arrow--next { right: 12px; }
+.hero__arrow svg { width: 15px; height: 15px; }
+
+.hero__dots {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 7px;
+  z-index: 4;
+}
+
+.hero__dots button {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.22);
+  transition: background var(--t-fast), width var(--t-fast);
+}
+
+.hero__dots button.is-active {
+  background: var(--brand-yellow-darker);
+  width: 18px;
+}
+
+/* ---------- Category circle strip ---------- */
+.catstrip { padding: 24px 0 0; }
+
+/* ---------- Flash deals + featured ---------- */
+.deals-head .section-title .bolt { color: var(--brand-yellow-darker); }
+
+/* ---------- Promo section ---------- */
+.promo-section { padding: 10px 0 19px; }

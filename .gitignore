@@ -1,0 +1,6 @@
+application/logs/*
+!application/logs/index.html
+application/cache/product_csv_imports/*.json
+application/config/payment_keys/*.pem
+uploads/products/*
+!uploads/products/.gitkeep

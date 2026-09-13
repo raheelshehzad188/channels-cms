@@ -1,204 +1,75 @@
- id="wrapper">
         <nav class="navbar-default navbar-static-side" role="navigation">
             <div class="sidebar-collapse">
                 <ul class="nav metismenu" id="side-menu">
                     <li class="nav-header">
-                        <div class="dropdown profile-element"> <span>
-                            <?php
-                                $logo = config_item('app_logo');
-                            ?>
+                <div class="dropdown profile-element">
+                    <span>
                             <img alt="image" class="img-circle" src="<?= $assets ?>img/profile_small.jpg" />
                              </span>
                             <a data-toggle="dropdown" class="dropdown-toggle" href="#">
-                            <span class="clear"> <span class="block m-t-xs"> <strong class="font-bold">David Williams</strong>
-                             </span> <span class="text-muted text-xs block">Art Director <b class="caret"></b></span> </span> </a>
+                        <span class="clear">
+                            <span class="block m-t-xs">
+                                <strong class="font-bold"><?= htmlspecialchars(ec_display_name()) ?></strong>
+                            </span>
+                            <span class="text-muted text-xs block">
+                                <?= htmlspecialchars(ec_role_label(ec_user()->roleID)) ?> <b class="caret"></b>
+                            </span>
+                        </span>
+                    </a>
                             <ul class="dropdown-menu animated fadeInRight m-t-xs">
-                                <li><a href="profile.html">Profile</a></li>
-                                <li><a href="contacts.html">Contacts</a></li>
-                                <li><a href="mailbox.html">Mailbox</a></li>
-                                <li class="divider"></li>
-                                <li><a href="login.html">Logout</a></li>
+                        <li><a href="<?= base_url('admin/admin/logout') ?>">Logout</a></li>
                             </ul>
                         </div>
-                        <div class="logo-element">
-                            IN+
-                        </div>
-                    </li>
-                    <li class="">
-                        <a href="<?= base_url('admin/admin/page/calender'); ?>"><i class="fa fa-th-large"></i> <span class="nav-label">Calender</span> </a>
-                    </li>.
+                <div class="logo-element">EC</div>
+                                    </li>
+                                    
+            <?php if (ec_is_admin()): ?>
+            <li class="<?= $this->uri->segment(2) == 'admin' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/admin') ?>"><i class="fa fa-th-large"></i> <span class="nav-label">Dashboard</span></a>
+                            </li>
+            <li class="<?= $this->uri->segment(2) == 'countries' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/countries') ?>"><i class="fa fa-globe"></i> <span class="nav-label">Countries</span></a>
+                                    </li>
+            <li class="<?= $this->uri->segment(2) == 'categories' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/categories') ?>"><i class="fa fa-tags"></i> <span class="nav-label">Categories</span></a>
+                                    </li>
+            <li class="<?= $this->uri->segment(2) == 'suppliers' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/suppliers') ?>"><i class="fa fa-truck"></i> <span class="nav-label">Suppliers</span></a>
+                                    </li>
+            <li class="<?= $this->uri->segment(2) == 'users' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/users') ?>"><i class="fa fa-users"></i> <span class="nav-label">Users</span></a>
+                                    </li>
+            <li class="<?= $this->uri->segment(2) == 'themes' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/themes') ?>"><i class="fa fa-paint-brush"></i> <span class="nav-label">Themes</span></a>
+                                    </li>
+            <li class="<?= $this->uri->segment(2) == 'stores' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/stores') ?>"><i class="fa fa-shopping-bag"></i> <span class="nav-label">Stores</span></a>
+                                    </li>
+            <li class="<?= $this->uri->segment(2) == 'pricing' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/pricing') ?>"><i class="fa fa-money"></i> <span class="nav-label">Pricing</span></a>
+                            </li>
+            <li class="<?= $this->uri->segment(2) == 'smtp' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/smtp') ?>"><i class="fa fa-envelope"></i> <span class="nav-label">SMTP</span></a>
+            </li>
+            <li class="<?= $this->uri->segment(2) == 'paypal' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/paypal') ?>"><i class="fa fa-credit-card"></i> <span class="nav-label">Gateway</span></a>
+            </li>
+            <?php endif; ?>
 
-                    <li class="">
-                        <a href="#"><i class="fa fa-th-large"></i> <span class="nav-label">Pre Award</span> <span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level">
-                            <li class=""><a href="index.html">Solicitation Provisions(Applicability)</a></li>
-                            <li><a href="dashboard_2.html">Solicitation Provisions(Compliance)</a></li>
-                            <li><a href="dashboard_3.html"> Contract Clauses(Applicability)</a></li>
-                            <li><a href="dashboard_4_1.html">Special Terms & Conditions</a></li>
-                            <li><a href="dashboard_5.html">Representations & Certifications(Applicability & Compliance) </a></li>
-                        </ul>
-                    </li>
-                       <li class="">
-                        <a href="#"><i class="fa fa-th-large"></i> <span class="nav-label">Award/Performance</span> <span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level">
-                            <li class=""><a href="index.html">Contract Overview</a></li>
-                            <li><a href="dashboard_2.html">Clause Analysis(Complaince)</a></li>
-                            <li><a href="dashboard_3.html"> Special Terms & Conditions (Compliance)</a></li>
-                            <li><a href="dashboard_4_1.html">SPWS/SOW Compliance</a></li>
-                            <li><a href="dashboard_5.html">Contract Value/Funded Value</a></li>
-                        </ul>
-                    </li>
-                      <li class="">
-                        <a href="#"><i class="fa fa-th-large"></i> <span class="nav-label">Closeout</span> <span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level">
-                            <li class=""><a href="index.html">Contract Performance</a></li>
-                            <li><a href="dashboard_2.html">Settle Subcontracts</a></li>
-                            <li><a href="dashboard_3.html"> Physical Contract Complaince</a></li>
-                            <li><a href="dashboard_4_1.html">Contract Completion Documents</a></li>
-                            <li><a href="dashboard_5.html">Reconcile Contract</a></li>
-                        </ul>
-                    </li>
-
-                    <li>
-                        <a href="#"><i class="fa fa-sitemap"></i> <span class="nav-label">Subcontracts </span><span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level collapse">
-                            <li>
-                                <a href="#" id="damian">A)Pre award <span class="fa arrow"></span></a>
-                                <ul class="nav nav-third-level">
-                                    <li>
-                                        <a href="#">Solicitation Provision Flowdown</a>
+            <li class="<?= $this->uri->segment(2) == 'orders' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/orders') ?>"><i class="fa fa-shopping-cart"></i> <span class="nav-label">Orders</span></a>
                                     </li>
-                                    <li>
-                                        <a href="#">Contract Clause Flowdown</a>
+            <li class="<?= $this->uri->segment(2) == 'products' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/products') ?>"><i class="fa fa-cubes"></i> <span class="nav-label">Products</span></a>
                                     </li>
-                                    <li>
-                                        <a href="#">Special Terms & Conditions </a>
-                                    </li>
-                                     <li>
-                                        <a href="#">Representations & Certifications</a>
-                                    </li>
-                                    
-                                    
+            <?php if (ec_is_admin()): ?>
+            <li class="<?= $this->uri->segment(3) == 'unknown' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/products/unknown') ?>"><i class="fa fa-question-circle"></i> <span class="nav-label">Unknown Imports</span></a>
+            </li>
+            <li class="<?= $this->uri->segment(2) == 'flush-data' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/flush-data') ?>"><i class="fa fa-trash"></i> <span class="nav-label">Flush Data</span></a>
+            </li>
+            <?php endif; ?> 
                                 </ul>
-                            </li>
-                            <li>
-                                <a href="#" id="damian">B)Award/Performance <span class="fa arrow"></span></a>
-                                <ul class="nav nav-third-level">
-                                    <li>
-                                        <a href="#">SubContract Overview</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Clause Analysis(Complaince)</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Special Terms & Conditions(Compliance)</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">PWS/SOW (Compliance)</a>
-                                    </li>
-                                        <li>
-                                        <a href="#">SubContract Value/Funded Value</a>
-                                    </li>
-
-                                </ul>
-                            </li>
-                              <li>
-                                <a href="#" id="damian">C)Closeout <span class="fa arrow"></span></a>
-                                <ul class="nav nav-third-level">
-                                    <li>
-                                        <a href="#">SubContract Overview</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Physical SubContract Complaince</a>
-                                    </li>
-                                     <li>
-                                        <a href="#">Subcontract Completion Documents</a>
-                                    </li> 
-                                    <li>
-                                        <a href="#">Reconcile Subcontract</a>
-                                    </li>
-                                     
-                                    
-                                </ul>
-                            </li>
-                           
-                            
-                        </ul>
-                    </li>
-                      <li>
-                                <a href="#" id="damian">Files <span class="fa arrow"></span></a>
-                                <ul class="nav nav-third-level">
-                                    <li>
-                                        <a href="#">Documentation</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">a)Solicitation</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">b)Offer</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">C)Award</a>
-                                    </li>
-                                        <li>
-                                            <a href="#">D)Performance</a>
-                                        </li>
- <li>
-                                            <a href="#">E)Closeout</a>
-                                        </li>
- <li>
-                                            <a href="#">F)Letter Library</a>
-                                        </li>
-                                    
-                                     
-                                     
-                                    
-                                </ul>
-                            </li>
-                            <li>
-                                <a href="#" id="damian">Reports <span class="fa arrow"></span></a>
-                                <ul class="nav nav-third-level">
-                                    <li>
-                                        <a href="#">A)Contract Matrix</a>
-                                    </li> 
-                                       <li>
-                                        <a href="#">B)Company Dashboard</a>
-                                    </li> 
-                                       <li>
-                                        <a href="#">C)Contract Dashboard</a>
-                                    </li>
-                                        <li>
-                                        <a href="#">D)Contract Brief</a>
-                                    </li>  <li>
-                                        <a href="#">E)Contract Calendar</a>
-                                    </li>
-                                    
-                                    
-                                     
-                                     
-                                    
-                                </ul>
-                            </li>
-                              <li>
-                                <a href="#" id="damian">Notifications <span class="fa arrow"></span></a>
-                                
-                            </li>
-                            <li>
-                            <a href="#" id="damian">Roles & Permissions <span class="fa arrow"></span></a>
-                                     <ul class="nav nav-third-level">
-                                    <li>
-                                        <a href="#">NEED THEASE OPTIONS TOO</a>
-                                    </li> 
-                                                                        
-                                     
-                                    
-                                </ul>
-                            </li>
-                            <li>
-                                <a href="#" id="damian">Users <span class="fa arrow"></span></a>
-                                
-                            </li>
-
-                  
                                 </div>
         </nav>

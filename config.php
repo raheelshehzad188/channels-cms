@@ -2,13 +2,13 @@
 
 $local_config = array(
 'app_logo' =>'https://channelsmedia.com/wp-content/uploads/2020/01/favicon-300x300.png',
-'app_name' =>'Channels media',
-'db_host' =>'localhost',
-'db_name' =>'cms',
+'app_name' =>'Ecommerce Platform',
+'db_host' =>'127.0.0.1',
+'db_name' =>'ecommerce',
 'db_user' =>'root',
-'app_theme' =>'dashcode',
-'db_pass' =>'root',
-'base_url' =>'http://localhost:8888/cms'
+'app_theme' =>'inspinia',
+    'db_pass' =>'',
+'base_url' =>'http://localhost/ec3/'
 );
 
 ?>

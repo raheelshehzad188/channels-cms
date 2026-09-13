@@ -1,0 +1,29 @@
+:root { --primary:#c9a227; --header-bg:#fffaf3; --ink:#2b2118; --muted:#7a6d5d; --card:#ffffff; }
+* { box-sizing:border-box; }
+body.aurora { margin:0; font-family:"Source Sans 3", sans-serif; color:var(--ink); background:#f7f1e8; }
+a { color:inherit; text-decoration:none; }
+.container { width:min(1100px, calc(100% - 40px)); margin:0 auto; }
+.site-header { background:var(--header-bg); border-bottom:1px solid rgba(201,162,39,.25); }
+.header-inner { display:flex; justify-content:space-between; align-items:center; padding:18px 0; }
+.logo { font-family:"Playfair Display", serif; font-size:28px; letter-spacing:.04em; }
+.logo img { height:42px; }
+nav a { margin-left:22px; font-weight:600; }
+.hero { padding:90px 0 70px; background:linear-gradient(135deg, var(--header-bg), #f3e6c8); }
+.hero h1 { font-family:"Playfair Display", serif; font-size:56px; max-width:640px; margin:10px 0 16px; }
+.eyebrow { text-transform:uppercase; letter-spacing:.18em; color:var(--primary); font-size:12px; font-weight:600; }
+.btn { display:inline-block; margin-top:18px; background:var(--primary); color:#fff; padding:12px 22px; border-radius:999px; }
+.section { padding:60px 0; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:22px; }
+.card { background:var(--card); border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(43,33,24,.06); }
+.card-media { height:200px; display:flex; align-items:center; justify-content:center; background:#efe4d0; color:var(--muted); }
+.card-media img, .detail-media img { width:100%; height:100%; object-fit:cover; }
+.card h3 { margin:14px 16px 0; font-family:"Playfair Display", serif; }
+.price { margin:8px 16px 16px; color:var(--primary); font-weight:700; }
+.muted { color:var(--muted); margin:0 16px 8px; }
+.page-head { padding:50px 0 10px; }
+.detail { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start; }
+.detail-media { min-height:360px; background:#efe4d0; border-radius:18px; overflow:hidden; }
+.price.large { font-size:28px; margin:0 0 16px; }
+.card-media.tall { min-height:360px; }
+.site-footer { padding:28px 0; background:#2b2118; color:#f7f1e8; }
+@media (max-width:800px) { .hero h1 { font-size:36px; } .detail { grid-template-columns:1fr; } }

@@ -1,129 +1,230 @@
 <?php
-
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Stores extends CI_Controller {
 
-        function __construct() {
+    public function __construct()
+    {
                 parent::__construct();
-                if (!isset($_SESSION['knet_login'])) {
-                        redirect('/login');
-                }
-                $this->load->library('template');
-                $this->load->model('Store_model');
-                $this->url = base_url('/admin/stores');
+        ec_require_admin();
+        $this->load->model('Store_model');
+        $this->load->model('Theme_model');
+    }
+
+    public function index()
+    {
+        $data = array(
+            'title' => 'Stores',
+            'stores' => $this->Store_model->all(),
+        );
+        $this->template->admin('stores/index', $data);
+    }
+
+    public function form($id = 0)
+    {
+        $store = $id ? $this->Store_model->get($id) : null;
+        if ($id && !$store) {
+            $this->session->set_flashdata('error', 'Store not found.');
+            redirect('/admin/stores');
+            return;
         }
 
-        private $single = 'Store';
-        private $multi = 'Stores';
-        private $add = 'addstore';
-        private $all = 'allstores';
-        private $url = '';
+        $this->load->model('Country_model');
+        $data = array(
+            'title' => $store ? 'Edit Store' : 'Add Store',
+            'store' => $store,
+            'countries' => $this->Country_model->all(),
+        );
+        $this->template->admin('stores/form', $data);
+    }
 
         public function save($id = 0)
         {
-                $domain = trim($this->input->post('domain'));
-                $password = $this->input->post('password');
-                $confirmPassword = $this->input->post('confirm_password');
-
-                $this->form_validation->set_rules('domain', 'Domain Name', 'required|callback__check_domain_unique[' . $id . ']');
-
+        $this->form_validation->set_rules('name', 'Store Name', 'required|trim');
+        $this->form_validation->set_rules('domain', 'Domain', 'required|trim');
+        $this->form_validation->set_rules('email', 'Login Email', 'required|trim|valid_email');
+        $this->form_validation->set_rules('country_id', 'Country', 'required|integer');
                 if (!$id) {
-                        $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]');
-                        $this->form_validation->set_rules('confirm_password', 'Confirm Password', 'required|matches[password]');
-                } elseif ($password !== '' || $confirmPassword !== '') {
-                        $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]');
-                        $this->form_validation->set_rules('confirm_password', 'Confirm Password', 'required|matches[password]');
-                }
+            $this->form_validation->set_rules('password', 'Password', 'required|min_length[4]');
+        }
 
-                if ($this->form_validation->run() == FALSE) {
+        if ($this->form_validation->run() === FALSE) {
                         $this->session->set_flashdata('error', validation_errors());
-                } else {
-                        $arr = array(
+            redirect($id ? '/admin/stores/form/' . $id : '/admin/stores/form');
+            return;
+        }
+
+        $domain = strtolower(trim($this->input->post('domain')));
+        $domain = preg_replace('/^https?:\/\//', '', $domain);
+        $domain = rtrim($domain, '/');
+
+        if ($this->Store_model->domain_exists($domain, $id)) {
+            $this->session->set_flashdata('error', 'This domain is already used by another store.');
+            redirect($id ? '/admin/stores/form/' . $id : '/admin/stores/form');
+            return;
+        }
+
+        $payload = array(
+            'name' => trim($this->input->post('name')),
                                 'domain' => $domain,
-                                'name' => $domain,
-                                'slug' => url_title($domain, '-', TRUE),
-                        );
-
+            'email' => strtolower(trim($this->input->post('email'))),
+            'owner_name' => trim($this->input->post('owner_name')),
+            'country_id' => (int) $this->input->post('country_id'),
+        );
+        $password = $this->input->post('password');
                         if ($password !== '') {
-                                $arr['password'] = md5($password);
-                        }
-
-                        if ($id) {
-                                if ($this->Store_model->update($id, $arr)) {
-                                        $this->session->set_flashdata('success', $this->single . ' updated successfully!');
-                                } else {
-                                        $this->session->set_flashdata('error', 'Server error');
-                                }
-                        } else {
-                                if ($this->Store_model->add($arr)) {
-                                        $this->session->set_flashdata('success', $this->single . ' created successfully!');
-                                } else {
-                                        $this->session->set_flashdata('error', 'Server error');
-                                }
-                        }
-                }
-                redirect($_SERVER['HTTP_REFERER']);
+            $payload['password'] = md5($password);
         }
 
-        public function _check_domain_unique($domain, $id = 0)
-        {
-                $this->db->where('domain', $domain);
-                $this->db->where('status', 0);
-                if ($id) {
-                        $this->db->where('id !=', $id);
-                }
-                if ($this->db->count_all_results('stores') > 0) {
-                        $this->form_validation->set_message('_check_domain_unique', 'This domain is already registered.');
-                        return FALSE;
-                }
-                return TRUE;
+        $this->load->model('Country_model');
+        $country = $this->Country_model->get((int) $payload['country_id']);
+        if ($country) {
+            if ($this->db->field_exists('currency', 'stores')) {
+                $payload['currency'] = strtoupper(trim($country->currency));
+            }
+            if ($this->db->field_exists('country', 'stores')) {
+                $payload['country'] = $country->name;
+            }
         }
 
-        public function delete($id = 0)
-        {
-                if ($id) {
-                        if ($this->Store_model->update($id, array('status' => 1))) {
-                                $this->session->set_flashdata('success', $this->single . ' deleted successfully!');
-                        } else {
-                                $this->session->set_flashdata('error', 'Server error');
-                        }
-                }
-                redirect($_SERVER['HTTP_REFERER']);
+        $storeId = $this->Store_model->save($payload, $id);
+        $this->session->set_flashdata('success', 'Store saved. Select a theme to continue.');
+        redirect('/admin/stores/theme/' . $storeId);
+    }
+
+    public function theme($id = 0)
+    {
+        $store = $this->Store_model->get($id);
+        if (!$store) {
+            $this->session->set_flashdata('error', 'Store not found.');
+            redirect('/admin/stores');
+            return;
         }
 
-        public function create($id = 0)
-        {
-                $data = array();
-                $data['url'] = $this->url;
-                $data['assets'] = base_url('assets/admin/');
-                $data['page'] = ($id ? 'Edit ' : 'Create ') . $this->single;
-                $data['breed'] = array(
-                        'Home' => base_url('/admin/admin'),
-                        $data['page'] => '',
-                );
+        $data = array(
+            'title' => 'Select Theme',
+            'store' => $store,
+            'themes' => $this->Theme_model->all(),
+        );
+        $this->template->admin('stores/theme', $data);
+    }
 
-                if ($id) {
-                        $data['edit'] = $this->Store_model->getbyid($id);
-                        if (!$data['edit']) {
-                                redirect($this->url . '/all');
-                        }
-                }
-
-                $this->template->admin($this->add, $data);
+    public function save_theme($id = 0)
+    {
+        $store = $this->Store_model->get($id);
+        if (!$store) {
+            redirect('/admin/stores');
+            return;
         }
 
-        public function all()
-        {
-                $data = array();
-                $data['url'] = $this->url;
-                $data['assets'] = base_url('/assets/') . config_item('app_theme') . '/';
-                $data['page'] = 'Manage ' . $this->multi;
-                $data['breed'] = array(
-                        'Home' => base_url('/admin/admin'),
-                        $data['page'] => '',
-                );
-                $data['data'] = $this->Store_model->get(array('status' => 0));
-                $this->template->admin($this->all, $data);
+        $themeId = (int) $this->input->post('theme_id');
+        $theme = $this->Theme_model->get($themeId);
+        if (!$theme) {
+            $this->session->set_flashdata('error', 'Please select a theme.');
+            redirect('/admin/stores/theme/' . $id);
+            return;
+        }
+
+        $this->Store_model->save(array(
+            'theme_id' => $themeId,
+            'status' => 0,
+        ), $id);
+
+        $this->session->set_flashdata('success', 'Theme selected. Fill required settings to activate.');
+        redirect('/admin/stores/settings/' . $id);
+    }
+
+    public function settings($id = 0)
+    {
+        $store = $this->Store_model->get($id);
+        if (!$store || empty($store->theme_id)) {
+            $this->session->set_flashdata('error', 'Select a theme first.');
+            redirect($store ? '/admin/stores/theme/' . $id : '/admin/stores');
+            return;
+        }
+
+        $data = array(
+            'title' => 'Store Theme Settings',
+            'store' => $store,
+            'theme' => $this->Theme_model->get($store->theme_id),
+            'fields' => $this->Theme_model->fields($store->theme_id),
+            'values' => $this->Store_model->settings_map($id),
+        );
+        $this->template->admin('stores/settings', $data);
+    }
+
+    public function save_settings($id = 0)
+    {
+        $store = $this->Store_model->get($id);
+        if (!$store || empty($store->theme_id)) {
+            redirect('/admin/stores');
+            return;
+        }
+
+        $fields = $this->Theme_model->fields($store->theme_id);
+        $values = $this->Store_model->settings_map($id);
+
+        foreach ($fields as $field) {
+            if ($field->field_type === 'image') {
+                $uploaded = $this->_upload_setting_image($id, $field->field_key);
+                $value = $uploaded !== '' ? $uploaded : (isset($values[$field->field_key]) ? $values[$field->field_key] : '');
+            } else {
+                $value = trim((string) $this->input->post($field->field_key));
+            }
+
+            if ($field->is_required && $value === '') {
+                $this->session->set_flashdata('error', $field->field_label . ' is required.');
+                redirect('/admin/stores/settings/' . $id);
+                return;
+            }
+
+            $this->Store_model->save_setting($id, $store->theme_id, $field->field_key, $value);
+        }
+
+        $this->Store_model->save(array('status' => 1), $id);
+        $this->session->set_flashdata('success', 'Theme activated on ' . $store->domain . '.');
+        redirect('/admin/stores');
+    }
+
+    public function delete($id = 0)
+    {
+        $store = $this->Store_model->get($id);
+        if (!$store) {
+                        $this->session->set_flashdata('error', 'Store not found.');
+            redirect('/admin/stores');
+            return;
+        }
+
+        $this->Store_model->delete($id);
+        $this->session->set_flashdata('success', 'Store deleted.');
+        redirect('/admin/stores');
+    }
+
+    private function _upload_setting_image($storeId, $key)
+    {
+        if (empty($_FILES[$key]['name'])) {
+            return '';
+        }
+
+        $dir = FCPATH . 'uploads/stores/' . (int) $storeId . '/';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $config = array(
+            'upload_path' => $dir,
+            'allowed_types' => 'jpg|jpeg|png|gif|webp',
+            'max_size' => 4096,
+            'encrypt_name' => true,
+        );
+        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
+        if (!$this->upload->do_upload($key)) {
+            $this->session->set_flashdata('error', $this->upload->display_errors('', ''));
+            return '';
+        }
+
+        $uploaded = $this->upload->data();
+        return 'uploads/stores/' . (int) $storeId . '/' . $uploaded['file_name'];
         }
 }

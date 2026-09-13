@@ -26,6 +26,14 @@ class Admin extends CI_Controller {
 
 		}
 
+        if (ec_is_ecommerce() && $this->router->method !== 'logout') {
+
+			redirect('/admin/products');
+
+			exit;
+
+		}
+
         $data= array();
 
 		$this->load->library('template');
@@ -658,37 +666,18 @@ if($user->roleID == 4)
 
 		$data['page']= 'Dashboard';
 
+		$data['title']= 'Dashboard';
+
 		$data['assets']= base_url('assets/admin/');
 
-		$user = $this->session->userdata('knet_login');
+		$data['counts'] = array(
+			'countries' => $this->db->count_all('countries'),
+			'suppliers' => $this->db->count_all('suppliers'),
+			'users' => $this->db->count_all('users'),
+			'products' => $this->db->count_all('products'),
+		);
 
-		if($user->roleID == 1)
-
-		{
-
-		$this->template->admin('index',$data);
-
-		}
-
-		elseif($user->roleID == 2)
-
-		{
-
-		$data['url']= base_url('admin/admin/');
-
-		$data['page']= 'Validate Coupon';
-
-		$this->template->admin('vcoupon',$data);
-
-	}
-
-		else
-
-		{
-
-			$this->template->admin('index',$data);
-
-		}
+		$this->template->admin('ec_dashboard', $data);
 
 
 

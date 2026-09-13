@@ -1,0 +1,283 @@
+/* ==========================================================================
+   Simple content pages — about, contact, policies, cart, wishlist, account
+   Built from the same tokens and components as the shop pages.
+   ========================================================================== */
+
+.pagehead {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 6px 0 22px;
+  margin-bottom: 26px;
+}
+
+.pagehead h1 {
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.pagehead p {
+  font-size: var(--fs-15);
+  color: var(--text-muted);
+  margin-top: 8px;
+  max-width: 720px;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 40px;
+  align-items: start;
+  padding-bottom: 34px;
+}
+
+.content--single { grid-template-columns: minmax(0, 1fr); }
+
+.prose-block h2 {
+  font-size: var(--fs-18);
+  font-weight: 700;
+  margin: 26px 0 8px;
+}
+
+.prose-block h2:first-child { margin-top: 0; }
+
+.prose-block p,
+.prose-block li {
+  font-size: var(--fs-14);
+  color: var(--text-body);
+  line-height: 1.75;
+}
+
+.prose-block p { margin-bottom: 12px; }
+
+.prose-block ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: grid;
+  gap: 7px;
+}
+
+.prose-block ul li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.prose-block ul li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--brand-yellow-darker);
+}
+
+/* ---------- Side card ---------- */
+.sidecard {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 20px;
+  background: var(--surface-alt);
+}
+
+.sidecard h2 {
+  font-size: var(--fs-16);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.sidecard ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+  font-size: var(--fs-13);
+}
+
+.sidecard a { color: var(--info-blue); }
+.sidecard a:hover { text-decoration: underline; }
+
+.sidecard__row {
+  display: flex;
+  gap: 10px;
+  font-size: var(--fs-13);
+  color: var(--text-body);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.sidecard__row:last-child { border-bottom: 0; }
+.sidecard__row svg { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 2px; }
+.sidecard__row b { display: block; }
+
+/* ---------- Forms ---------- */
+.form {
+  display: grid;
+  gap: 14px;
+  max-width: 560px;
+}
+
+.form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.field { display: grid; gap: 6px; }
+
+.field label {
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-size: var(--fs-14);
+  background: var(--surface);
+  width: 100%;
+}
+
+.field textarea { min-height: 120px; resize: vertical; }
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--brand-yellow-dark);
+  box-shadow: 0 0 0 3px rgba(255, 216, 20, 0.22);
+}
+
+.field__hint { font-size: var(--fs-12); color: var(--text-muted); }
+
+.form__note {
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+}
+
+/* ---------- Empty states (cart / wishlist) ---------- */
+.empty {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--surface-alt);
+}
+
+.empty__icon {
+  width: 62px;
+  height: 62px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  color: var(--text-body);
+}
+
+.empty__icon svg { width: 28px; height: 28px; }
+
+.empty h2 {
+  font-size: var(--fs-18);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.empty p {
+  font-size: var(--fs-14);
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* ---------- Cards grid (blog / help topics) ---------- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--t-base), transform var(--t-base);
+}
+
+.card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.card__body { padding: 16px; }
+
+.card__tag {
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--brand-yellow-darker);
+}
+
+.card__title {
+  font-size: var(--fs-15);
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 6px 0 7px;
+}
+
+.card__text { font-size: var(--fs-13); color: var(--text-muted); line-height: 1.6; }
+
+/* ---------- Steps (track order) ---------- */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.step {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 18px;
+  background: var(--surface);
+}
+
+.step b {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  background: var(--brand-yellow);
+  color: var(--brand-black);
+  font-size: var(--fs-12);
+  margin-bottom: 10px;
+}
+
+.step p { font-size: var(--fs-13); color: var(--text-body); line-height: 1.55; }
+.step p strong { display: block; color: var(--text-primary); }
+
+@media (max-width: 900px) {
+  .content { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .form__row { grid-template-columns: minmax(0, 1fr); }
+  .empty { padding: 34px 18px; }
+}

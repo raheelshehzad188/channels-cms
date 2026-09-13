@@ -353,12 +353,26 @@ class Template {
 
                 echo $CI->load->view(config_item('app_theme').'/admin/'.$view,$data,true);
 
-                
-// 
-                echo $fot =  $CI->load->view(config_item('app_theme').'/includes/footer',$data,true);
+                echo $CI->load->view(config_item('app_theme').'/includes/footer',$data,true);
 
                 
 
+        }
+
+        public function store($view, $data)
+        {
+                $CI =& get_instance();
+
+                if (!isset($data['title'])) {
+                        $data['title'] = isset($data['store']) ? $data['store']->name : 'Store Admin';
+                }
+
+                $data['assets'] = base_url('assets/store/');
+                $data['ci'] = $CI;
+
+                echo $CI->load->view('store/includes/header', $data, true);
+                echo $CI->load->view('store/' . $view, $data, true);
+                echo $CI->load->view('store/includes/footer', $data, true);
         }
 
         public function front($view , $data)

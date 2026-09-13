@@ -1,4 +1,15 @@
 <?php
+$host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
+if (preg_match('/^(theme1|theme2|fruitables|zenvello)\.(ecommerce\.test|localhost)$/', $host)) {
+	$uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/';
+	$uri = preg_replace('#^/ec3(/index\.php)?#', '', $uri);
+	if ($uri === '' || $uri[0] !== '/') {
+		$uri = '/' . ltrim($uri, '/');
+	}
+	$_SERVER['REQUEST_URI'] = $uri;
+	$_SERVER['SCRIPT_NAME'] = '/index.php';
+}
+
 session_start();
 include "config.php";
 $_SESSION['local_config'] = $local_config;
