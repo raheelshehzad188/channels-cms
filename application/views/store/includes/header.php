@@ -28,10 +28,10 @@ $currentMethod = strtolower($this->router->fetch_method());
     <a class="nav-link <?= ($currentClass === 'products' && $currentMethod === 'index') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/products"><i class="bi bi-box-seam me-2"></i> Available Products</a>
     <a class="nav-link <?= ($currentClass === 'products' && $currentMethod !== 'index') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/my-products"><i class="bi bi-bag-check me-2"></i> My Products</a>
     <a class="nav-link <?= ($currentClass === 'categories') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/categories"><i class="bi bi-tags me-2"></i> Categories</a>
+    <a class="nav-link <?= ($currentClass === 'theme_settings' || $currentClass === 'homepage_hero') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/theme-settings"><i class="bi bi-palette2 me-2"></i> Theme Settings</a>
     <a class="nav-link <?= ($currentClass === 'orders') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/orders"><i class="bi bi-bag me-2"></i> Orders</a>
     <a class="nav-link <?= ($currentClass === 'customers') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/customers"><i class="bi bi-people me-2"></i> Customers</a>
     <a class="nav-link <?= ($currentClass === 'apps') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/apps"><i class="bi bi-grid me-2"></i> Apps</a>
-    <a class="nav-link <?= ($currentClass === 'theme_settings' || $currentClass === 'homepage_hero') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/theme-settings"><i class="bi bi-palette2 me-2"></i> Theme Settings</a>
     <a class="nav-link <?= ($currentClass === 'themes') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/themes"><i class="bi bi-palette me-2"></i> Themes</a>
     <a class="nav-link <?= ($currentClass === 'appearance') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/custom-css"><i class="bi bi-filetype-css me-2"></i> Custom CSS</a>
     <a class="nav-link <?= ($currentClass === 'staff') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/staff"><i class="bi bi-person-badge me-2"></i> Staff</a>
