@@ -5,6 +5,16 @@ function s($settings, $key, $default = '') {
 ?>
 <?php $this->load->view('flash'); ?>
 
+<div class="store-card mb-3">
+  <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+    <div>
+      <div class="fw-medium">Theme settings</div>
+      <p class="text-muted small mb-0">Logo, favicon, colors, homepage banners, and the Zenvello hero slider.</p>
+    </div>
+    <a href="<?= $storeUrl ?>/theme-settings" class="btn btn-store-primary">Open theme settings</a>
+  </div>
+</div>
+
 <form method="post">
   <div class="row g-3">
     <div class="col-lg-6">
