@@ -29,10 +29,16 @@ class Shop extends CI_Controller {
         foreach ($homeCategories as $cat) {
             $this->Ec_category_model->resolve_for_store($cat, $this->store->id);
         }
+        $heroSlides = array();
+        if ($this->theme && $this->theme->slug === 'zenvello') {
+            $this->load->model('Store_hero_model');
+            $heroSlides = $this->Store_hero_model->active_for_store($this->store->id);
+        }
         $this->render('home', array(
             'title' => $this->store->name,
             'products' => $this->products(8),
             'home_categories' => $homeCategories,
+            'hero_slides' => $heroSlides,
         ));
     }
 
@@ -110,7 +116,7 @@ class Shop extends CI_Controller {
 
         $html = '';
         $slugTheme = $this->theme->slug;
-        $assets = base_url('assets/frontend/' . $slugTheme . '/');
+        $assets = storefront_asset_url('assets/frontend/' . $slugTheme . '/');
         foreach ($products as $product) {
             ob_start();
             $this->load->view('frontend/' . $slugTheme . '/product_card', array(
@@ -633,7 +639,7 @@ class Shop extends CI_Controller {
         $data['customer'] = isset($data['customer']) ? $data['customer'] : $this->current_customer();
         $data['cart_count'] = storefront_cart_count($this->store->id);
         $data['current_page'] = isset($data['page_slug']) ? $data['page_slug'] : $page;
-        $data['assets'] = base_url('assets/frontend/' . $slug . '/');
+        $data['assets'] = storefront_asset_url('assets/frontend/' . $slug . '/');
         $data['setting'] = function ($key, $default = '') {
             return isset($this->settings[$key]) && $this->settings[$key] !== '' ? $this->settings[$key] : $default;
         };

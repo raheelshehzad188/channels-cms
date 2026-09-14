@@ -1,6 +1,8 @@
 <?php
 $primary = theme_setting($settings, 'primary_color', '#ffd814');
+$secondary = theme_setting($settings, 'secondary_color', '#111111');
 $logo = theme_setting($settings, 'logo');
+$favicon = theme_setting($settings, 'favicon');
 $cartCount = isset($cart_count) ? (int) $cart_count : 0;
 $current = isset($current_page) ? $current_page : 'home';
 $pageCss = 'home';
@@ -27,6 +29,9 @@ $contactUrl = storefront_url('page/contact');
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars(isset($title) ? $title : $store->name) ?></title>
+<?php if ($favicon): ?>
+<link rel="icon" href="<?= storefront_asset_url($favicon) ?>">
+<?php endif; ?>
 <?php if (!empty($meta_description)): ?>
 <meta name="description" content="<?= htmlspecialchars($meta_description) ?>">
 <?php endif; ?>
@@ -46,7 +51,7 @@ $contactUrl = storefront_url('page/contact');
 <?php endforeach; ?>
 <link rel="stylesheet" href="<?= $assets ?>css/responsive.css">
 <?php $this->load->view('frontend/shared/custom_css'); ?>
-<style>:root { --brand-yellow: <?= htmlspecialchars($primary) ?>; }</style>
+<style>:root { --brand-yellow: <?= htmlspecialchars($primary) ?>; --brand-black: <?= htmlspecialchars($secondary) ?>; }</style>
 </head>
 <body class="zenvello">
 <a class="visually-hidden" href="#main">Skip to content</a>
@@ -76,7 +81,7 @@ $contactUrl = storefront_url('page/contact');
 
     <a class="logo" href="<?= $homeUrl ?>" aria-label="<?= htmlspecialchars($store->name) ?> home">
       <?php if ($logo): ?>
-        <img src="<?= base_url($logo) ?>" alt="<?= htmlspecialchars($store->name) ?>" style="max-height:48px">
+        <img src="<?= storefront_asset_url($logo) ?>" alt="<?= htmlspecialchars($store->name) ?>" style="max-height:48px">
       <?php else: ?>
         <span class="logo__word">ZEN<em>Vello</em></span>
         <span class="logo__tag"><?= htmlspecialchars($store->name) ?></span>

@@ -5,8 +5,13 @@
     <div class="footer__grid">
       <div class="footer__brand">
         <a class="logo" href="<?= storefront_url('shop/index') ?>">
-          <span class="logo__word">ZEN<em>Vello</em></span>
-          <span class="logo__tag"><?= htmlspecialchars($store->name) ?></span>
+          <?php $footerLogo = theme_setting($settings, 'logo'); ?>
+          <?php if ($footerLogo): ?>
+            <img src="<?= storefront_asset_url($footerLogo) ?>" alt="<?= htmlspecialchars($store->name) ?>" style="max-height:40px">
+          <?php else: ?>
+            <span class="logo__word">ZEN<em>Vello</em></span>
+            <span class="logo__tag"><?= htmlspecialchars($store->name) ?></span>
+          <?php endif; ?>
         </a>
         <p class="footer__about"><?= htmlspecialchars(theme_setting($settings, 'footer_about', 'Your one-stop shop for quality products at the best prices. Shop smart, live better.')) ?></p>
       </div>

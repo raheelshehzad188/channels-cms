@@ -2,6 +2,7 @@
 $primary = theme_setting($settings, 'primary_color', '#81C408');
 $secondary = theme_setting($settings, 'secondary_color', '#FFB524');
 $logo = theme_setting($settings, 'logo');
+$favicon = theme_setting($settings, 'favicon');
 $address = theme_setting($settings, 'address', '123 Street, New York');
 $email = theme_setting($settings, 'email', 'email@example.com');
 $storeName = isset($store->name) ? $store->name : 'Fruitables';
@@ -19,6 +20,9 @@ $cartCount = isset($cart_count) ? (int) $cart_count : storefront_cart_count(isse
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title><?= htmlspecialchars(isset($title) ? $title : $storeName) ?></title>
+    <?php if ($favicon): ?>
+    <link rel="icon" href="<?= storefront_asset_url($favicon) ?>">
+    <?php endif; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Raleway:wght@600;800&display=swap" rel="stylesheet">

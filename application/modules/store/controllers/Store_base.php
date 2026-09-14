@@ -84,10 +84,13 @@ class Store_base extends CI_Controller {
 
     protected function viewData($extra = array())
     {
+        $theme = $this->tenant->get_theme();
         $data = array(
             'store' => $this->store,
             'staff' => $this->staff,
             'storeUrl' => $this->storeUrl,
+            'theme' => $theme,
+            'theme_slug' => $theme ? $theme->slug : '',
             'page' => '',
             'title' => $this->store ? $this->store->name : 'Store Admin',
         );

@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS `store_hero_slides` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `store_id` INT(11) NOT NULL,
+  `image` VARCHAR(255) NOT NULL DEFAULT '',
+  `slide_bg` VARCHAR(32) NOT NULL DEFAULT '',
+  `kicker` VARCHAR(120) NOT NULL DEFAULT '',
+  `kicker_color` VARCHAR(32) NOT NULL DEFAULT '',
+  `title` VARCHAR(255) NOT NULL DEFAULT '',
+  `text` TEXT NULL,
+  `btn_text` VARCHAR(120) NOT NULL DEFAULT 'Shop Now',
+  `btn_link` VARCHAR(500) NOT NULL DEFAULT 'shop',
+  `light_text` TINYINT(1) NOT NULL DEFAULT 0,
+  `disc_small` VARCHAR(40) NOT NULL DEFAULT '',
+  `disc_big` VARCHAR(40) NOT NULL DEFAULT '',
+  `disc_span` VARCHAR(40) NOT NULL DEFAULT '',
+  `disc_bg` VARCHAR(32) NOT NULL DEFAULT '',
+  `sort_order` INT(11) NOT NULL DEFAULT 0,
+  `status` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `store_id` (`store_id`),
+  KEY `store_status_sort` (`store_id`, `status`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

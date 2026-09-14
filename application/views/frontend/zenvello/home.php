@@ -4,10 +4,58 @@ $promoH = $assets . 'assets/images/banners/promo-halloween.jpg';
 $promoC = $assets . 'assets/images/banners/promo-christmas.jpg';
 $heroTitle = theme_setting($settings, 'hero_title', "Make Your Home\nFeel Like You");
 $heroText = theme_setting($settings, 'hero_subtitle', 'Discover smart, stylish and affordable products for a better everyday life.');
+$heroSlides = !empty($hero_slides) ? $hero_slides : array();
 ?>
 <div class="container">
   <section class="hero" data-slider aria-roledescription="carousel" aria-label="Featured promotions">
     <div class="hero__track" data-slider-track>
+      <?php if (!empty($heroSlides)): ?>
+        <?php foreach ($heroSlides as $i => $slide): ?>
+          <?php
+            $slideImg = trim((string) $slide->image) !== '' ? storefront_asset_url($slide->image) : $hero;
+            $btnText = trim((string) $slide->btn_text) !== '' ? $slide->btn_text : 'Shop Now';
+            $btnLink = trim((string) $slide->btn_link);
+            if ($btnLink === '') {
+                $btnLink = storefront_url('shop');
+            } elseif ($btnLink[0] !== '#' && strpos($btnLink, 'http') !== 0 && strpos($btnLink, '//') !== 0) {
+                $btnLink = storefront_url(ltrim($btnLink, '/'));
+            }
+            $slideStyle = trim((string) $slide->slide_bg) !== '' ? '--slide-bg:' . $slide->slide_bg : '';
+            $light = (int) $slide->light_text === 1;
+            $kickerStyle = trim((string) $slide->kicker_color) !== '' ? 'color:' . $slide->kicker_color : ($light ? 'color:#ffb74d' : '');
+            $bodyStyle = $light ? 'color:#fff' : '';
+            $titleStyle = $light ? 'color:#fff' : '';
+            $textStyle = $light ? 'color:#e4e0dc' : '';
+            $heading = $i === 0 ? 'h1' : 'h2';
+            $hasDisc = trim((string) $slide->disc_small) !== '' || trim((string) $slide->disc_big) !== '' || trim((string) $slide->disc_span) !== '';
+            $discStyle = trim((string) $slide->disc_bg) !== '' ? 'background:' . $slide->disc_bg : '';
+            $alt = trim(preg_replace('/\s+/', ' ', str_replace(array("\r", "\n"), ' ', (string) $slide->title)));
+            if ($alt === '') {
+                $alt = $store->name;
+            }
+          ?>
+          <article class="hero__slide"<?php if ($slideStyle !== ''): ?> style="<?= htmlspecialchars($slideStyle) ?>"<?php endif; ?>>
+            <img class="hero__bg" src="<?= htmlspecialchars($slideImg) ?>" alt="<?= htmlspecialchars($alt) ?>">
+            <div class="hero__body"<?php if ($bodyStyle !== ''): ?> style="<?= htmlspecialchars($bodyStyle) ?>"<?php endif; ?>>
+              <?php if (trim((string) $slide->kicker) !== ''): ?>
+                <p class="hero__kicker"<?php if ($kickerStyle !== ''): ?> style="<?= htmlspecialchars($kickerStyle) ?>"<?php endif; ?>><?= htmlspecialchars($slide->kicker) ?></p>
+              <?php endif; ?>
+              <<?= $heading ?> class="hero__title"<?php if ($titleStyle !== ''): ?> style="<?= htmlspecialchars($titleStyle) ?>"<?php endif; ?>><?= nl2br(htmlspecialchars($slide->title)) ?></<?= $heading ?>>
+              <?php if (trim((string) $slide->text) !== ''): ?>
+                <p class="hero__text"<?php if ($textStyle !== ''): ?> style="<?= htmlspecialchars($textStyle) ?>"<?php endif; ?>><?= htmlspecialchars($slide->text) ?></p>
+              <?php endif; ?>
+              <a class="btn btn--yellow btn--lg" href="<?= htmlspecialchars($btnLink) ?>"><?= htmlspecialchars($btnText) ?> <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            </div>
+            <?php if ($hasDisc): ?>
+              <div class="hero__disc" aria-hidden="true"<?php if ($discStyle !== ''): ?> style="<?= htmlspecialchars($discStyle) ?>"<?php endif; ?>>
+                <?php if (trim((string) $slide->disc_small) !== ''): ?><small><?= htmlspecialchars($slide->disc_small) ?></small><?php endif; ?>
+                <?php if (trim((string) $slide->disc_big) !== ''): ?><b><?= htmlspecialchars($slide->disc_big) ?></b><?php endif; ?>
+                <?php if (trim((string) $slide->disc_span) !== ''): ?><span><?= htmlspecialchars($slide->disc_span) ?></span><?php endif; ?>
+              </div>
+            <?php endif; ?>
+          </article>
+        <?php endforeach; ?>
+      <?php else: ?>
       <article class="hero__slide">
         <img class="hero__bg" src="<?= $hero ?>" alt="<?= htmlspecialchars($store->name) ?>">
         <div class="hero__body">
@@ -38,6 +86,7 @@ $heroText = theme_setting($settings, 'hero_subtitle', 'Discover smart, stylish a
           <a class="btn btn--yellow btn--lg" href="<?= storefront_url('shop') ?>">Shop Deals <span class="arrow" aria-hidden="true">&rarr;</span></a>
         </div>
       </article>
+      <?php endif; ?>
     </div>
     <button class="hero__arrow hero__arrow--prev" type="button" aria-label="Previous slide" data-slider-prev>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
@@ -59,7 +108,7 @@ $heroText = theme_setting($settings, 'hero_subtitle', 'Discover smart, stylish a
       <li>
         <a class="circle<?= $cat->slug === 'deals' ? ' circle--deals' : '' ?>" href="<?= storefront_url('category/' . rawurlencode($cat->slug)) ?>">
           <?php if ($img): ?>
-            <span class="circle__ring" aria-hidden="true" style="background-image:url('<?= base_url($img) ?>');background-size:cover;background-position:center"></span>
+            <span class="circle__ring" aria-hidden="true" style="background-image:url('<?= storefront_asset_url($img) ?>');background-size:cover;background-position:center"></span>
           <?php else: ?>
             <span class="circle__ring" aria-hidden="true"><?= htmlspecialchars($cat->icon ?: '•') ?></span>
           <?php endif; ?>
@@ -112,23 +161,39 @@ $heroText = theme_setting($settings, 'hero_subtitle', 'Discover smart, stylish a
 </section>
 
 <section class="container promo-section" aria-label="Seasonal shops">
+  <?php
+    $bannerHref = function ($link) {
+        $link = trim((string) $link);
+        if ($link === '') {
+            return storefront_url('shop');
+        }
+        if ($link[0] === '#' || strpos($link, 'http') === 0 || strpos($link, '//') === 0) {
+            return $link;
+        }
+        return storefront_url(ltrim($link, '/'));
+    };
+    $b1img = theme_setting($settings, 'banner_1_image', '');
+    $b1img = $b1img !== '' ? storefront_asset_url($b1img) : $promoH;
+    $b2img = theme_setting($settings, 'banner_2_image', '');
+    $b2img = $b2img !== '' ? storefront_asset_url($b2img) : $promoC;
+  ?>
   <div class="promos">
     <article class="promo">
-      <img src="<?= $promoH ?>" alt="Seasonal collection">
+      <img src="<?= htmlspecialchars($b1img) ?>" alt="<?= htmlspecialchars(theme_setting($settings, 'banner_1_title', 'Top Picks')) ?>">
       <div class="promo__body">
-        <p class="promo__kicker">Explore</p>
-        <h2 class="promo__title">Top Picks</h2>
-        <p class="promo__sub">Curated essentials &amp; more</p>
-        <a class="btn btn--yellow" href="<?= storefront_url('shop') ?>">Shop Now <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        <p class="promo__kicker"><?= htmlspecialchars(theme_setting($settings, 'banner_1_kicker', 'Explore')) ?></p>
+        <h2 class="promo__title"><?= htmlspecialchars(theme_setting($settings, 'banner_1_title', 'Top Picks')) ?></h2>
+        <p class="promo__sub"><?= htmlspecialchars(theme_setting($settings, 'banner_1_text', 'Curated essentials & more')) ?></p>
+        <a class="btn btn--yellow" href="<?= htmlspecialchars($bannerHref(theme_setting($settings, 'banner_1_btn_link', 'shop'))) ?>"><?= htmlspecialchars(theme_setting($settings, 'banner_1_btn_text', 'Shop Now')) ?> <span class="arrow" aria-hidden="true">&rarr;</span></a>
       </div>
     </article>
     <article class="promo">
-      <img src="<?= $promoC ?>" alt="Gift ideas">
+      <img src="<?= htmlspecialchars($b2img) ?>" alt="<?= htmlspecialchars(theme_setting($settings, 'banner_2_title', 'Gift Ideas')) ?>">
       <div class="promo__body">
-        <p class="promo__kicker">Make It Special</p>
-        <h2 class="promo__title">Gift Ideas</h2>
-        <p class="promo__sub">Finds the whole family will love</p>
-        <a class="btn btn--yellow" href="<?= storefront_url('shop') ?>">Browse Gifts <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        <p class="promo__kicker"><?= htmlspecialchars(theme_setting($settings, 'banner_2_kicker', 'Make It Special')) ?></p>
+        <h2 class="promo__title"><?= htmlspecialchars(theme_setting($settings, 'banner_2_title', 'Gift Ideas')) ?></h2>
+        <p class="promo__sub"><?= htmlspecialchars(theme_setting($settings, 'banner_2_text', 'Finds the whole family will love')) ?></p>
+        <a class="btn btn--yellow" href="<?= htmlspecialchars($bannerHref(theme_setting($settings, 'banner_2_btn_link', 'shop'))) ?>"><?= htmlspecialchars(theme_setting($settings, 'banner_2_btn_text', 'Browse Gifts')) ?> <span class="arrow" aria-hidden="true">&rarr;</span></a>
       </div>
     </article>
   </div>

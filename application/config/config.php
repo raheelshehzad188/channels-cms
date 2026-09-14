@@ -59,8 +59,17 @@ if(isset($_SESSION['local_config']) && is_array($_SESSION['local_config']))
 
 $host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
 if ($host !== '' && !in_array($host, array('localhost', '127.0.0.1'), true)) {
-	$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-	$config['base_url'] = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/';
+	$https = (function_exists('is_https') && is_https())
+		|| (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+		|| (isset($_SERVER['REQUEST_SCHEME']) && strtolower((string) $_SERVER['REQUEST_SCHEME']) === 'https')
+		|| (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+	$scheme = $https ? 'https' : 'http';
+	$script = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', $_SERVER['SCRIPT_NAME']) : '/index.php';
+	$basePath = rtrim(dirname($script), '/');
+	if ($basePath === '.' || $basePath === '\\') {
+		$basePath = '';
+	}
+	$config['base_url'] = $scheme . '://' . $host . $basePath . '/';
 }
 
 //HMVC
