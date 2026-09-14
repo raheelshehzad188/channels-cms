@@ -107,6 +107,8 @@ class Theme_settings extends Store_base {
                 'disc_bg' => $this->normalize_color(trim((string) $this->input->post('disc_bg')), ''),
                 'sort_order' => (int) $this->input->post('sort_order'),
                 'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
+                'starts_on' => $this->date_value('starts_on'),
+                'ends_on' => $this->date_value('ends_on'),
             );
             if ($payload['btn_text'] === '') {
                 $payload['btn_text'] = 'Shop Now';
@@ -146,6 +148,7 @@ class Theme_settings extends Store_base {
             'tab' => 'slider',
             'is_zenvello' => true,
             'slide' => $slide,
+            'season_presets' => $this->season_presets(),
         )));
     }
 
@@ -287,6 +290,34 @@ class Theme_settings extends Store_base {
             return strtolower($value);
         }
         return $fallback;
+    }
+
+    protected function date_value($key)
+    {
+        $value = trim((string) $this->input->post($key));
+        if ($value === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+        return $value;
+    }
+
+    protected function season_presets()
+    {
+        $year = (int) date('Y');
+        $today = date('Y-m-d');
+        $presets = array(
+            array('id' => 'halloween', 'label' => 'Halloween', 'start' => $year . '-10-01', 'end' => $year . '-11-02'),
+            array('id' => 'christmas', 'label' => 'Christmas', 'start' => $year . '-12-01', 'end' => $year . '-12-26'),
+            array('id' => 'newyear', 'label' => 'New Year', 'start' => $year . '-12-27', 'end' => ($year + 1) . '-01-05'),
+        );
+        foreach ($presets as &$preset) {
+            if ($preset['end'] < $today) {
+                $preset['start'] = date('Y-m-d', strtotime($preset['start'] . ' +1 year'));
+                $preset['end'] = date('Y-m-d', strtotime($preset['end'] . ' +1 year'));
+            }
+        }
+        unset($preset);
+        return $presets;
     }
 
     protected function upload_theme_file($field, $allowIcon = false, $dir = '')

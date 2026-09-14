@@ -29,11 +29,22 @@ class Store_hero_model extends CI_Model {
             disc_bg VARCHAR(32) NOT NULL DEFAULT '',
             sort_order INT(11) NOT NULL DEFAULT 0,
             status TINYINT(1) NOT NULL DEFAULT 1,
+            starts_on DATE NULL,
+            ends_on DATE NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY store_id (store_id),
             KEY store_status_sort (store_id, status, sort_order)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        if ($this->db->table_exists('store_hero_slides')) {
+            if (!$this->db->field_exists('starts_on', 'store_hero_slides')) {
+                $this->db->query('ALTER TABLE store_hero_slides ADD COLUMN starts_on DATE NULL AFTER status');
+            }
+            if (!$this->db->field_exists('ends_on', 'store_hero_slides')) {
+                $this->db->query('ALTER TABLE store_hero_slides ADD COLUMN ends_on DATE NULL AFTER starts_on');
+            }
+        }
     }
 
     public function all_for_store($storeId)
@@ -48,9 +59,35 @@ class Store_hero_model extends CI_Model {
 
     public function active_for_store($storeId)
     {
-        return $this->db
-            ->where('store_id', (int) $storeId)
+        $today = date('Y-m-d');
+        $storeId = (int) $storeId;
+        $dated = $this->db
+            ->where('store_id', $storeId)
             ->where('status', 1)
+            ->where('starts_on IS NOT NULL', null, false)
+            ->where('starts_on !=', '0000-00-00')
+            ->where('starts_on <=', $today)
+            ->group_start()
+                ->where('ends_on IS NULL', null, false)
+                ->or_where('ends_on', '0000-00-00')
+                ->or_where('ends_on >=', $today)
+            ->group_end()
+            ->order_by('sort_order', 'asc')
+            ->order_by('id', 'asc')
+            ->get('store_hero_slides')
+            ->result();
+        if (!empty($dated)) {
+            return $dated;
+        }
+
+        return $this->db
+            ->where('store_id', $storeId)
+            ->where('status', 1)
+            ->group_start()
+                ->where('starts_on IS NULL', null, false)
+                ->or_where('starts_on', '0000-00-00')
+                ->or_where('starts_on', '')
+            ->group_end()
             ->order_by('sort_order', 'asc')
             ->order_by('id', 'asc')
             ->get('store_hero_slides')
@@ -79,6 +116,11 @@ class Store_hero_model extends CI_Model {
     public function save($storeId, $data, $id = 0)
     {
         $data['store_id'] = (int) $storeId;
+        foreach (array('starts_on', 'ends_on') as $dateField) {
+            if (array_key_exists($dateField, $data) && ($data[$dateField] === '' || $data[$dateField] === '0000-00-00')) {
+                $data[$dateField] = null;
+            }
+        }
         $id = (int) $id;
         if ($id > 0) {
             unset($data['created_at']);

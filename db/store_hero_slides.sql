@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS `store_hero_slides` (
   `disc_bg` VARCHAR(32) NOT NULL DEFAULT '',
   `sort_order` INT(11) NOT NULL DEFAULT 0,
   `status` TINYINT(1) NOT NULL DEFAULT 1,
+  `starts_on` DATE NULL,
+  `ends_on` DATE NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `store_id` (`store_id`),

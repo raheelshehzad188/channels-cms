@@ -11,7 +11,7 @@ $v = function ($key, $fallback = '') use ($values) {
 
 <?php if ($tab === 'slider'): ?>
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <p class="text-muted mb-0">Home page hero slider. Add or edit each slide image and text.</p>
+    <p class="text-muted mb-0">Schedule Halloween, Christmas, and New Year slides by date. Live seasonal slides replace year-round ones automatically.</p>
     <a href="<?= $storeUrl ?>/theme-settings/slide" class="btn btn-store-primary"><i class="bi bi-plus-lg me-1"></i> Add slide</a>
   </div>
   <div class="store-card">
@@ -22,6 +22,7 @@ $v = function ($key, $fallback = '') use ($values) {
             <tr>
               <th width="90">Image</th>
               <th>Text</th>
+              <th>Schedule</th>
               <th width="90">Order</th>
               <th width="100">Status</th>
               <th class="text-end" width="160">Actions</th>
@@ -29,7 +30,25 @@ $v = function ($key, $fallback = '') use ($values) {
           </thead>
           <tbody>
             <?php foreach ($slides as $slide): ?>
-              <?php $image = !empty($slide->image) ? base_url($slide->image) : ''; ?>
+              <?php
+                $image = !empty($slide->image) ? base_url($slide->image) : '';
+                $today = date('Y-m-d');
+                $start = (!empty($slide->starts_on) && $slide->starts_on !== '0000-00-00') ? $slide->starts_on : '';
+                $end = (!empty($slide->ends_on) && $slide->ends_on !== '0000-00-00') ? $slide->ends_on : '';
+                if ($start === '' && $end === '') {
+                    $scheduleBadge = '<span class="badge text-bg-light text-muted">Year-round</span>';
+                    $scheduleDates = 'Always';
+                } elseif ($start !== '' && $start > $today) {
+                    $scheduleBadge = '<span class="badge text-bg-info">Upcoming</span>';
+                    $scheduleDates = htmlspecialchars($start) . ($end !== '' ? ' – ' . htmlspecialchars($end) : '');
+                } elseif ($end !== '' && $end < $today) {
+                    $scheduleBadge = '<span class="badge text-bg-secondary">Ended</span>';
+                    $scheduleDates = htmlspecialchars($start !== '' ? $start : '…') . ' – ' . htmlspecialchars($end);
+                } else {
+                    $scheduleBadge = '<span class="badge text-bg-warning">Live now</span>';
+                    $scheduleDates = htmlspecialchars($start !== '' ? $start : '…') . ($end !== '' ? ' – ' . htmlspecialchars($end) : '');
+                }
+              ?>
               <tr>
                 <td>
                   <?php if ($image): ?>
@@ -47,6 +66,10 @@ $v = function ($key, $fallback = '') use ($values) {
                     <div class="text-muted small"><?= htmlspecialchars($slide->text) ?></div>
                   <?php endif; ?>
                 </td>
+                <td>
+                  <?= $scheduleBadge ?>
+                  <div class="text-muted small mt-1"><?= $scheduleDates ?></div>
+                </td>
                 <td><?= (int) $slide->sort_order ?></td>
                 <td><?= ((int) $slide->status === 1) ? '<span class="badge text-bg-success">Active</span>' : '<span class="badge text-bg-secondary">Inactive</span>' ?></td>
                 <td class="text-end">
@@ -56,7 +79,7 @@ $v = function ($key, $fallback = '') use ($values) {
               </tr>
             <?php endforeach; ?>
             <?php if (empty($slides)): ?>
-              <tr><td colspan="5" class="text-center text-muted py-4">No hero slides yet. Add one for the homepage slider.</td></tr>
+              <tr><td colspan="6" class="text-center text-muted py-4">No hero slides yet. Add one for the homepage slider.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>

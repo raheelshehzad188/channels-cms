@@ -7,6 +7,14 @@ $val = function ($key, $fallback = '') use ($slide) {
     }
     return $fallback;
 };
+$dateVal = function ($key) use ($val) {
+    $raw = trim((string) $val($key));
+    if ($raw === '' || $raw === '0000-00-00') {
+        return '';
+    }
+    return $raw;
+};
+$presets = isset($season_presets) ? $season_presets : array();
 ?>
 
 <div class="store-card mb-3">
@@ -15,7 +23,7 @@ $val = function ($key, $fallback = '') use ($slide) {
     <a href="<?= $storeUrl ?>/theme-settings/slider" class="btn btn-sm btn-outline-secondary">Back</a>
   </div>
   <div class="card-body">
-    <p class="text-muted small">Shown on the Zenvello home page slider. Leave colors blank to use the theme defaults.</p>
+    <p class="text-muted small">Set a date range so Halloween, Christmas, and New Year slides switch automatically. Leave dates empty for year-round slides.</p>
     <form method="post" enctype="multipart/form-data" action="<?= $storeUrl ?>/theme-settings/slide<?= $slide ? '/' . (int) $slide->id : '' ?>">
       <div class="mb-3">
         <label class="form-label">Slide image <?= $slide ? '' : '<span class="text-danger">*</span>' ?></label>
@@ -47,6 +55,27 @@ $val = function ($key, $fallback = '') use ($slide) {
         <div class="col-md-6">
           <label class="form-label">Button link</label>
           <input type="text" name="btn_link" class="form-control" value="<?= htmlspecialchars($val('btn_link', 'shop')) ?>" placeholder="shop or category/halloween">
+        </div>
+      </div>
+
+      <h6 class="mt-2 mb-3">Schedule</h6>
+      <?php if (!empty($presets)): ?>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <?php foreach ($presets as $preset): ?>
+            <button type="button" class="btn btn-sm btn-outline-secondary js-season-preset" data-start="<?= htmlspecialchars($preset['start']) ?>" data-end="<?= htmlspecialchars($preset['end']) ?>"><?= htmlspecialchars($preset['label']) ?></button>
+          <?php endforeach; ?>
+          <button type="button" class="btn btn-sm btn-outline-secondary js-season-clear">Year-round</button>
+        </div>
+      <?php endif; ?>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Start date</label>
+          <input type="date" name="starts_on" id="starts_on" class="form-control" value="<?= htmlspecialchars($dateVal('starts_on')) ?>">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">End date</label>
+          <input type="date" name="ends_on" id="ends_on" class="form-control" value="<?= htmlspecialchars($dateVal('ends_on')) ?>">
+          <div class="form-text">Home page shows this slide only between these dates. If a seasonal slide is live, year-round slides are hidden.</div>
         </div>
       </div>
 
@@ -106,3 +135,22 @@ $val = function ($key, $fallback = '') use ($slide) {
     </form>
   </div>
 </div>
+<script>
+(function () {
+  var start = document.getElementById('starts_on');
+  var end = document.getElementById('ends_on');
+  document.querySelectorAll('.js-season-preset').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      start.value = btn.getAttribute('data-start') || '';
+      end.value = btn.getAttribute('data-end') || '';
+    });
+  });
+  var clearBtn = document.querySelector('.js-season-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      start.value = '';
+      end.value = '';
+    });
+  }
+})();
+</script>
