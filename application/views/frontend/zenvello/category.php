@@ -1,7 +1,7 @@
 <?php
 $hero = $assets . 'assets/images/hero/hero-living.jpg';
 if (!empty($category_hero)) {
-    $hero = base_url($category_hero);
+    $hero = storefront_asset_url($category_hero);
 }
 $heroTitle = !empty($category->display_hero_title)
     ? $category->display_hero_title
@@ -15,6 +15,10 @@ $heroBtnLink = !empty($category->display_hero_btn_link) ? $category->display_her
 if ($heroBtnLink !== '' && isset($heroBtnLink[0]) && $heroBtnLink[0] !== '#' && strpos($heroBtnLink, 'http') !== 0 && strpos($heroBtnLink, '//') !== 0) {
     $heroBtnLink = storefront_url(ltrim($heroBtnLink, '/'));
 }
+$discSmall = !empty($category->display_hero_disc_small) ? $category->display_hero_disc_small : 'UP TO';
+$discBig = !empty($category->display_hero_disc_big) ? $category->display_hero_disc_big : '50%';
+$discSpan = !empty($category->display_hero_disc_span) ? $category->display_hero_disc_span : 'OFF';
+$showDisc = trim($discSmall . $discBig . $discSpan) !== '';
 ?>
 <div class="container">
   <section class="hero hero--static" aria-label="<?= htmlspecialchars($category->name) ?>">
@@ -27,9 +31,13 @@ if ($heroBtnLink !== '' && isset($heroBtnLink[0]) && $heroBtnLink[0] !== '#' && 
           <p class="hero__text"><?= htmlspecialchars($heroText) ?></p>
           <a class="btn btn--yellow btn--lg" href="<?= htmlspecialchars($heroBtnLink) ?>"><?= htmlspecialchars($heroBtnText) ?> <span class="arrow" aria-hidden="true">&rarr;</span></a>
         </div>
+        <?php if ($showDisc): ?>
         <div class="hero__disc" aria-hidden="true">
-          <small>UP TO</small><b>50%</b><span>OFF</span>
+          <?php if ($discSmall !== ''): ?><small><?= htmlspecialchars($discSmall) ?></small><?php endif; ?>
+          <?php if ($discBig !== ''): ?><b><?= htmlspecialchars($discBig) ?></b><?php endif; ?>
+          <?php if ($discSpan !== ''): ?><span><?= htmlspecialchars($discSpan) ?></span><?php endif; ?>
         </div>
+        <?php endif; ?>
       </article>
     </div>
   </section>
@@ -51,7 +59,7 @@ if ($heroBtnLink !== '' && isset($heroBtnLink[0]) && $heroBtnLink[0] !== '#' && 
       <li>
         <a class="circle" href="<?= storefront_url('category/' . rawurlencode($sub->slug)) ?>">
           <?php if ($img): ?>
-            <span class="circle__ring" aria-hidden="true" style="background-image:url('<?= base_url($img) ?>');background-size:cover;background-position:center"></span>
+            <span class="circle__ring" aria-hidden="true" style="background-image:url('<?= storefront_asset_url($img) ?>');background-size:cover;background-position:center"></span>
           <?php else: ?>
             <span class="circle__ring" aria-hidden="true"><?= htmlspecialchars($sub->icon ?: '•') ?></span>
           <?php endif; ?>

@@ -103,6 +103,9 @@ class Categories extends Store_base {
                 'hero_text' => trim((string) $this->input->post('hero_text')),
                 'hero_btn_text' => trim((string) $this->input->post('hero_btn_text')),
                 'hero_btn_link' => trim((string) $this->input->post('hero_btn_link')),
+                'hero_disc_small' => trim((string) $this->input->post('hero_disc_small')),
+                'hero_disc_big' => trim((string) $this->input->post('hero_disc_big')),
+                'hero_disc_span' => trim((string) $this->input->post('hero_disc_span')),
                 'show_on_home' => (int) $this->input->post('show_on_home') === 1 ? 1 : 0,
             );
             $image = $this->upload_field('image');

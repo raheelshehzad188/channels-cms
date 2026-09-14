@@ -28,6 +28,15 @@ $val = function ($key, $fallback = '') use ($category, $setting) {
     if ($key === 'hero_kicker') {
         return 'Shop category';
     }
+    if ($key === 'hero_disc_small') {
+        return 'UP TO';
+    }
+    if ($key === 'hero_disc_big') {
+        return '50%';
+    }
+    if ($key === 'hero_disc_span') {
+        return 'OFF';
+    }
     return $fallback;
 };
 $displayImage = !empty($category->display_image) ? $category->display_image : $category->image;
@@ -68,6 +77,22 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
         <div class="col-md-6">
           <label class="form-label">Button link</label>
           <input type="text" name="hero_btn_link" class="form-control" value="<?= htmlspecialchars($val('hero_btn_link')) ?>" placeholder="#category-products or /shop">
+        </div>
+      </div>
+      <h6 class="mt-1 mb-3">Discount badge</h6>
+      <p class="text-muted small">Circle on the hero (for example UP TO / 50% / OFF). Change the middle value to 30%, 20%, or any text.</p>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label">Small text</label>
+          <input type="text" name="hero_disc_small" class="form-control" value="<?= htmlspecialchars($val('hero_disc_small')) ?>" placeholder="UP TO">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Discount</label>
+          <input type="text" name="hero_disc_big" class="form-control" value="<?= htmlspecialchars($val('hero_disc_big')) ?>" placeholder="50%">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Bottom text</label>
+          <input type="text" name="hero_disc_span" class="form-control" value="<?= htmlspecialchars($val('hero_disc_span')) ?>" placeholder="OFF">
         </div>
       </div>
       <div class="row g-3 mb-4">

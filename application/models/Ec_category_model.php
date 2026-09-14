@@ -86,6 +86,9 @@ class Ec_category_model extends CI_Model {
             'hero_text' => "ALTER TABLE categories ADD COLUMN hero_text TEXT NULL AFTER hero_title",
             'hero_btn_text' => "ALTER TABLE categories ADD COLUMN hero_btn_text VARCHAR(120) NOT NULL DEFAULT '' AFTER hero_text",
             'hero_btn_link' => "ALTER TABLE categories ADD COLUMN hero_btn_link VARCHAR(500) NOT NULL DEFAULT '' AFTER hero_btn_text",
+            'hero_disc_small' => "ALTER TABLE categories ADD COLUMN hero_disc_small VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_btn_link",
+            'hero_disc_big' => "ALTER TABLE categories ADD COLUMN hero_disc_big VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_small",
+            'hero_disc_span' => "ALTER TABLE categories ADD COLUMN hero_disc_span VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_big",
         );
         foreach ($cols as $field => $sql) {
             if (!$this->db->field_exists($field, 'categories')) {
@@ -99,6 +102,9 @@ class Ec_category_model extends CI_Model {
             'hero_text' => "ALTER TABLE store_category_settings ADD COLUMN hero_text TEXT NULL AFTER hero_title",
             'hero_btn_text' => "ALTER TABLE store_category_settings ADD COLUMN hero_btn_text VARCHAR(120) NOT NULL DEFAULT '' AFTER hero_text",
             'hero_btn_link' => "ALTER TABLE store_category_settings ADD COLUMN hero_btn_link VARCHAR(500) NOT NULL DEFAULT '' AFTER hero_btn_text",
+            'hero_disc_small' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_small VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_btn_link",
+            'hero_disc_big' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_big VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_small",
+            'hero_disc_span' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_span VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_big",
         );
         foreach ($scsCols as $field => $sql) {
             if (!$this->db->field_exists($field, 'store_category_settings')) {
@@ -449,6 +455,21 @@ class Ec_category_model extends CI_Model {
             $setting ? $setting->hero_btn_link : '',
             isset($category->hero_btn_link) ? $category->hero_btn_link : '',
             ''
+        );
+        $category->display_hero_disc_small = $pick(
+            $setting && isset($setting->hero_disc_small) ? $setting->hero_disc_small : '',
+            isset($category->hero_disc_small) ? $category->hero_disc_small : '',
+            'UP TO'
+        );
+        $category->display_hero_disc_big = $pick(
+            $setting && isset($setting->hero_disc_big) ? $setting->hero_disc_big : '',
+            isset($category->hero_disc_big) ? $category->hero_disc_big : '',
+            '50%'
+        );
+        $category->display_hero_disc_span = $pick(
+            $setting && isset($setting->hero_disc_span) ? $setting->hero_disc_span : '',
+            isset($category->hero_disc_span) ? $category->hero_disc_span : '',
+            'OFF'
         );
 
         $category->store_enabled = $setting ? (int) $setting->enabled : 0;
