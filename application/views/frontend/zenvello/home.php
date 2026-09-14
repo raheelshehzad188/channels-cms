@@ -27,7 +27,8 @@ $heroSlides = !empty($hero_slides) ? $hero_slides : array();
             $titleStyle = $light ? 'color:#fff' : '';
             $textStyle = $light ? 'color:#e4e0dc' : '';
             $heading = $i === 0 ? 'h1' : 'h2';
-            $hasDisc = trim((string) $slide->disc_small) !== '' || trim((string) $slide->disc_big) !== '' || trim((string) $slide->disc_span) !== '';
+            $hasDisc = (!isset($slide->disc_on) || (int) $slide->disc_on === 1)
+                && (trim((string) $slide->disc_small) !== '' || trim((string) $slide->disc_big) !== '' || trim((string) $slide->disc_span) !== '');
             $discStyle = trim((string) $slide->disc_bg) !== '' ? 'background:' . $slide->disc_bg : '';
             $alt = trim(preg_replace('/\s+/', ' ', str_replace(array("\r", "\n"), ' ', (string) $slide->title)));
             if ($alt === '') {

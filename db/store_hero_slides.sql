@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `store_hero_slides` (
   `disc_big` VARCHAR(40) NOT NULL DEFAULT '',
   `disc_span` VARCHAR(40) NOT NULL DEFAULT '',
   `disc_bg` VARCHAR(32) NOT NULL DEFAULT '',
+  `disc_on` TINYINT(1) NOT NULL DEFAULT 1,
   `sort_order` INT(11) NOT NULL DEFAULT 0,
   `status` TINYINT(1) NOT NULL DEFAULT 1,
   `starts_on` DATE NULL,

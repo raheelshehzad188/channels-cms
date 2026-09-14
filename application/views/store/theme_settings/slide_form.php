@@ -98,6 +98,13 @@ $presets = isset($season_presets) ? $season_presets : array();
       </div>
 
       <h6 class="mt-2 mb-3">Discount badge (optional)</h6>
+      <div class="mb-3">
+        <label class="form-label">Discount badge</label>
+        <select name="disc_on" class="form-select" style="max-width:180px">
+          <option value="1" <?= (int) $val('disc_on', 1) === 1 ? 'selected' : '' ?>>On</option>
+          <option value="0" <?= (int) $val('disc_on', 1) === 0 ? 'selected' : '' ?>>Off</option>
+        </select>
+      </div>
       <div class="row g-3 mb-3">
         <div class="col-md-3">
           <label class="form-label">Small</label>

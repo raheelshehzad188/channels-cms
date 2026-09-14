@@ -105,6 +105,7 @@ class Theme_settings extends Store_base {
                 'disc_big' => trim((string) $this->input->post('disc_big')),
                 'disc_span' => trim((string) $this->input->post('disc_span')),
                 'disc_bg' => $this->normalize_color(trim((string) $this->input->post('disc_bg')), ''),
+                'disc_on' => (int) $this->input->post('disc_on') === 1 ? 1 : 0,
                 'sort_order' => (int) $this->input->post('sort_order'),
                 'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
                 'starts_on' => $this->date_value('starts_on'),

@@ -81,6 +81,13 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
       </div>
       <h6 class="mt-1 mb-3">Discount badge</h6>
       <p class="text-muted small">Circle on the hero (for example UP TO / 50% / OFF). Change the middle value to 30%, 20%, or any text.</p>
+      <div class="mb-3">
+        <label class="form-label">Discount badge</label>
+        <select name="hero_disc_on" class="form-select" style="max-width:180px">
+          <option value="1" <?= (int) $val('hero_disc_on', 1) === 1 ? 'selected' : '' ?>>On</option>
+          <option value="0" <?= (int) $val('hero_disc_on', 1) === 0 ? 'selected' : '' ?>>Off</option>
+        </select>
+      </div>
       <div class="row g-3 mb-4">
         <div class="col-md-4">
           <label class="form-label">Small text</label>

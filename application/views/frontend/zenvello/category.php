@@ -18,7 +18,7 @@ if ($heroBtnLink !== '' && isset($heroBtnLink[0]) && $heroBtnLink[0] !== '#' && 
 $discSmall = !empty($category->display_hero_disc_small) ? $category->display_hero_disc_small : 'UP TO';
 $discBig = !empty($category->display_hero_disc_big) ? $category->display_hero_disc_big : '50%';
 $discSpan = !empty($category->display_hero_disc_span) ? $category->display_hero_disc_span : 'OFF';
-$showDisc = trim($discSmall . $discBig . $discSpan) !== '';
+$showDisc = !empty($category->display_hero_disc_on) && trim($discSmall . $discBig . $discSpan) !== '';
 ?>
 <div class="container">
   <section class="hero hero--static" aria-label="<?= htmlspecialchars($category->name) ?>">

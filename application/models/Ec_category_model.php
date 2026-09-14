@@ -89,6 +89,7 @@ class Ec_category_model extends CI_Model {
             'hero_disc_small' => "ALTER TABLE categories ADD COLUMN hero_disc_small VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_btn_link",
             'hero_disc_big' => "ALTER TABLE categories ADD COLUMN hero_disc_big VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_small",
             'hero_disc_span' => "ALTER TABLE categories ADD COLUMN hero_disc_span VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_big",
+            'hero_disc_on' => "ALTER TABLE categories ADD COLUMN hero_disc_on TINYINT(1) NOT NULL DEFAULT 1 AFTER hero_disc_span",
         );
         foreach ($cols as $field => $sql) {
             if (!$this->db->field_exists($field, 'categories')) {
@@ -105,6 +106,7 @@ class Ec_category_model extends CI_Model {
             'hero_disc_small' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_small VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_btn_link",
             'hero_disc_big' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_big VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_small",
             'hero_disc_span' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_span VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_big",
+            'hero_disc_on' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_on TINYINT(1) NOT NULL DEFAULT 1 AFTER hero_disc_span",
         );
         foreach ($scsCols as $field => $sql) {
             if (!$this->db->field_exists($field, 'store_category_settings')) {
@@ -471,6 +473,13 @@ class Ec_category_model extends CI_Model {
             isset($category->hero_disc_span) ? $category->hero_disc_span : '',
             'OFF'
         );
+        $discOn = 1;
+        if ($setting && isset($setting->hero_disc_on)) {
+            $discOn = (int) $setting->hero_disc_on;
+        } elseif (isset($category->hero_disc_on)) {
+            $discOn = (int) $category->hero_disc_on;
+        }
+        $category->display_hero_disc_on = $discOn === 1 ? 1 : 0;
 
         $category->store_enabled = $setting ? (int) $setting->enabled : 0;
         $category->show_on_home = $setting ? (int) $setting->show_on_home : 0;
