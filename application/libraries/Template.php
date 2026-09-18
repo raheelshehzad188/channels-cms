@@ -92,7 +92,7 @@ class Template {
 
               CURLOPT_HTTPHEADER => array(
 
-                "authorization: Bearer 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",
+                "authorization: Bearer " . (getenv('SENDGRID_API_KEY') ?: ''),
 
                 "cache-control: no-cache",
 
