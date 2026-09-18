@@ -43,7 +43,21 @@
                                     <td><?= htmlspecialchars($user->uname) ?></td>
                                     <td><?= htmlspecialchars($user->email) ?></td>
                                     <td><?= htmlspecialchars(ec_role_label($user->roleID)) ?></td>
-                                    <td><?= ((int)$user->roleID === ROLE_ECOMMERCE) ? number_format((float)$user->commission, 2) : '-' ?></td>
+                                    <td><?php
+                                        if ((int) $user->roleID !== ROLE_ECOMMERCE) {
+                                            echo '-';
+                                        } else {
+                                            $parts = array();
+                                            if ((float) $user->commission > 0) {
+                                                $parts[] = number_format((float) $user->commission, 2);
+                                            }
+                                            $pct = isset($user->commission_percent) ? (float) $user->commission_percent : 0;
+                                            if ($pct > 0) {
+                                                $parts[] = number_format($pct, 2) . '%';
+                                            }
+                                            echo $parts ? htmlspecialchars(implode(' + ', $parts)) : '0';
+                                        }
+                                    ?></td>
                                     <td><?= htmlspecialchars($user->phone) ?></td>
                                     <td>
                                         <span class="label label-<?= ((int)$user->status === 1) ? 'primary' : 'default' ?>">

@@ -7,9 +7,17 @@
         <?php endif; ?>
     </div>
     <div class="detail-copy">
-        <p class="eyebrow"><?= htmlspecialchars($product->sku ?: 'Product') ?></p>
+        <?php if (!empty($product->brand)): ?>
+            <p class="eyebrow"><?= htmlspecialchars($product->brand) ?></p>
+        <?php else: ?>
+            <p class="eyebrow"><?= htmlspecialchars($product->sku ?: 'Product') ?></p>
+        <?php endif; ?>
         <h1><?= htmlspecialchars($product->name) ?></h1>
-        <p class="price large"><?= format_money((float) $product->price) ?></p>
+        <?php if (!empty($product->brand) && !empty($product->sku)): ?>
+            <p class="muted">SKU: <?= htmlspecialchars($product->sku) ?></p>
+        <?php endif; ?>
+        <p class="price large"><?= format_money((float) (isset($cart_product) && $cart_product ? $cart_product->price : $product->price)) ?></p>
+        <?php $this->load->view('frontend/shared/child_options'); ?>
         <p><?= nl2br(htmlspecialchars($product->description ?: 'Selected for the Noir collection.')) ?></p>
         <?php $this->load->view('frontend/shared/product_details', array('product' => $product)); ?>
         <p class="muted">Supplier: <?= htmlspecialchars($product->supplier_name ?: '-') ?> · <?= htmlspecialchars($product->country_name ?: '') ?></p>

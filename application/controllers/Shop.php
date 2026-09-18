@@ -18,6 +18,10 @@ class Shop extends CI_Controller {
 
         if (!$this->store || !$this->theme) {
             show_error('No active store theme is configured for this domain.', 404);
+            return;
+        }
+        if (function_exists('ensure_user_commission_schema')) {
+            ensure_user_commission_schema();
         }
         $this->store = hydrate_store_currency($this->store);
     }
@@ -66,10 +70,11 @@ class Shop extends CI_Controller {
         }
 
         $category = $this->Ec_category_model->resolve_for_store($category, $this->store->id);
-        $subcategories = $this->Ec_category_model->children($category->id);
-        foreach ($subcategories as $sub) {
-            $this->Ec_category_model->resolve_for_store($sub, $this->store->id);
-        }
+        $subcategories = $this->Ec_category_model->storefront_children(
+            $category->id,
+            $this->store->id,
+            setting_flag_on($this->settings, 'hide_empty_subcategories')
+        );
 
         $pageSize = 12;
         $categoryIds = $this->Ec_category_model->category_product_ids($category->id, true);
@@ -154,7 +159,7 @@ class Shop extends CI_Controller {
         }
 
         $this->render('shop', array(
-            'title' => ($activeCategory ? $activeCategory->name . ' — ' : 'Shop — ') . $this->store->name,
+            'title' => ($activeCategory ? category_store_name($activeCategory) . ' — ' : 'Shop — ') . $this->store->name,
             'products' => $products,
             'categories' => $categories,
             'filters' => $filters,
@@ -191,26 +196,83 @@ class Shop extends CI_Controller {
         if (!$product || !$this->matches_store_product($product)) {
             show_404();
         }
-        apply_storefront_pricing($product, $this->store->id);
+        $openedProduct = $product;
+        $family = function_exists('product_family')
+            ? product_family($product, true)
+            : array('parent' => $product, 'selected' => $product, 'children' => array());
+        $display = $family['parent'] ? $family['parent'] : $product;
+        $cartProduct = $family['selected'] ? $family['selected'] : $product;
+        apply_storefront_pricing($display, $this->store->id);
+        apply_storefront_pricing($cartProduct, $this->store->id);
+        apply_storefront_pricing($family['children'], $this->store->id);
 
-        $this->render('detail', array(
-            'title' => $product->name . ' — ' . $this->store->name,
-            'product' => $product,
-            'product_images' => $this->product_gallery_rows($product->id),
+        $this->load->model('Ec_category_model');
+        $trail = $this->Ec_category_model->trail_for_storefront($display->id, $this->store->id);
+
+        $this->load->library('channel_events');
+        $tracking = $this->channel_events->view_content($this->store, $openedProduct);
+
+        $detailData = array(
+            'title' => $display->name . ' — ' . $this->store->name,
+            'tracking' => $tracking,
+            'product' => $display,
+            'cart_product' => $cartProduct,
+            'child_products' => $family['children'],
+            'product_images' => $this->product_gallery_rows($display->id),
+            'product_category' => $trail['category'],
+            'product_subcategory' => $trail['subcategory'],
             'products' => $this->products(8),
-            'canonical_url' => product_url($product),
-        ));
+            'canonical_url' => product_url($openedProduct),
+            'pdp_design' => product_detail_design($this->settings),
+        );
+
+        if ($detailData['pdp_design'] === 'new') {
+            $this->load->model('Product_faq_model');
+            $this->load->model('Product_review_model');
+            $reviewPage = max(1, (int) $this->input->get('reviews_page'));
+            $reviewLimit = 8;
+            $reviewOffset = ($reviewPage - 1) * $reviewLimit;
+            $reviewSummary = $this->Product_review_model->summary($this->store->id, $display->id);
+            $reviewTotal = (int) $reviewSummary['count'];
+            $childGalleries = array();
+            foreach ($family['children'] as $child) {
+                $childGalleries[(int) $child->id] = product_gallery_urls($child, $this->product_gallery_rows($child->id));
+            }
+            $detailData['products'] = $this->related_products($display, $trail, 8);
+            $detailData['product_attributes'] = product_attributes_rows($display->id);
+            $detailData['product_faqs'] = $this->Product_faq_model->for_product($this->store->id, $display->id, true);
+            $detailData['product_reviews'] = $this->Product_review_model->published_for_product($this->store->id, $display->id, $reviewLimit, $reviewOffset);
+            $detailData['review_summary'] = $reviewSummary;
+            $detailData['review_page'] = $reviewPage;
+            $detailData['review_limit'] = $reviewLimit;
+            $detailData['review_total'] = $reviewTotal;
+            $detailData['review_pages'] = $reviewLimit > 0 ? (int) ceil($reviewTotal / $reviewLimit) : 1;
+            $detailData['child_galleries'] = $childGalleries;
+            $detailData['in_wishlist'] = product_in_wishlist($this->store->id, $display->id);
+            $detailData['open_tab'] = trim((string) $this->input->get('tab'));
+            $detailData['flash_success'] = ec_take_flash('success');
+            $detailData['flash_error'] = ec_take_flash('error');
+        }
+
+        $this->render('detail', $detailData);
     }
 
     public function page($slug = 'contact')
     {
         $slug = strtolower(preg_replace('/[^a-z0-9\-]/', '', (string) $slug));
         if ($slug === 'contact') {
+            if (strtoupper((string) $this->input->method()) === 'POST') {
+                $this->submit_contact();
+                return;
+            }
             $this->render('contact', array(
                 'title' => 'Contact — ' . $this->store->name,
                 'page_slug' => 'contact',
-                'page_title' => 'Contact',
-                'products' => $this->products(8),
+                'page_title' => 'Contact Us',
+                'meta_description' => 'Contact the ' . $this->store->name . ' team by message, email or phone. We reply within one working day.',
+                'flash_success' => ec_take_flash('success'),
+                'flash_error' => ec_take_flash('error'),
+                'form' => $this->session->flashdata('contact_form') ?: array(),
             ));
             return;
         }
@@ -219,9 +281,11 @@ class Shop extends CI_Controller {
 
     public function cart()
     {
+        $this->load->library('channel_events');
         $this->render('cart', array_merge(array(
             'title' => 'Cart — ' . $this->store->name,
             'cart_items' => $this->cart_items(),
+            'tracking' => $this->channel_events->consume_browser_event($this->store),
             'flash_success' => ec_take_flash('success'),
             'flash_error' => ec_take_flash('error'),
         ), $this->cart_totals()));
@@ -233,11 +297,123 @@ class Shop extends CI_Controller {
         if (!$product || !$this->matches_store_product($product)) {
             show_404();
         }
+        if (function_exists('product_family')) {
+            $family = product_family($product, true);
+            if (!empty($family['selected']) && (int) $family['selected']->id !== (int) $product->id) {
+                $mapped = $this->catalog_query()->where('products.id', (int) $family['selected']->id)->get()->row();
+                if ($mapped) {
+                    $product = $mapped;
+                    $id = (int) $mapped->id;
+                }
+            }
+        }
+        $stock = (int) $product->stock;
+        if ($stock <= 0) {
+            $this->session->set_flashdata('error', 'This product is out of stock.');
+            redirect(product_url($product));
+            return;
+        }
+        $qty = (int) $this->input->get_post('qty');
+        if ($qty < 1) {
+            $qty = 1;
+        }
+        $qty = min($qty, min(10, $stock));
         $cart = storefront_cart($this->store->id);
-        $cart[(int) $id] = isset($cart[(int) $id]) ? $cart[(int) $id] + 1 : 1;
+        $id = (int) $id;
+        $existing = isset($cart[$id]) ? (int) $cart[$id] : 0;
+        $add = min($qty, max(0, $stock - $existing));
+        if ($add < 1) {
+            $this->session->set_flashdata('error', 'No more stock available for this product.');
+            redirect(storefront_url('cart'));
+            return;
+        }
+        $cart[$id] = $existing + $add;
         $_SESSION['storefront_cart'][$this->store->id] = $cart;
+        apply_storefront_pricing($product, $this->store->id);
+        $this->load->library('channel_events');
+        $this->channel_events->add_to_cart($this->store, $product, $add);
         $this->session->set_flashdata('success', 'Product added to cart.');
+        $next = strtolower(trim((string) $this->input->get_post('next')));
+        if ($next === 'checkout') {
+            redirect(storefront_url('checkout'));
+            return;
+        }
         redirect(storefront_url('cart'));
+    }
+
+    public function wishlist_toggle($id = 0)
+    {
+        $product = $this->catalog_query()->where('products.id', (int) $id)->get()->row();
+        if (!$product || !$this->matches_store_product($product)) {
+            show_404();
+        }
+        $storeId = (int) $this->store->id;
+        $id = (int) $id;
+        $list = storefront_wishlist($storeId);
+        $added = false;
+        if (isset($list[$id])) {
+            unset($list[$id]);
+        } else {
+            $list[$id] = $id;
+            $added = true;
+        }
+        $_SESSION['storefront_wishlist'][$storeId] = array_values($list);
+        if ($this->input->is_ajax_request() || $this->input->get('ajax')) {
+            $this->output->set_content_type('application/json')->set_output(json_encode(array(
+                'ok' => true,
+                'added' => $added,
+            )));
+            return;
+        }
+        $this->session->set_flashdata('success', $added ? 'Added to wishlist.' : 'Removed from wishlist.');
+        redirect(product_url($product));
+    }
+
+    public function submit_review($id = 0)
+    {
+        if (strtoupper((string) $this->input->method()) !== 'POST') {
+            redirect(storefront_url('shop'));
+            return;
+        }
+        $product = $this->catalog_query()->where('products.id', (int) $id)->get()->row();
+        if (!$product || !$this->matches_store_product($product)) {
+            show_404();
+        }
+        $family = function_exists('product_family')
+            ? product_family($product, true)
+            : array('parent' => $product);
+        $display = !empty($family['parent']) ? $family['parent'] : $product;
+        $customer = $this->current_customer();
+        if (!$customer) {
+            $this->session->set_flashdata('error', 'Please login to write a review.');
+            redirect(storefront_url('account/login'));
+            return;
+        }
+        $name = trim((string) $this->input->post('customer_name'));
+        if ($name === '') {
+            $name = trim((string) $customer->name);
+        }
+        $content = trim((string) $this->input->post('content'));
+        $title = trim((string) $this->input->post('title'));
+        $rating = (int) $this->input->post('rating');
+        if ($name === '' || $content === '') {
+            $this->session->set_flashdata('error', 'Please add your name and review.');
+            redirect(product_url($display) . '?tab=reviews');
+            return;
+        }
+        $this->load->model('Product_review_model');
+        $this->Product_review_model->save($this->store->id, array(
+            'product_id' => (int) $display->id,
+            'customer_id' => (int) $customer->id,
+            'customer_name' => $name,
+            'rating' => $rating,
+            'title' => $title,
+            'content' => $content,
+            'status' => 1,
+            'approval_status' => 'pending',
+        ), 0);
+        $this->session->set_flashdata('success', 'Thanks for your review. It will appear after approval.');
+        redirect(product_url($display) . '?tab=reviews');
     }
 
     public function update_cart()
@@ -286,8 +462,8 @@ class Shop extends CI_Controller {
                 'phone' => trim((string) $this->input->post('phone')),
                 'address' => trim($this->input->post('address')),
             );
-            if ($shipping['name'] === '' || $shipping['email'] === '' || $shipping['address'] === '') {
-                $this->session->set_flashdata('error', 'Name, email and address are required.');
+            if ($shipping['name'] === '' || $shipping['email'] === '' || $shipping['address'] === '' || $shipping['phone'] === '') {
+                $this->session->set_flashdata('error', 'Name, email, WhatsApp number and address are required.');
                 redirect(storefront_url('checkout'));
                 return;
             }
@@ -522,9 +698,13 @@ class Shop extends CI_Controller {
         unset($_SESSION['checkout_draft'][$this->store->id]);
         $this->Ec_order_model->notify_status($order);
 
+        $this->load->library('channel_events');
+        $tracking = $this->channel_events->purchase($this->store, $order, $this->Ec_order_model->items($order->id));
+
         $this->render('thanks', array(
             'title' => 'Thank you — ' . $this->store->name,
             'order' => $order,
+            'tracking' => $tracking,
         ));
     }
 
@@ -614,11 +794,38 @@ class Shop extends CI_Controller {
             redirect(storefront_url('account'));
             return;
         }
+        $this->load->model('Ec_order_model');
         $this->render('profile', array(
-            'title' => 'Profile — ' . $this->store->name,
+            'title' => 'Account — ' . $this->store->name,
             'customer' => $customer,
+            'orders' => $this->Ec_order_model->for_customer($this->store->id, $customer->id),
+            'statuses' => Ec_order_model::statuses(),
             'flash_success' => ec_take_flash('success'),
             'flash_error' => ec_take_flash('error'),
+        ));
+    }
+
+    public function customer_order($orderNo = '')
+    {
+        $customer = $this->current_customer();
+        if (!$customer) {
+            redirect(storefront_url('account/login'));
+            return;
+        }
+        $this->load->model('Ec_order_model');
+        $order = $this->Ec_order_model->for_customer_by_no($this->store->id, $customer->id, $orderNo);
+        if (!$order) {
+            $this->session->set_flashdata('error', 'Order not found.');
+            redirect(storefront_url('account'));
+            return;
+        }
+        $this->render('order', array(
+            'title' => 'Order ' . $order->order_no . ' — ' . $this->store->name,
+            'customer' => $customer,
+            'order' => $order,
+            'items' => $this->Ec_order_model->items($order->id),
+            'logs' => $this->Ec_order_model->logs($order->id),
+            'statuses' => Ec_order_model::statuses(),
         ));
     }
 
@@ -631,7 +838,7 @@ class Shop extends CI_Controller {
     protected function render($page, $data = array())
     {
         $slug = $this->theme->slug;
-        $shared = array('cart', 'checkout', 'payment', 'login', 'signup', 'profile', 'thanks');
+        $shared = array('cart', 'checkout', 'payment', 'login', 'signup', 'profile', 'order', 'thanks');
         $data['store'] = $this->store;
         $data['theme'] = $this->theme;
         $data['settings'] = $this->settings;
@@ -662,10 +869,22 @@ class Shop extends CI_Controller {
         if (!isset($data['active_category_slug'])) {
             $data['active_category_slug'] = trim((string) $this->input->get('category'));
         }
+        if (!isset($data['tracking'])) {
+            $this->load->library('channel_events');
+            $data['tracking'] = $this->channel_events->tracking_payload($this->store);
+        }
+
+        if (!isset($data['pdp_design'])) {
+            $data['pdp_design'] = product_detail_design($this->settings);
+        }
 
         $this->load->view('frontend/' . $slug . '/header', $data);
         if (in_array($page, $shared, true)) {
             $this->load->view('frontend/shared/' . $page, $data);
+        } elseif ($page === 'detail' && $data['pdp_design'] === 'new') {
+            $this->load->view('frontend/shared/product_detail/new', $data);
+        } elseif ($page === 'contact' && is_file(APPPATH . 'views/frontend/' . $slug . '/contact.php')) {
+            $this->load->view('frontend/' . $slug . '/contact', $data);
         } elseif ($page === 'contact' && is_file(APPPATH . 'views/frontend/' . $slug . '/page.php')) {
             $this->load->view('frontend/' . $slug . '/page', $data);
         } else {
@@ -739,12 +958,50 @@ class Shop extends CI_Controller {
 
     protected function products($limit = 0)
     {
-        $this->catalog_query()->where('products.status', 1)->order_by('products.id', 'desc');
+        $this->catalog_query()->where('products.status', 1);
+        $this->exclude_child_products();
+        $this->db->order_by('products.id', 'desc');
         if ($limit) {
             $this->db->limit((int) $limit);
         }
         $products = $this->db->get()->result();
         return apply_storefront_pricing($products, $this->store->id);
+    }
+
+    protected function related_products($product, $trail, $limit = 8)
+    {
+        $excludeId = $product ? (int) $product->id : 0;
+        $categoryIds = array();
+        if (!empty($trail['subcategory']) && !empty($trail['subcategory']->id)) {
+            $categoryIds[] = (int) $trail['subcategory']->id;
+        }
+        if (!empty($trail['category']) && !empty($trail['category']->id)) {
+            $categoryIds[] = (int) $trail['category']->id;
+        }
+        $related = array();
+        if ($categoryIds) {
+            foreach ($this->products_in_categories($categoryIds, $limit + 2, 0) as $item) {
+                if ((int) $item->id === $excludeId) {
+                    continue;
+                }
+                $related[(int) $item->id] = $item;
+                if (count($related) >= $limit) {
+                    break;
+                }
+            }
+        }
+        if (count($related) < $limit) {
+            foreach ($this->products($limit + 4) as $item) {
+                if ((int) $item->id === $excludeId || isset($related[(int) $item->id])) {
+                    continue;
+                }
+                $related[(int) $item->id] = $item;
+                if (count($related) >= $limit) {
+                    break;
+                }
+            }
+        }
+        return array_values($related);
     }
 
     protected function products_in_categories($categoryIds, $limit = 12, $offset = 0)
@@ -756,7 +1013,9 @@ class Shop extends CI_Controller {
         $this->catalog_query()
             ->join('product_categories pc_cat', 'pc_cat.product_id = products.id', 'inner')
             ->where_in('pc_cat.category_id', $categoryIds)
-            ->where('products.status', 1)
+            ->where('products.status', 1);
+        $this->exclude_child_products();
+        $this->db
             ->group_by('products.id')
             ->order_by('products.id', 'desc')
             ->limit((int) $limit, (int) $offset);
@@ -776,7 +1035,14 @@ class Shop extends CI_Controller {
             ->join('product_categories pc_cat', 'pc_cat.product_id = products.id', 'inner')
             ->where('products.store_id', (int) $this->store->id)
             ->where('products.status', 1)
-            ->where_in('pc_cat.category_id', $categoryIds)
+            ->where_in('pc_cat.category_id', $categoryIds);
+        if ($this->db->field_exists('parent_sku', 'products')) {
+            $this->db->group_start()
+                ->where('products.parent_sku', '')
+                ->or_where('products.parent_sku IS NULL', null, false)
+                ->group_end();
+        }
+        $row = $this->db
             ->get()
             ->row();
         return $row ? (int) $row->total : 0;
@@ -800,6 +1066,7 @@ class Shop extends CI_Controller {
     protected function filtered_products($filters)
     {
         $this->catalog_query()->where('products.status', 1);
+        $this->exclude_child_products();
 
         if (!empty($filters['category'])) {
             $this->db
@@ -846,12 +1113,17 @@ class Shop extends CI_Controller {
 
     protected function price_bounds()
     {
-        $row = $this->db
+        $this->db
             ->select('MIN(price) as min_price, MAX(price) as max_price', false)
             ->where('store_id', (int) $this->store->id)
-            ->where('status', 1)
-            ->get('products')
-            ->row();
+            ->where('status', 1);
+        if ($this->db->field_exists('parent_sku', 'products')) {
+            $this->db->group_start()
+                ->where('parent_sku', '')
+                ->or_where('parent_sku IS NULL', null, false)
+                ->group_end();
+        }
+        $row = $this->db->get('products')->row();
         return array(
             'min' => $row && $row->min_price !== null ? (float) $row->min_price : 0,
             'max' => $row && $row->max_price !== null ? (float) $row->max_price : 100,
@@ -861,13 +1133,25 @@ class Shop extends CI_Controller {
     protected function catalog_query()
     {
         return $this->db
-            ->select('products.*, suppliers.name as supplier_name, users.commission as owner_commission, COALESCE(product_country.name, supplier_country.name) as country_name', false)
+            ->select('products.*, suppliers.name as supplier_name, users.commission as owner_commission, users.commission_percent as owner_commission_percent, COALESCE(product_country.name, supplier_country.name) as country_name', false)
             ->from('products')
             ->join('suppliers', 'suppliers.id = products.supplier_id', 'left')
             ->join('countries as product_country', 'product_country.id = products.country_id', 'left')
             ->join('countries as supplier_country', 'supplier_country.id = suppliers.country_id', 'left')
             ->join('users', 'users.UserID = products.created_by', 'left')
-            ->where('products.store_id', (int) $this->store->id);
+            ->where('products.store_id', (int) $this->store->id)
+            ->where('products.status', 1);
+    }
+
+    protected function exclude_child_products()
+    {
+        if (!$this->db->field_exists('parent_sku', 'products')) {
+            return;
+        }
+        $this->db->group_start()
+            ->where('products.parent_sku', '')
+            ->or_where('products.parent_sku IS NULL', null, false)
+            ->group_end();
     }
 
     protected function matches_store_product($product)
@@ -877,6 +1161,9 @@ class Shop extends CI_Controller {
 
     protected function product_gallery_rows($productId)
     {
+        if (!$this->db->table_exists('product_images')) {
+            return array();
+        }
         return $this->db
             ->where('product_id', (int) $productId)
             ->order_by('sort_order', 'asc')

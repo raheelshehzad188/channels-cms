@@ -41,7 +41,17 @@
                 </div>
                 <div class="form-group">
                     <label class="col-sm-3 control-label">Name</label>
-                    <div class="col-sm-6"><input type="text" name="name" class="form-control" required value="<?= htmlspecialchars($val('name')) ?>"></div>
+                    <div class="col-sm-6">
+                        <input type="text" name="name" class="form-control" required value="<?= htmlspecialchars($val('name')) ?>">
+                        <span class="help-block">English name. Admin always shows this.</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Local name</label>
+                    <div class="col-sm-6">
+                        <input type="text" name="local_name" class="form-control" value="<?= htmlspecialchars($val('local_name')) ?>" placeholder="e.g. Halloween dekorationer">
+                        <span class="help-block">Storefront name in the country’s language. Leave blank to use the English name.</span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-3 control-label">Slug</label>
@@ -63,10 +73,22 @@
                     <label class="col-sm-3 control-label">Default hero image</label>
                     <div class="col-sm-6">
                         <input type="file" name="hero_image" class="form-control" accept="image/*">
-                        <span class="help-block">Size: 1280 × 640 px</span>
+                        <span class="help-block" id="hero-image-hint" data-just-img="Just image (full banner): 1600 × 480 px. The photo covers the whole hero." data-with-text="With extra text: 1280 × 640 px. The photo sits on the right of the hero.">Just image (full banner): 1600 × 480 px. The photo covers the whole hero.</span>
                         <?php if ($val('hero_image')): ?><img src="<?= base_url($val('hero_image')) ?>" style="height:64px;margin-top:8px"><?php endif; ?>
                     </div>
                 </div>
+                <?php $heroExtraOn = (int) $val('hero_extra_text', 1) === 1; ?>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Extra text</label>
+                    <div class="col-sm-6">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="hero_extra_text" value="1" id="extra_text" <?= $heroExtraOn ? 'checked' : '' ?>>
+                            Show kicker, title, button, and other copy on the hero
+                        </label>
+                        <span class="help-block">Leave unchecked to use only the hero image.</span>
+                    </div>
+                </div>
+                <div id="extra-text-fields" <?= $heroExtraOn ? '' : 'style="display:none"' ?>>
                 <div class="form-group">
                     <label class="col-sm-3 control-label">Hero kicker</label>
                     <div class="col-sm-6"><input type="text" name="hero_kicker" class="form-control" value="<?= htmlspecialchars($val('hero_kicker')) ?>" placeholder="Modern Living"></div>
@@ -86,6 +108,7 @@
                 <div class="form-group">
                     <label class="col-sm-3 control-label">Hero button link</label>
                     <div class="col-sm-6"><input type="text" name="hero_btn_link" class="form-control" value="<?= htmlspecialchars($val('hero_btn_link')) ?>" placeholder="/shop or full URL or leave blank for products"></div>
+                </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-3 control-label">Description</label>
@@ -148,5 +171,15 @@
                 }
             });
     });
+    var extra = document.getElementById('extra_text');
+    var fields = document.getElementById('extra-text-fields');
+    var hint = document.getElementById('hero-image-hint');
+    function syncExtra() {
+        var on = extra && extra.checked;
+        if (fields) fields.style.display = on ? '' : 'none';
+        if (hint) hint.textContent = on ? hint.getAttribute('data-with-text') : hint.getAttribute('data-just-img');
+    }
+    if (extra) extra.addEventListener('change', syncExtra);
+    syncExtra();
 })(jQuery);
 </script>

@@ -14,8 +14,11 @@ class Products extends Store_base {
     public function index()
     {
         $this->requireAuth();
-        $products = $this->Store_product_model->available_for_store($this->store);
+        $this->load->model('Ec_category_model');
+        $filters = $this->available_filters();
+        $products = $this->Store_product_model->available_for_store($this->store, $filters);
         $copied = $this->Store_product_model->copied_source_ids($this->store->id);
+        ec_refresh_store_copy_costs((int) $this->store->id);
         foreach ($products as $product) {
             $product->base_price = product_base_price($product);
             $product->wholesale_price = product_wholesale_price($product, $this->store->id);
@@ -28,8 +31,51 @@ class Products extends Store_base {
             'page' => 'Available Products',
             'title' => 'Available Products',
             'products' => $products,
-            'platform_fee' => product_platform_fee($this->store->id),
+            'filters' => $filters,
+            'category_tree' => $filters['category_tree'],
+            'has_filters' => ($filters['q'] !== '' || $filters['category_id'] > 0 || $filters['subcategory_id'] > 0),
+            'platform_fee_percent' => platform_fee_percent(),
         )));
+    }
+
+    protected function available_filters()
+    {
+        $q = trim((string) $this->input->get('q'));
+        $categoryId = (int) $this->input->get('category_id');
+        $subcategoryId = (int) $this->input->get('subcategory_id');
+        $countryId = (int) (isset($this->store->country_id) ? $this->store->country_id : 0);
+        $tree = $this->Ec_category_model->tree_for_country($countryId);
+
+        $validCategory = false;
+        $subParent = 0;
+        foreach ($tree as $parent) {
+            $parentId = (int) $parent['id'];
+            if ($parentId === $categoryId) {
+                $validCategory = true;
+            }
+            foreach ($parent['children'] as $child) {
+                if ((int) $child['id'] === $subcategoryId) {
+                    $subParent = $parentId;
+                }
+            }
+        }
+        if (!$validCategory) {
+            $categoryId = 0;
+        }
+        if ($subParent < 1) {
+            $subcategoryId = 0;
+        } elseif ($categoryId > 0 && $categoryId !== $subParent) {
+            $subcategoryId = 0;
+        } elseif ($categoryId < 1 && $subParent > 0) {
+            $categoryId = $subParent;
+        }
+
+        return array(
+            'q' => $q,
+            'category_id' => $categoryId,
+            'subcategory_id' => $subcategoryId,
+            'category_tree' => $tree,
+        );
     }
 
     public function mine()
@@ -45,6 +91,12 @@ class Products extends Store_base {
     public function add($id = 0)
     {
         $this->requireAuth();
+        $existing = $this->Store_product_model->find_copy($this->store->id, $id);
+        if ($existing) {
+            redirect('store/products/form/' . $existing->id);
+            return;
+        }
+
         $source = $this->Store_product_model->catalog_item_for_store($this->store, $id);
         if (!$source) {
             $this->session->set_flashdata('error', 'This product is not available for your store.');
@@ -52,46 +104,7 @@ class Products extends Store_base {
             return;
         }
 
-        $existing = $this->Store_product_model->find_copy($this->store->id, $source->id);
-        if ($existing) {
-            redirect('store/products/form/' . $existing->id);
-            return;
-        }
-
-        $wholesale = product_wholesale_price($source, $this->store->id);
-        $price = product_customer_price($source, $this->store->id);
-        $slug = $this->Store_product_model->unique_slug(url_title($source->slug ?: $source->name, 'dash', true), $this->store->id);
-
-        $copyId = $this->Store_product_model->save(array(
-            'store_id' => (int) $this->store->id,
-            'source_product_id' => (int) $source->id,
-            'supplier_id' => $source->supplier_id,
-            'country_id' => $source->country_id ?: $this->store->country_id,
-            'name' => $source->name,
-            'sku' => $source->sku,
-            'slug' => $slug,
-            'price' => $price,
-            'max_sale_price' => $source->max_sale_price,
-            'compare_price' => $source->compare_price,
-            'cost_price' => $wholesale,
-            'stock' => $source->stock,
-            'description' => $source->description,
-            'details' => isset($source->details) ? $source->details : '',
-            'seo_title' => isset($source->seo_title) ? $source->seo_title : '',
-            'seo_description' => isset($source->seo_description) ? $source->seo_description : '',
-            'seo_keywords' => isset($source->seo_keywords) ? $source->seo_keywords : '',
-            'image' => $this->Store_product_model->copy_file($source->image),
-            'ship_min_days' => isset($source->ship_min_days) ? (int) $source->ship_min_days : 0,
-            'ship_max_days' => isset($source->ship_max_days) ? (int) $source->ship_max_days : 0,
-            'status' => 1,
-            'created_by' => $source->created_by,
-        ));
-
-        foreach ($this->Store_product_model->images($source->id) as $image) {
-            $this->Store_product_model->add_image($copyId, $this->Store_product_model->copy_file($image->image));
-        }
-        $this->Store_product_model->copy_options($source->id, $copyId);
-
+        $copyId = $this->Store_product_model->copy_from_catalog($this->store, $source);
         $this->session->set_flashdata('success', 'Product copied to your store. You can now edit it.');
         redirect('store/products/form/' . $copyId);
     }
@@ -105,6 +118,10 @@ class Products extends Store_base {
             $this->session->set_flashdata('error', 'Product not found in your store.');
             redirect('store/my-products');
             return;
+        }
+        if ($product) {
+            ec_refresh_store_copy_costs((int) $this->store->id);
+            $product = $this->Store_product_model->get_owned($this->store->id, $id);
         }
 
         $this->template->store('products/form', $this->viewData(array(
@@ -144,6 +161,7 @@ class Products extends Store_base {
             $payload = array(
                 'price' => $price,
                 'slug' => $this->Store_product_model->unique_slug($slug, $this->store->id, $id),
+                'made_by' => trim((string) $this->input->post('made_by')),
                 'seo_title' => trim((string) $this->input->post('seo_title')),
                 'seo_description' => trim((string) $this->input->post('seo_description')),
                 'seo_keywords' => trim((string) $this->input->post('seo_keywords')),
@@ -158,6 +176,7 @@ class Products extends Store_base {
             $this->save_gallery($productId);
             $cats = $this->input->post('categories');
             $this->Ec_category_model->set_product_categories($productId, is_array($cats) ? $cats : array());
+            $this->channel_sync_product($productId);
 
             if ($maxSale > 0 && $price > $maxSale) {
                 $this->session->set_flashdata('success', 'Product updated. Warning: selling price is above the recommended maximum (' . number_format($maxSale, 2) . ').');
@@ -181,6 +200,10 @@ class Products extends Store_base {
             'country_id' => $this->store->country_id,
             'name' => $name,
             'sku' => trim((string) $this->input->post('sku')),
+            'parent_sku' => trim((string) $this->input->post('parent_sku')),
+            'is_default' => ($this->input->post('parent_sku') && $this->input->post('is_default')) ? 1 : 0,
+            'brand' => trim((string) $this->input->post('brand')),
+            'made_by' => trim((string) $this->input->post('made_by')),
             'slug' => $this->Store_product_model->unique_slug($slug, $this->store->id, 0),
             'description' => trim((string) $this->input->post('description')),
             'details' => ec_sanitize_product_html($this->input->post('details')),
@@ -204,7 +227,11 @@ class Products extends Store_base {
         }
 
         $productId = $this->Store_product_model->save($payload, 0);
+        if (function_exists('product_sync_default_child')) {
+            product_sync_default_child($productId);
+        }
         $this->save_gallery($productId);
+        $this->channel_sync_product($productId);
         $this->session->set_flashdata('success', 'Product created.');
         redirect('store/products/form/' . $productId);
     }
@@ -218,6 +245,7 @@ class Products extends Store_base {
             redirect('store/my-products');
             return;
         }
+        $this->channel_delete_product($id);
         $this->Store_product_model->delete_owned($this->store->id, $id);
         $this->session->set_flashdata('success', 'Product deleted.');
         redirect('store/my-products');
@@ -282,5 +310,17 @@ class Products extends Store_base {
         }
         $uploaded = $this->upload->data();
         return 'uploads/products/' . $uploaded['file_name'];
+    }
+
+    protected function channel_sync_product($productId)
+    {
+        $this->load->model('Store_channel_model');
+        $this->Store_channel_model->queue_sync_product($this->store, $productId);
+    }
+
+    protected function channel_delete_product($productId)
+    {
+        $this->load->model('Store_channel_model');
+        $this->Store_channel_model->queue_delete_product($this->store, $productId);
     }
 }

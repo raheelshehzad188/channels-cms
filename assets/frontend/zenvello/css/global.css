@@ -421,7 +421,13 @@ body {
 }
 
 .breadcrumb a:hover { color: var(--text-primary); text-decoration: underline; }
-.breadcrumb [aria-current] { color: var(--text-body); }
+.breadcrumb [aria-current] {
+  color: var(--text-body);
+  max-width: min(100%, 42ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ---------- Trust strip ---------- */
 .trustbar {

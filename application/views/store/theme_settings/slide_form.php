@@ -28,33 +28,87 @@ $presets = isset($season_presets) ? $season_presets : array();
       <div class="mb-3">
         <label class="form-label">Slide image <?= $slide ? '' : '<span class="text-danger">*</span>' ?></label>
         <input type="file" name="image" class="form-control" accept="image/*" <?= $slide ? '' : 'required' ?>>
-        <div class="form-text">Recommended: 1400 × 640 px (JPG, PNG, or WebP)</div>
+        <div class="form-text" id="hero-image-hint" data-just-img="Just image (full slider): 1600 × 480 px (JPG, PNG, or WebP). The photo covers the whole banner." data-with-text="With extra text: 1400 × 640 px (JPG, PNG, or WebP). The photo sits on the right of the slider.">Just image (full slider): 1600 × 480 px (JPG, PNG, or WebP). The photo covers the whole banner.</div>
         <?php if ($slide && !empty($slide->image)): ?>
           <img src="<?= base_url($slide->image) ?>" alt="" class="mt-2" style="height:88px;object-fit:cover;border-radius:8px">
         <?php endif; ?>
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Kicker</label>
-        <input type="text" name="kicker" class="form-control" value="<?= htmlspecialchars($val('kicker')) ?>" placeholder="Modern Living" maxlength="120">
+      <?php $extraOn = $slide ? ((int) $val('extra_text', 1) === 1) : false; ?>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="extra_text" value="1" id="extra_text" <?= $extraOn ? 'checked' : '' ?>>
+        <label class="form-check-label" for="extra_text">Extra text</label>
+        <div class="form-text">Leave unchecked to use only the image. Check to add kicker, title, button, and badge.</div>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Title <span class="text-danger">*</span></label>
-        <textarea name="title" class="form-control" rows="2" required><?= htmlspecialchars($val('title')) ?></textarea>
-        <div class="form-text">Use a new line for a second title row.</div>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Text</label>
-        <textarea name="text" class="form-control" rows="2"><?= htmlspecialchars($val('text')) ?></textarea>
-      </div>
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label class="form-label">Button text</label>
-          <input type="text" name="btn_text" class="form-control" value="<?= htmlspecialchars($val('btn_text', 'Shop Now')) ?>">
+
+      <div id="extra-text-fields" <?= $extraOn ? '' : 'hidden' ?>>
+        <div class="mb-3">
+          <label class="form-label">Kicker</label>
+          <input type="text" name="kicker" class="form-control" value="<?= htmlspecialchars($val('kicker')) ?>" placeholder="Modern Living" maxlength="120">
         </div>
-        <div class="col-md-6">
-          <label class="form-label">Button link</label>
-          <input type="text" name="btn_link" class="form-control" value="<?= htmlspecialchars($val('btn_link', 'shop')) ?>" placeholder="shop or category/halloween">
+        <div class="mb-3">
+          <label class="form-label">Title <span class="text-danger">*</span></label>
+          <textarea name="title" class="form-control" rows="2" <?= $extraOn ? 'required' : '' ?>><?= htmlspecialchars($val('title')) ?></textarea>
+          <div class="form-text">Use a new line for a second title row.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Text</label>
+          <textarea name="text" class="form-control" rows="2"><?= htmlspecialchars($val('text')) ?></textarea>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Button text</label>
+            <input type="text" name="btn_text" class="form-control" value="<?= htmlspecialchars($val('btn_text', 'Shop Now')) ?>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Button link</label>
+            <input type="text" name="btn_link" class="form-control" value="<?= htmlspecialchars($val('btn_link', 'shop')) ?>" placeholder="shop or category/halloween">
+          </div>
+        </div>
+
+        <h6 class="mt-2 mb-3">Look</h6>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Overlay color</label>
+            <input type="text" name="slide_bg" class="form-control" value="<?= htmlspecialchars($val('slide_bg')) ?>" placeholder="#1b1016" maxlength="7">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Kicker color</label>
+            <input type="text" name="kicker_color" class="form-control" value="<?= htmlspecialchars($val('kicker_color')) ?>" placeholder="#ffb74d" maxlength="7">
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="light_text" value="1" id="light_text" <?= (int) $val('light_text', 0) === 1 ? 'checked' : '' ?>>
+              <label class="form-check-label" for="light_text">Light text (dark slides)</label>
+            </div>
+          </div>
+        </div>
+
+        <h6 class="mt-2 mb-3">Discount badge (optional)</h6>
+        <div class="mb-3">
+          <label class="form-label">Discount badge</label>
+          <select name="disc_on" class="form-select" style="max-width:180px">
+            <option value="1" <?= (int) $val('disc_on', 1) === 1 ? 'selected' : '' ?>>On</option>
+            <option value="0" <?= (int) $val('disc_on', 1) === 0 ? 'selected' : '' ?>>Off</option>
+          </select>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <label class="form-label">Small</label>
+            <input type="text" name="disc_small" class="form-control" value="<?= htmlspecialchars($val('disc_small')) ?>" placeholder="UP TO">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Big</label>
+            <input type="text" name="disc_big" class="form-control" value="<?= htmlspecialchars($val('disc_big')) ?>" placeholder="50%">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Span</label>
+            <input type="text" name="disc_span" class="form-control" value="<?= htmlspecialchars($val('disc_span')) ?>" placeholder="OFF">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Badge color</label>
+            <input type="text" name="disc_bg" class="form-control" value="<?= htmlspecialchars($val('disc_bg')) ?>" placeholder="#111111" maxlength="7">
+          </div>
         </div>
       </div>
 
@@ -76,51 +130,6 @@ $presets = isset($season_presets) ? $season_presets : array();
           <label class="form-label">End date</label>
           <input type="date" name="ends_on" id="ends_on" class="form-control" value="<?= htmlspecialchars($dateVal('ends_on')) ?>">
           <div class="form-text">Home page shows this slide only between these dates. If a seasonal slide is live, year-round slides are hidden.</div>
-        </div>
-      </div>
-
-      <h6 class="mt-2 mb-3">Look</h6>
-      <div class="row g-3 mb-3">
-        <div class="col-md-4">
-          <label class="form-label">Overlay color</label>
-          <input type="text" name="slide_bg" class="form-control" value="<?= htmlspecialchars($val('slide_bg')) ?>" placeholder="#1b1016" maxlength="7">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Kicker color</label>
-          <input type="text" name="kicker_color" class="form-control" value="<?= htmlspecialchars($val('kicker_color')) ?>" placeholder="#ffb74d" maxlength="7">
-        </div>
-        <div class="col-md-4 d-flex align-items-end">
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" name="light_text" value="1" id="light_text" <?= (int) $val('light_text', 0) === 1 ? 'checked' : '' ?>>
-            <label class="form-check-label" for="light_text">Light text (dark slides)</label>
-          </div>
-        </div>
-      </div>
-
-      <h6 class="mt-2 mb-3">Discount badge (optional)</h6>
-      <div class="mb-3">
-        <label class="form-label">Discount badge</label>
-        <select name="disc_on" class="form-select" style="max-width:180px">
-          <option value="1" <?= (int) $val('disc_on', 1) === 1 ? 'selected' : '' ?>>On</option>
-          <option value="0" <?= (int) $val('disc_on', 1) === 0 ? 'selected' : '' ?>>Off</option>
-        </select>
-      </div>
-      <div class="row g-3 mb-3">
-        <div class="col-md-3">
-          <label class="form-label">Small</label>
-          <input type="text" name="disc_small" class="form-control" value="<?= htmlspecialchars($val('disc_small')) ?>" placeholder="UP TO">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Big</label>
-          <input type="text" name="disc_big" class="form-control" value="<?= htmlspecialchars($val('disc_big')) ?>" placeholder="50%">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Span</label>
-          <input type="text" name="disc_span" class="form-control" value="<?= htmlspecialchars($val('disc_span')) ?>" placeholder="OFF">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Badge color</label>
-          <input type="text" name="disc_bg" class="form-control" value="<?= htmlspecialchars($val('disc_bg')) ?>" placeholder="#111111" maxlength="7">
         </div>
       </div>
 
@@ -159,5 +168,17 @@ $presets = isset($season_presets) ? $season_presets : array();
       end.value = '';
     });
   }
+  var extra = document.getElementById('extra_text');
+  var fields = document.getElementById('extra-text-fields');
+  var hint = document.getElementById('hero-image-hint');
+  var title = document.querySelector('[name="title"]');
+  function syncExtra() {
+    var on = extra && extra.checked;
+    if (fields) fields.hidden = !on;
+    if (hint) hint.textContent = on ? hint.getAttribute('data-with-text') : hint.getAttribute('data-just-img');
+    if (title) title.required = !!on;
+  }
+  if (extra) extra.addEventListener('change', syncExtra);
+  syncExtra();
 })();
 </script>

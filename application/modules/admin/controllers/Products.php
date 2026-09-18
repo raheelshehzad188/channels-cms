@@ -15,12 +15,150 @@ class Products extends CI_Controller {
     {
         $this->load->model('Theme_model');
         $this->load->model('Country_model');
+        $this->load->model('Ec_category_model');
+        $this->load->model('User_model');
         $ownerId = ec_is_ecommerce() ? (int) ec_user()->UserID : 0;
+        $countryId = (int) $this->input->get('country_id');
+        $categoryId = (int) $this->input->get('category_id');
+        $createdBy = (int) $this->input->get('created_by');
+        $q = trim((string) $this->input->get('q'));
+        $ecommerceUsers = ec_is_admin() ? $this->User_model->ecommerce_users() : array();
+        if (ec_is_admin() && $createdBy) {
+            $validOwner = false;
+            foreach ($ecommerceUsers as $owner) {
+                if ((int) $owner->UserID === $createdBy) {
+                    $validOwner = true;
+                    break;
+                }
+            }
+            $ownerId = $validOwner ? $createdBy : 0;
+            if (!$validOwner) {
+                $createdBy = 0;
+            }
+        } else {
+            $createdBy = $ownerId;
+        }
+
+        $categoryFilters = array();
+        if ($countryId) {
+            $categoryFilters['country_id'] = $countryId;
+        }
+        $categories = $this->Ec_category_model->all($categoryFilters);
+        if ($categoryId) {
+            $valid = false;
+            foreach ($categories as $cat) {
+                if ((int) $cat->id === $categoryId) {
+                    $valid = true;
+                    break;
+                }
+            }
+            if (!$valid) {
+                $categoryId = 0;
+            }
+        }
+
+        $filters = array(
+            'country_id' => $countryId,
+            'category_id' => $categoryId,
+            'q' => $q,
+        );
+        $perPageOptions = array(10, 25, 50, 100);
+        $requestedPerPage = $this->input->get('per_page');
+        $requestedPage = $this->input->get('page');
+        $perPage = (int) $requestedPerPage;
+        if (!in_array($perPage, $perPageOptions, true)) {
+            $cookiePerPage = (int) $this->input->cookie('admin_products_per_page');
+            $perPage = in_array($cookiePerPage, $perPageOptions, true) ? $cookiePerPage : 25;
+        }
+        $this->load->helper('cookie');
+        $this->input->set_cookie(array(
+            'name' => 'admin_products_per_page',
+            'value' => (string) $perPage,
+            'expire' => 30 * 24 * 3600,
+            'path' => '/',
+        ));
+        $total = $this->Product_model->count_filtered($ownerId, $filters);
+        $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 1;
+        $page = (int) $requestedPage;
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+        $filters['limit'] = $perPage;
+        $filters['offset'] = $offset;
+        $from = $total > 0 ? ($offset + 1) : 0;
+        $to = min($offset + $perPage, $total);
+        $listQuery = array(
+            'q' => $q,
+            'country_id' => $countryId,
+            'category_id' => $categoryId,
+            'created_by' => $createdBy,
+            'per_page' => $perPage,
+        );
+        $pageUrl = function ($pageNum) use ($listQuery) {
+            $query = $listQuery;
+            $query['page'] = max(1, (int) $pageNum);
+            return base_url('admin/products') . '?' . http_build_query($query);
+        };
+        $canonicalNeeded = ($requestedPage === false || $requestedPage === null || $requestedPerPage === false || $requestedPerPage === null
+            || (int) $requestedPage !== $page
+            || (int) $requestedPerPage !== $perPage);
+        if ($canonicalNeeded) {
+            redirect($pageUrl($page));
+            return;
+        }
+        $window = 2;
+        $pageStart = max(1, $page - $window);
+        $pageEnd = min($totalPages, $page + $window);
+        $pageNumbers = array();
+        if ($pageStart > 1) {
+            $pageNumbers[] = array('label' => 1, 'url' => $pageUrl(1), 'current' => false);
+            if ($pageStart > 2) {
+                $pageNumbers[] = array('label' => '…', 'url' => '', 'current' => false);
+            }
+        }
+        for ($i = $pageStart; $i <= $pageEnd; $i++) {
+            $pageNumbers[] = array(
+                'label' => $i,
+                'url' => $pageUrl($i),
+                'current' => ($i === $page),
+            );
+        }
+        if ($pageEnd < $totalPages) {
+            if ($pageEnd < $totalPages - 1) {
+                $pageNumbers[] = array('label' => '…', 'url' => '', 'current' => false);
+            }
+            $pageNumbers[] = array('label' => $totalPages, 'url' => $pageUrl($totalPages), 'current' => false);
+        }
+
         $data = array(
             'title' => 'Products',
-            'products' => $this->Product_model->all($ownerId),
+            'products' => $this->Product_model->all($ownerId, $filters),
             'themes' => $this->Theme_model->all(),
             'countries' => $this->Country_model->all(),
+            'categories' => $categories,
+            'ecommerce_users' => $ecommerceUsers,
+            'country_id' => $countryId,
+            'category_id' => $categoryId,
+            'created_by' => $createdBy,
+            'q' => $q,
+            'list_page' => $page,
+            'per_page' => $perPage,
+            'per_page_options' => $perPageOptions,
+            'total' => $total,
+            'total_pages' => $totalPages,
+            'from_row' => $from,
+            'to_row' => $to,
+            'page_numbers' => $pageNumbers,
+            'first_page_url' => $pageUrl(1),
+            'prev_page_url' => $pageUrl($page - 1),
+            'next_page_url' => $pageUrl($page + 1),
+            'last_page_url' => $pageUrl($totalPages),
+            'has_prev_page' => $page > 1,
+            'has_next_page' => $page < $totalPages,
         );
         $this->template->admin('products/index', $data);
     }
@@ -28,9 +166,11 @@ class Products extends CI_Controller {
     public function import()
     {
         $this->load->model('Country_model');
+        $prefs = $this->import_prefs();
         $data = array(
             'title' => 'Import Product',
             'countries' => $this->Country_model->all(),
+            'import_prefs' => $prefs,
         );
         $this->template->admin('products/import', $data);
     }
@@ -49,8 +189,11 @@ class Products extends CI_Controller {
                     'name' => $result['name'],
                     'sku' => $result['sku'],
                     'cost' => $result['cost'],
+                    'country_id' => isset($result['country_id']) ? (int) $result['country_id'] : $countryId,
+                    'country_name' => isset($result['country_name']) ? $result['country_name'] : '',
                 )));
         } catch (Exception $e) {
+            $this->record_import_failure($url, $e->getMessage());
             $this->output
                 ->set_status_header(400)
                 ->set_content_type('application/json')
@@ -61,26 +204,78 @@ class Products extends CI_Controller {
         }
     }
 
+    public function import_source()
+    {
+        $url = trim((string) $this->input->post('source_url'));
+        $this->load->library('Product_importer');
+        try {
+            $info = $this->product_importer->source_info($url);
+            $this->json_out(array(
+                'ok' => true,
+                'host' => $info['host'],
+                'country_id' => (int) $info['country_id'],
+                'country_name' => $info['country_name'],
+                'known' => !empty($info['known']),
+            ));
+        } catch (Exception $e) {
+            $this->json_out(array('ok' => false, 'error' => $e->getMessage()), 400);
+        }
+    }
+
+    public function import_categories()
+    {
+        $countryId = (int) $this->input->get('country_id');
+        if (!$countryId) {
+            $countryId = (int) $this->input->post('country_id');
+        }
+        $this->load->model('Ec_category_model');
+        $this->json_out(array('ok' => true, 'categories' => $this->Ec_category_model->tree_for_country($countryId)));
+    }
+
     public function import_save()
     {
         $countryId = (int) $this->input->post('country_id');
         $url = trim((string) $this->input->post('source_url'));
         $basePrice = trim((string) $this->input->post('base_price'));
         $costOverride = $basePrice !== '' ? (float) $basePrice : null;
+        $categoryId = (int) $this->input->post('category_id');
+        $subcategoryId = (int) $this->input->post('subcategory_id');
+        $shipMin = max(0, (int) $this->input->post('ship_min_days'));
+        $shipMax = max(0, (int) $this->input->post('ship_max_days'));
+        $stockRaw = trim((string) $this->input->post('stock'));
+        $autoAdd = $this->input->post('auto_add_to_stores') ? 1 : 0;
+        $creativeLinks = $this->posted_creative_links();
         $this->load->model('Product_import_model');
         $this->load->library('Product_importer');
+        $countryId = $this->product_importer->country_id_for_url($url, $countryId);
+        $this->remember_import_prefs($countryId);
+        $extra = array(
+            'category_id' => $categoryId,
+            'subcategory_id' => $subcategoryId,
+            'ship_min_days' => $shipMin,
+            'ship_max_days' => $shipMax,
+            'auto_add_to_stores' => $autoAdd,
+            'creative_links' => $creativeLinks,
+        );
+        if ($stockRaw !== '') {
+            $extra['stock'] = max(0, (int) $stockRaw);
+        }
         try {
-            $result = $this->product_importer->import($url, $countryId, (int) ec_user()->UserID, $costOverride);
+            $result = $this->product_importer->import($url, $countryId, (int) ec_user()->UserID, $costOverride, $extra);
         } catch (Exception $e) {
+            $this->record_import_failure($url, $e->getMessage());
             $this->session->set_flashdata('error', $e->getMessage());
             redirect('/admin/products/import');
             return;
         }
 
+        $this->Product_import_model->clear_failed($url, (int) ec_user()->UserID);
+
+        $autoAdded = isset($result['auto_added']) ? (int) $result['auto_added'] : 0;
         if (!empty($result['existing'])) {
-            $this->session->set_flashdata('success', 'This URL is already imported. Review the product below.');
+            $this->session->set_flashdata('success', 'This URL is already imported. Review the product below.' . $this->auto_add_flash($autoAdded, $autoAdd));
         } else {
-            $this->session->set_flashdata('success', 'Product imported successfully. Review and save any changes.');
+            $this->session->set_flashdata('success', 'Product imported as Inactive. Ecommerce users can review the detail page; store owners and customers will not see it until it is set Active.' . $this->auto_add_flash($autoAdded, $autoAdd));
         }
         redirect('/admin/products/form/' . (int) $result['product_id']);
     }
@@ -209,15 +404,18 @@ class Products extends CI_Controller {
                 $row['link'],
                 $countryId,
                 (int) ec_user()->UserID,
-                $row
+                $row,
+                array('auto_add_to_stores' => $this->input->post('auto_add_to_stores') ? 1 : 0)
             );
             $status = !empty($result['skipped']) ? 'skipped' : 'imported';
+            $this->Product_import_model->clear_failed($row['link'], (int) ec_user()->UserID);
             $this->json_out($base + array(
                 'status' => $status,
                 'product_id' => isset($result['product_id']) ? (int) $result['product_id'] : 0,
                 'message' => isset($result['message']) ? $result['message'] : '',
             ));
         } catch (Exception $e) {
+            $this->record_csv_failure($row, $countryId, $e->getMessage());
             $this->json_out($base + array(
                 'status' => 'failed',
                 'error' => $e->getMessage(),
@@ -256,6 +454,105 @@ class Products extends CI_Controller {
             ->set_status_header((int) $code)
             ->set_content_type('application/json', 'utf-8')
             ->set_output(json_encode($data));
+    }
+
+    protected function import_prefs()
+    {
+        $raw = $this->input->cookie('ec_import_prefs', false);
+        $data = json_decode((string) $raw, true);
+        if (!is_array($data)) {
+            $data = array();
+        }
+        return array(
+            'country_id' => (int) (isset($data['country_id']) ? $data['country_id'] : 0),
+            'category_id' => (int) (isset($data['category_id']) ? $data['category_id'] : 0),
+            'subcategory_id' => (int) (isset($data['subcategory_id']) ? $data['subcategory_id'] : 0),
+            'ship_min_days' => (int) (isset($data['ship_min_days']) ? $data['ship_min_days'] : 0),
+            'ship_max_days' => (int) (isset($data['ship_max_days']) ? $data['ship_max_days'] : 0),
+            'stock' => isset($data['stock']) && $data['stock'] !== '' ? (int) $data['stock'] : '',
+            'auto_add_to_stores' => !empty($data['auto_add_to_stores']) ? 1 : 0,
+        );
+    }
+
+    protected function remember_import_prefs($countryId = null)
+    {
+        $stockRaw = trim((string) $this->input->post('stock'));
+        $prefs = array(
+            'country_id' => $countryId !== null ? (int) $countryId : (int) $this->input->post('country_id'),
+            'category_id' => (int) $this->input->post('category_id'),
+            'subcategory_id' => (int) $this->input->post('subcategory_id'),
+            'ship_min_days' => max(0, (int) $this->input->post('ship_min_days')),
+            'ship_max_days' => max(0, (int) $this->input->post('ship_max_days')),
+            'stock' => $stockRaw === '' ? '' : max(0, (int) $stockRaw),
+            'auto_add_to_stores' => $this->input->post('auto_add_to_stores') ? 1 : 0,
+        );
+        $this->load->helper('cookie');
+        $this->input->set_cookie(array(
+            'name' => 'ec_import_prefs',
+            'value' => json_encode($prefs),
+            'expire' => 365 * 24 * 3600,
+            'path' => '/',
+            'httponly' => false,
+        ));
+    }
+
+    protected function auto_add_flash($added, $requested = false)
+    {
+        if (!$requested) {
+            return '';
+        }
+        $added = (int) $added;
+        if ($added > 0) {
+            return ' Auto-added to ' . $added . ' recommended store' . ($added === 1 ? '' : 's') . ' with each store plus amount.';
+        }
+        return ' Marked for recommended stores. No store in this country currently has Auto-add enabled.';
+    }
+
+    protected function record_import_failure($url, $error)
+    {
+        $this->load->model('Product_import_model');
+        $stockRaw = trim((string) $this->input->post('stock'));
+        $basePrice = trim((string) $this->input->post('base_price'));
+        $this->Product_import_model->record_failed(array(
+            'url' => $url,
+            'country_id' => (int) $this->input->post('country_id'),
+            'user_id' => (int) ec_user()->UserID,
+            'category_id' => (int) $this->input->post('category_id'),
+            'subcategory_id' => (int) $this->input->post('subcategory_id'),
+            'base_price' => $basePrice !== '' ? (float) $basePrice : 0,
+            'ship_min_days' => max(0, (int) $this->input->post('ship_min_days')),
+            'ship_max_days' => max(0, (int) $this->input->post('ship_max_days')),
+            'stock' => $stockRaw === '' ? 0 : max(0, (int) $stockRaw),
+            'error' => $error,
+        ));
+    }
+
+    protected function record_csv_failure($row, $countryId, $error)
+    {
+        $this->load->model('Product_import_model');
+        $this->load->model('Ec_category_model');
+        $categoryId = 0;
+        $subcategoryId = 0;
+        $categoryName = isset($row['category']) ? trim((string) $row['category']) : '';
+        $subName = isset($row['sub_category']) ? trim((string) $row['sub_category']) : '';
+        if ($categoryName !== '') {
+            $categoryId = (int) $this->Ec_category_model->find_or_create($countryId, $categoryName, 0);
+            if ($subName !== '' && $categoryId) {
+                $subcategoryId = (int) $this->Ec_category_model->find_or_create($countryId, $subName, $categoryId);
+            }
+        }
+        $this->Product_import_model->record_failed(array(
+            'url' => isset($row['link']) ? $row['link'] : '',
+            'country_id' => (int) $countryId,
+            'user_id' => (int) ec_user()->UserID,
+            'category_id' => $categoryId,
+            'subcategory_id' => $subcategoryId,
+            'base_price' => isset($row['price']) ? $row['price'] : 0,
+            'ship_min_days' => isset($row['delivery_min_days']) ? $row['delivery_min_days'] : 0,
+            'ship_max_days' => isset($row['delivery_max_days']) ? $row['delivery_max_days'] : 0,
+            'product_name' => isset($row['product']) ? $row['product'] : '',
+            'error' => $error,
+        ));
     }
 
     public function fetch_details($id = 0)
@@ -312,33 +609,132 @@ class Products extends CI_Controller {
     public function unknown()
     {
         if (!ec_is_admin()) {
-            $this->session->set_flashdata('error', 'You do not have permission to view unknown import links.');
+            $this->session->set_flashdata('error', 'You do not have permission to view failed import links.');
             redirect('/admin/products');
             return;
         }
         $this->load->model('Product_import_model');
         $data = array(
-            'title' => 'Unknown Import Links',
+            'title' => 'Failed Imports',
             'links' => $this->Product_import_model->unknown_links(),
+            'failed_ids' => $this->Product_import_model->unknown_ids(),
         );
         $this->template->admin('products/unknown', $data);
+    }
+
+    public function unknown_retry($id = 0)
+    {
+        if (!ec_is_admin()) {
+            $this->session->set_flashdata('error', 'You do not have permission to retry failed imports.');
+            redirect('/admin/products');
+            return;
+        }
+        $this->load->model('Product_import_model');
+        $result = $this->retry_failed_row((int) $id);
+        if (empty($result['ok'])) {
+            $this->session->set_flashdata('error', $result['error']);
+            redirect('/admin/products/unknown');
+            return;
+        }
+        if (!empty($result['existing'])) {
+            $this->session->set_flashdata('success', 'This URL was already imported. Review the product below.');
+        } else {
+            $this->session->set_flashdata('success', 'Product re-imported successfully.');
+        }
+        redirect('/admin/products/form/' . (int) $result['product_id']);
+    }
+
+    public function unknown_retry_row()
+    {
+        if (!ec_is_admin()) {
+            $this->json_out(array('ok' => false, 'error' => 'You do not have permission to retry failed imports.'), 403);
+            return;
+        }
+        @set_time_limit(90);
+        $this->load->model('Product_import_model');
+        $id = (int) $this->input->post('id');
+        $result = $this->retry_failed_row($id);
+        $this->json_out($result, !empty($result['ok']) ? 200 : 400);
+    }
+
+    protected function retry_failed_row($id)
+    {
+        $this->load->model('Product_import_model');
+        $row = $this->Product_import_model->get_failed($id);
+        if (!$row) {
+            return array('ok' => false, 'id' => (int) $id, 'error' => 'Failed import not found.');
+        }
+
+        $userId = (int) $row->user_id ?: (int) ec_user()->UserID;
+        $costOverride = (float) $row->base_price > 0 ? (float) $row->base_price : null;
+        $extra = array(
+            'category_id' => (int) $row->category_id,
+            'subcategory_id' => (int) $row->subcategory_id,
+            'ship_min_days' => (int) $row->ship_min_days,
+            'ship_max_days' => (int) $row->ship_max_days,
+            'product_name' => isset($row->product_name) ? trim((string) $row->product_name) : '',
+        );
+        if (isset($row->stock) && $row->stock !== '') {
+            $extra['stock'] = max(0, (int) $row->stock);
+        }
+        $this->load->library('Product_importer');
+        try {
+            $this->Product_import_model->learn_source($row->domain, (int) $row->country_id);
+            $result = $this->product_importer->import($row->url, (int) $row->country_id, $userId, $costOverride, $extra);
+        } catch (Exception $e) {
+            $this->Product_import_model->record_failed(array(
+                'url' => $row->url,
+                'domain' => $row->domain,
+                'country_id' => $row->country_id,
+                'user_id' => $userId,
+                'category_id' => $row->category_id,
+                'subcategory_id' => $row->subcategory_id,
+                'base_price' => $row->base_price,
+                'ship_min_days' => $row->ship_min_days,
+                'ship_max_days' => $row->ship_max_days,
+                'stock' => $row->stock,
+                'product_name' => isset($row->product_name) ? $row->product_name : '',
+                'error' => $e->getMessage(),
+            ));
+            return array(
+                'ok' => false,
+                'id' => (int) $row->id,
+                'url' => $row->url,
+                'error' => $e->getMessage(),
+            );
+        }
+
+        $this->Product_import_model->delete_unknown((int) $row->id);
+        return array(
+            'ok' => true,
+            'id' => (int) $row->id,
+            'url' => $row->url,
+            'existing' => !empty($result['existing']),
+            'product_id' => (int) $result['product_id'],
+            'status' => !empty($result['existing']) ? 'existing' : 'imported',
+        );
     }
 
     public function unknown_delete($id = 0)
     {
         if (!ec_is_admin()) {
-            $this->session->set_flashdata('error', 'You do not have permission to manage unknown import links.');
+            $this->session->set_flashdata('error', 'You do not have permission to manage failed import links.');
             redirect('/admin/products');
             return;
         }
         $this->load->model('Product_import_model');
         $this->Product_import_model->delete_unknown($id);
-        $this->session->set_flashdata('success', 'Unknown link removed.');
+        $this->session->set_flashdata('success', 'Failed import removed.');
         redirect('/admin/products/unknown');
     }
 
     public function form($id = 0)
     {
+        if ($id !== 0 && $id !== '0' && !ctype_digit((string) $id)) {
+            show_404();
+            return;
+        }
+        $id = (int) $id;
 
         $product = $id ? $this->Product_model->get($id) : null;
         if ($id && !$product) {
@@ -354,13 +750,15 @@ class Products extends CI_Controller {
 
         $this->load->model('Country_model');
         $this->load->model('User_model');
-        $ecommerceUsers = array();
-        foreach ($this->User_model->all() as $user) {
-            if ((int) $user->roleID === ROLE_ECOMMERCE) {
-                $ecommerceUsers[] = $user;
-            }
-        }
+        $this->load->model('Ec_category_model');
+        $ecommerceUsers = $this->User_model->ecommerce_users();
         $storeCopies = $product ? $this->Product_model->store_copies($product->id) : array();
+        $countryId = $product ? (int) $product->country_id : 0;
+        $selection = $product
+            ? $this->Ec_category_model->selection_for_product($product->id)
+            : array('category_id' => 0, 'subcategory_id' => 0);
+        $selectedCategory = !empty($selection['category_id']) ? $this->Ec_category_model->get($selection['category_id']) : null;
+        $selectedSubcategory = !empty($selection['subcategory_id']) ? $this->Ec_category_model->get($selection['subcategory_id']) : null;
         $data = array(
             'title' => $product ? 'Edit Product' : 'Add Product',
             'product' => $product,
@@ -371,14 +769,24 @@ class Products extends CI_Controller {
             'attributes' => $product ? $this->Product_model->attributes($product->id) : array(),
             'variations' => $product ? $this->Product_model->variations($product->id) : array(),
             'sources' => $product ? $this->Product_model->sources($product->id) : array(),
+            'creatives' => $product ? $this->Product_model->creatives($product->id) : array(),
             'store_copies' => $storeCopies,
             'price_locked' => $product && ec_is_ecommerce() && !empty($storeCopies),
+            'category_tree' => $this->Ec_category_model->tree_for_country($countryId),
+            'selected_category_id' => (int) $selection['category_id'],
+            'selected_subcategory_id' => (int) $selection['subcategory_id'],
+            'selected_category_name' => $selectedCategory ? $selectedCategory->name : '',
+            'selected_subcategory_name' => $selectedSubcategory ? $selectedSubcategory->name : '',
         );
         $this->template->admin('products/form', $data);
     }
 
     public function view($id = 0)
     {
+        if (!ctype_digit((string) $id) || (int) $id < 1) {
+            show_404();
+            return;
+        }
         $product = $this->Product_model->get($id);
         if (!$product) {
             $this->session->set_flashdata('error', 'Product not found.');
@@ -433,9 +841,47 @@ class Products extends CI_Controller {
             'products' => $this->Product_model->all_active(8),
             'product_images' => $this->Product_model->images($product->id),
         );
+        $this->load->model('Ec_category_model');
+        $trail = $this->Ec_category_model->trail_for_storefront($product->id, $storeRow ? (int) $storeRow->id : 0);
+        $data['product_category'] = $trail['category'];
+        $data['product_subcategory'] = $trail['subcategory'];
+
+        if (function_exists('product_family')) {
+            $family = product_family($product, true);
+            $data['product'] = $family['parent'];
+            $data['cart_product'] = $family['selected'];
+            $data['child_products'] = $family['children'];
+            $data['product_images'] = $this->Product_model->images($family['parent']->id);
+        } else {
+            $data['cart_product'] = $product;
+            $data['child_products'] = array();
+        }
+
+        $data['pdp_design'] = function_exists('product_detail_design') ? product_detail_design($settings) : 'old';
+        if ($data['pdp_design'] === 'new' && !empty($data['product'])) {
+            $this->load->model('Product_faq_model');
+            $this->load->model('Product_review_model');
+            $storeId = $storeRow ? (int) $storeRow->id : 0;
+            $parent = $data['product'];
+            $data['product_attributes'] = product_attributes_rows($parent->id);
+            $data['product_faqs'] = $storeId ? $this->Product_faq_model->for_product($storeId, $parent->id, true) : array();
+            $data['review_summary'] = $storeId ? $this->Product_review_model->summary($storeId, $parent->id) : array('count' => 0, 'average' => 0, 'breakdown' => array(5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0));
+            $data['product_reviews'] = $storeId ? $this->Product_review_model->published_for_product($storeId, $parent->id, 8, 0) : array();
+            $data['review_page'] = 1;
+            $data['review_limit'] = 8;
+            $data['review_total'] = (int) $data['review_summary']['count'];
+            $data['review_pages'] = 1;
+            $data['child_galleries'] = array();
+            $data['in_wishlist'] = false;
+            $data['open_tab'] = '';
+        }
 
         $this->load->view('frontend/' . $theme->slug . '/header', $data);
-        $this->load->view('frontend/' . $theme->slug . '/detail', $data);
+        if (!empty($data['pdp_design']) && $data['pdp_design'] === 'new') {
+            $this->load->view('frontend/shared/product_detail/new', $data);
+        } else {
+            $this->load->view('frontend/' . $theme->slug . '/detail', $data);
+        }
         $this->load->view('frontend/' . $theme->slug . '/footer', $data);
     }
 
@@ -469,6 +915,10 @@ class Products extends CI_Controller {
         $payload = array(
             'name' => trim($this->input->post('name')),
             'sku' => trim($this->input->post('sku')),
+            'parent_sku' => trim((string) $this->input->post('parent_sku')),
+            'is_default' => ($this->input->post('parent_sku') && $this->input->post('is_default')) ? 1 : 0,
+            'brand' => trim((string) $this->input->post('brand')),
+            'made_by' => trim((string) $this->input->post('made_by')),
             'slug' => $this->_slug($this->input->post('slug'), $this->input->post('name')),
             'stock' => (int) $this->input->post('stock'),
             'supplier_id' => $this->input->post('supplier_id') ? (int) $this->input->post('supplier_id') : null,
@@ -481,12 +931,13 @@ class Products extends CI_Controller {
             'seo_description' => trim($this->input->post('seo_description')),
             'seo_keywords' => trim($this->input->post('seo_keywords')),
             'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
+            'auto_add_to_stores' => $this->input->post('auto_add_to_stores') ? 1 : 0,
         );
+        $payload['max_sale_price'] = (float) $this->input->post('max_sale_price');
         if (!$priceLocked) {
             $payload['price'] = (float) $this->input->post('price');
             $payload['compare_price'] = (float) $this->input->post('compare_price');
             $payload['cost_price'] = (float) $this->input->post('cost_price');
-            $payload['max_sale_price'] = (float) $this->input->post('max_sale_price');
         }
 
         if (ec_is_ecommerce()) {
@@ -503,13 +954,155 @@ class Products extends CI_Controller {
         }
 
         $productId = $this->Product_model->save($payload, $id);
+        if (function_exists('product_sync_default_child')) {
+            product_sync_default_child($productId);
+        }
         $this->_save_gallery($productId);
         $this->_save_attributes($productId);
         $this->_save_variations($productId, $priceLocked);
         $this->_save_sources($productId);
+        $this->_save_creatives($productId);
+        $this->_save_categories($productId, (int) $payload['country_id']);
+        if (empty($payload['store_id']) && (empty($existing) || empty($existing->store_id))) {
+            if (method_exists($this->Product_model, 'sync_copy_fields')) {
+                $this->Product_model->sync_copy_fields($productId, array(
+                    'max_sale_price' => $payload['max_sale_price'],
+                    'brand' => isset($payload['brand']) ? $payload['brand'] : '',
+                    'made_by' => isset($payload['made_by']) ? $payload['made_by'] : '',
+                ));
+            } elseif (method_exists($this->Product_model, 'sync_max_sale_price')) {
+                $this->Product_model->sync_max_sale_price($productId, $payload['max_sale_price']);
+            }
+            $added = 0;
+            if (!empty($payload['auto_add_to_stores']) && function_exists('ec_auto_add_catalog_product')) {
+                $added = (int) ec_auto_add_catalog_product($productId, true);
+            }
+            $this->session->set_flashdata('success', ($id ? 'Product updated successfully.' : 'Product added successfully.') . $this->auto_add_flash($added, !empty($payload['auto_add_to_stores'])));
+            redirect('/admin/products/form/' . $productId);
+            return;
+        }
 
         $this->session->set_flashdata('success', $id ? 'Product updated successfully.' : 'Product added successfully.');
         redirect('/admin/products/form/' . $productId);
+    }
+
+    public function create_child()
+    {
+        $parentId = (int) $this->input->post('parent_id');
+        $name = trim((string) $this->input->post('name'));
+        $price = $this->input->post('price');
+        $fail = function ($message, $code = 400) {
+            $this->output
+                ->set_status_header($code)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('ok' => false, 'error' => $message)));
+        };
+
+        $parent = $parentId ? $this->Product_model->get($parentId) : null;
+        if (!$parent || !$this->_can_manage($parent)) {
+            $fail('You do not have permission to add a child for this product.', 403);
+            return;
+        }
+        if (!empty($parent->store_id)) {
+            $fail('Store copies cannot have children from this list.');
+            return;
+        }
+        if ($name === '') {
+            $fail('Title is required.');
+            return;
+        }
+        if ($price === '' || $price === null || !is_numeric($price) || (float) $price < 0) {
+            $fail('Enter a valid base price.');
+            return;
+        }
+
+        if (function_exists('ensure_product_parent_columns')) {
+            ensure_product_parent_columns();
+        }
+
+        $parentSku = isset($parent->parent_sku) ? trim((string) $parent->parent_sku) : '';
+        if ($parentSku === '') {
+            $parentSku = trim((string) $parent->sku);
+        }
+        if ($parentSku === '') {
+            $parentSku = $this->Product_model->unique_sku('P' . (int) $parent->id);
+            $this->Product_model->save(array('sku' => $parentSku), (int) $parent->id);
+        }
+
+        $suffix = strtoupper(preg_replace('/[^A-Za-z0-9]+/', '-', $name));
+        $suffix = trim($suffix, '-');
+        if ($suffix === '') {
+            $suffix = 'CHILD';
+        }
+        $sku = $this->Product_model->unique_sku($parentSku . '-' . $suffix);
+        $slug = $this->Product_model->unique_slug($this->_slug('', $name));
+        $image = $this->_upload_named('image');
+        if ($image === '') {
+            $image = isset($parent->image) ? $parent->image : '';
+        }
+
+        $hasDefault = false;
+        if ($this->db->field_exists('parent_sku', 'products')) {
+            $this->db
+                ->group_start()
+                    ->where('store_id IS NULL', null, false)
+                    ->or_where('store_id', 0)
+                ->group_end()
+                ->where('parent_sku', $parentSku)
+                ->where('is_default', 1);
+            $hasDefault = $this->db->count_all_results('products') > 0;
+        }
+
+        $payload = array(
+            'name' => $name,
+            'sku' => $sku,
+            'parent_sku' => $parentSku,
+            'is_default' => $hasDefault ? 0 : 1,
+            'slug' => $slug,
+            'brand' => isset($parent->brand) ? $parent->brand : '',
+            'made_by' => isset($parent->made_by) ? $parent->made_by : '',
+            'price' => round((float) $price, 2),
+            'compare_price' => isset($parent->compare_price) ? (float) $parent->compare_price : 0,
+            'cost_price' => isset($parent->cost_price) ? (float) $parent->cost_price : 0,
+            'max_sale_price' => isset($parent->max_sale_price) ? (float) $parent->max_sale_price : 0,
+            'stock' => isset($parent->stock) ? (int) $parent->stock : 0,
+            'ship_min_days' => isset($parent->ship_min_days) ? (int) $parent->ship_min_days : 0,
+            'ship_max_days' => isset($parent->ship_max_days) ? (int) $parent->ship_max_days : 0,
+            'supplier_id' => !empty($parent->supplier_id) ? (int) $parent->supplier_id : null,
+            'country_id' => !empty($parent->country_id) ? (int) $parent->country_id : null,
+            'description' => isset($parent->description) ? $parent->description : '',
+            'details' => isset($parent->details) ? $parent->details : '',
+            'seo_title' => $name,
+            'seo_description' => isset($parent->seo_description) ? $parent->seo_description : '',
+            'seo_keywords' => isset($parent->seo_keywords) ? $parent->seo_keywords : '',
+            'status' => 1,
+            'auto_add_to_stores' => !empty($parent->auto_add_to_stores) ? 1 : 0,
+            'image' => $image,
+            'created_by' => !empty($parent->created_by) ? (int) $parent->created_by : (int) ec_user()->UserID,
+        );
+
+        $childId = $this->Product_model->save($payload, 0);
+        if ($childId < 1) {
+            $fail('Could not create child product.', 500);
+            return;
+        }
+        if (function_exists('product_sync_default_child')) {
+            product_sync_default_child($childId);
+        }
+
+        $this->load->model('Ec_category_model');
+        $this->Ec_category_model->set_product_categories($childId, $this->Ec_category_model->ids_for_product($parent->id));
+
+        $added = 0;
+        if (!empty($payload['auto_add_to_stores']) && function_exists('ec_auto_add_catalog_product')) {
+            $added = (int) ec_auto_add_catalog_product($childId, true);
+        }
+
+        $this->output->set_content_type('application/json')->set_output(json_encode(array(
+            'ok' => true,
+            'id' => $childId,
+            'added' => $added,
+        )));
     }
 
     public function delete_image($id = 0)
@@ -691,6 +1284,53 @@ class Products extends CI_Controller {
         $this->Product_model->replace_sources($productId, $clean);
     }
 
+    private function posted_creative_links()
+    {
+        $links = $this->input->post('creative_links');
+        $rows = $this->input->post('creatives');
+        $clean = array();
+        $seen = array();
+        $candidates = array();
+        if (is_array($links)) {
+            foreach ($links as $link) {
+                $candidates[] = array('link' => $link, 'label' => '');
+            }
+        }
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    $candidates[] = array('link' => $row, 'label' => '');
+                    continue;
+                }
+                $candidates[] = array(
+                    'link' => isset($row['link']) ? $row['link'] : '',
+                    'label' => isset($row['label']) ? $row['label'] : '',
+                );
+            }
+        }
+        foreach ($candidates as $row) {
+            $link = trim((string) $row['link']);
+            if ($link === '') {
+                continue;
+            }
+            $key = strtolower(rtrim($link, '/'));
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $clean[] = array(
+                'link' => $link,
+                'label' => trim((string) $row['label']),
+            );
+        }
+        return $clean;
+    }
+
+    private function _save_creatives($productId)
+    {
+        $this->Product_model->replace_creatives($productId, $this->posted_creative_links());
+    }
+
     private function _upload_variation_image($index)
     {
         $field = null;
@@ -707,6 +1347,19 @@ class Products extends CI_Controller {
             $field = 'variation_image';
         }
         return $field ? $this->_upload_named($field) : '';
+    }
+
+    private function _save_categories($productId, $countryId)
+    {
+        $this->load->model('Ec_category_model');
+        $ids = $this->Ec_category_model->ids_from_form(
+            $countryId,
+            (int) $this->input->post('category_id'),
+            (int) $this->input->post('subcategory_id'),
+            $this->input->post('category_name'),
+            $this->input->post('subcategory_name')
+        );
+        $this->Ec_category_model->set_product_categories($productId, $ids);
     }
 
     private function _slug($slug, $name)

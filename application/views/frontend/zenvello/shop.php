@@ -12,7 +12,7 @@ $shopBase = storefront_url('shop');
     <li><a href="<?= storefront_url('shop/index') ?>">Home</a></li>
     <?php if ($activeCategory): ?>
       <li><a href="<?= $shopBase ?>">Shop</a></li>
-      <li aria-current="page"><?= htmlspecialchars($activeCategory->name) ?></li>
+      <li aria-current="page"><?= htmlspecialchars(category_store_name($activeCategory)) ?></li>
     <?php else: ?>
       <li aria-current="page">All Products</li>
     <?php endif; ?>
@@ -24,7 +24,7 @@ $shopBase = storefront_url('shop');
     <img src="<?= $assets ?>assets/images/hero/hero-living.jpg" alt="<?= htmlspecialchars($store->name) ?>">
     <div class="cathero__body">
       <p class="cathero__kicker"><?= $activeCategory ? 'Category' : 'Everything In One Place' ?></p>
-      <h1 class="cathero__title"><?= htmlspecialchars($activeCategory ? $activeCategory->name : 'All Products') ?></h1>
+      <h1 class="cathero__title"><?= htmlspecialchars($activeCategory ? category_store_name($activeCategory) : 'All Products') ?></h1>
       <p class="cathero__text"><?= htmlspecialchars($activeCategory && $activeCategory->description ? $activeCategory->description : ('Browse the full ' . $store->name . ' range.')) ?></p>
       <a class="btn btn--yellow btn--lg" href="#products">Start Browsing <span class="arrow" aria-hidden="true">&rarr;</span></a>
     </div>
@@ -57,7 +57,7 @@ $shopBase = storefront_url('shop');
             <?php if ((int) $cat->product_count < 1 && $filters['category'] !== $cat->slug) continue; ?>
             <label class="check">
               <input type="radio" name="category" value="<?= htmlspecialchars($cat->slug) ?>" <?= $filters['category'] === $cat->slug ? 'checked' : '' ?> onchange="this.form.submit()">
-              <span><?= htmlspecialchars(($cat->icon ? $cat->icon . ' ' : '') . $cat->name) ?> <span class="check__count">(<?= (int) $cat->product_count ?>)</span></span>
+              <span><?= htmlspecialchars(($cat->icon ? $cat->icon . ' ' : '') . category_store_name($cat)) ?> <span class="check__count">(<?= (int) $cat->product_count ?>)</span></span>
             </label>
           <?php endforeach; ?>
         </div>
@@ -117,11 +117,11 @@ $shopBase = storefront_url('shop');
   <section aria-label="Products">
     <div class="section-head" style="margin-bottom:16px">
       <div>
-        <h2 class="section-title" id="shop-title"><?= htmlspecialchars($activeCategory ? $activeCategory->name : 'Shop') ?></h2>
+        <h2 class="section-title" id="shop-title"><?= htmlspecialchars($activeCategory ? category_store_name($activeCategory) : 'Shop') ?></h2>
         <p class="section-sub"><?= count($products) ?> product<?= count($products) === 1 ? '' : 's' ?></p>
       </div>
     </div>
-    <div class="grid-6">
+    <div class="grid-4">
       <?php if (empty($products)): ?>
         <p class="section-sub">No products match these filters.</p>
       <?php else: ?>

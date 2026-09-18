@@ -62,6 +62,9 @@ $v = function ($key, $fallback = '') use ($values) {
                     <div class="text-muted small text-uppercase"><?= htmlspecialchars($slide->kicker) ?></div>
                   <?php endif; ?>
                   <div class="fw-medium"><?= nl2br(htmlspecialchars($slide->title)) ?></div>
+                  <?php if (isset($slide->extra_text) && (int) $slide->extra_text !== 1): ?>
+                    <span class="badge text-bg-light text-muted">Image only</span>
+                  <?php endif; ?>
                   <?php if ($slide->text !== '' && $slide->text !== null): ?>
                     <div class="text-muted small"><?= htmlspecialchars($slide->text) ?></div>
                   <?php endif; ?>

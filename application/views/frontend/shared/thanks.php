@@ -21,6 +21,11 @@
     <?php else: ?>
       <p class="ec-lead">Your order was placed successfully.</p>
     <?php endif; ?>
-    <a class="ec-btn" href="<?= storefront_url('shop') ?>">Continue shopping</a>
+    <?php if (!empty($order) && storefront_customer()): ?>
+      <a class="ec-btn" href="<?= storefront_url('account/orders/' . rawurlencode($order->order_no)) ?>">View order</a>
+      <a class="ec-btn secondary" href="<?= storefront_url('shop') ?>">Continue shopping</a>
+    <?php else: ?>
+      <a class="ec-btn" href="<?= storefront_url('shop') ?>">Continue shopping</a>
+    <?php endif; ?>
   </div>
 </section>

@@ -10,6 +10,7 @@ class Ec_category_model extends CI_Model {
             country_id INT(11) DEFAULT NULL,
             parent_id INT(11) DEFAULT NULL,
             name VARCHAR(150) NOT NULL,
+            local_name VARCHAR(150) NOT NULL DEFAULT '',
             slug VARCHAR(160) NOT NULL,
             icon VARCHAR(20) NOT NULL DEFAULT '',
             image VARCHAR(255) NOT NULL DEFAULT '',
@@ -77,6 +78,7 @@ class Ec_category_model extends CI_Model {
         $cols = array(
             'country_id' => "ALTER TABLE categories ADD COLUMN country_id INT(11) DEFAULT NULL AFTER id",
             'parent_id' => "ALTER TABLE categories ADD COLUMN parent_id INT(11) DEFAULT NULL AFTER country_id",
+            'local_name' => "ALTER TABLE categories ADD COLUMN local_name VARCHAR(150) NOT NULL DEFAULT '' AFTER name",
             'hero_image' => "ALTER TABLE categories ADD COLUMN hero_image VARCHAR(255) NOT NULL DEFAULT '' AFTER image",
             'seo_title' => "ALTER TABLE categories ADD COLUMN seo_title VARCHAR(255) NOT NULL DEFAULT '' AFTER description",
             'seo_description' => "ALTER TABLE categories ADD COLUMN seo_description TEXT NULL AFTER seo_title",
@@ -90,6 +92,7 @@ class Ec_category_model extends CI_Model {
             'hero_disc_big' => "ALTER TABLE categories ADD COLUMN hero_disc_big VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_small",
             'hero_disc_span' => "ALTER TABLE categories ADD COLUMN hero_disc_span VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_big",
             'hero_disc_on' => "ALTER TABLE categories ADD COLUMN hero_disc_on TINYINT(1) NOT NULL DEFAULT 1 AFTER hero_disc_span",
+            'hero_extra_text' => "ALTER TABLE categories ADD COLUMN hero_extra_text TINYINT(1) NOT NULL DEFAULT 1 AFTER hero_disc_on",
         );
         foreach ($cols as $field => $sql) {
             if (!$this->db->field_exists($field, 'categories')) {
@@ -107,6 +110,7 @@ class Ec_category_model extends CI_Model {
             'hero_disc_big' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_big VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_small",
             'hero_disc_span' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_span VARCHAR(40) NOT NULL DEFAULT '' AFTER hero_disc_big",
             'hero_disc_on' => "ALTER TABLE store_category_settings ADD COLUMN hero_disc_on TINYINT(1) NOT NULL DEFAULT 1 AFTER hero_disc_span",
+            'hero_extra_text' => "ALTER TABLE store_category_settings ADD COLUMN hero_extra_text TINYINT(1) NOT NULL DEFAULT 1 AFTER hero_disc_on",
         );
         foreach ($scsCols as $field => $sql) {
             if (!$this->db->field_exists($field, 'store_category_settings')) {
@@ -149,6 +153,16 @@ class Ec_category_model extends CI_Model {
             } else {
                 $this->db->where('categories.parent_id', (int) $filters['parent_id']);
             }
+        }
+        $q = isset($filters['q']) ? trim((string) $filters['q']) : '';
+        if ($q !== '') {
+            $this->db->group_start()
+                ->like('categories.name', $q)
+                ->or_like('categories.local_name', $q)
+                ->or_like('categories.slug', $q)
+                ->or_like('categories.icon', $q)
+                ->or_like('parent.name', $q)
+                ->group_end();
         }
         return $this->db->get()->result();
     }
@@ -229,6 +243,27 @@ class Ec_category_model extends CI_Model {
         return $this->db->where('id', $id)->delete('categories');
     }
 
+    public function tree_for_country($countryId)
+    {
+        $parents = $countryId ? $this->roots_for_country($countryId) : array();
+        $out = array();
+        foreach ($parents as $parent) {
+            $children = array();
+            foreach ($this->children($parent->id) as $child) {
+                $children[] = array(
+                    'id' => (int) $child->id,
+                    'name' => $child->name,
+                );
+            }
+            $out[] = array(
+                'id' => (int) $parent->id,
+                'name' => $parent->name,
+                'children' => $children,
+            );
+        }
+        return $out;
+    }
+
     public function ids_for_product($productId)
     {
         $this->ensure_tables();
@@ -238,6 +273,126 @@ class Ec_category_model extends CI_Model {
             $ids[] = (int) $row->category_id;
         }
         return $ids;
+    }
+
+    public function selection_for_product($productId)
+    {
+        $ids = $this->ids_for_product($productId);
+        $categoryId = 0;
+        $subcategoryId = 0;
+        foreach ($ids as $cid) {
+            $cat = $this->get($cid);
+            if (!$cat) {
+                continue;
+            }
+            $parentId = (int) $cat->parent_id;
+            if ($parentId < 1) {
+                if (!$categoryId) {
+                    $categoryId = (int) $cat->id;
+                }
+            } elseif (!$subcategoryId) {
+                $subcategoryId = (int) $cat->id;
+                if (!$categoryId) {
+                    $categoryId = $parentId;
+                }
+            }
+        }
+        return array(
+            'category_id' => $categoryId,
+            'subcategory_id' => $subcategoryId,
+        );
+    }
+
+    public function trail_for_storefront($productId, $storeId = 0)
+    {
+        $selection = $this->selection_for_product($productId);
+        $category = !empty($selection['category_id']) ? $this->get($selection['category_id']) : null;
+        $subcategory = !empty($selection['subcategory_id']) ? $this->get($selection['subcategory_id']) : null;
+        $storeId = (int) $storeId;
+        if ($category) {
+            $category = $storeId > 0 ? $this->resolve_for_store($category, $storeId) : $category;
+            if (empty($category->display_name)) {
+                $category->display_name = category_store_name($category);
+            }
+        }
+        if ($subcategory) {
+            $subcategory = $storeId > 0 ? $this->resolve_for_store($subcategory, $storeId) : $subcategory;
+            if (empty($subcategory->display_name)) {
+                $subcategory->display_name = category_store_name($subcategory);
+            }
+        }
+        return array(
+            'category' => $category,
+            'subcategory' => $subcategory,
+        );
+    }
+
+    public function ids_from_form($countryId, $categoryId, $subcategoryId, $categoryName = '', $subcategoryName = '')
+    {
+        $countryId = (int) $countryId;
+        $categoryId = (int) $categoryId;
+        $subcategoryId = (int) $subcategoryId;
+        $categoryName = trim((string) $categoryName);
+        $subcategoryName = trim((string) $subcategoryName);
+        if ($categoryName !== '') {
+            $categoryId = $this->upsert_named($countryId, $categoryId, $categoryName, 0);
+        }
+        if ($subcategoryName !== '' && $categoryId) {
+            $subcategoryId = $this->upsert_named($countryId, $subcategoryId, $subcategoryName, $categoryId);
+        }
+        return $this->ids_from_selection($countryId, $categoryId, $subcategoryId);
+    }
+
+    public function upsert_named($countryId, $id, $name, $parentId = 0)
+    {
+        $name = trim((string) $name);
+        $countryId = (int) $countryId;
+        $id = (int) $id;
+        $parentId = (int) $parentId;
+        if ($name === '' || $countryId < 1) {
+            return $id;
+        }
+        $match = $this->find_by_name($countryId, $name, $parentId);
+        if ($match) {
+            return (int) $match->id;
+        }
+        $current = $id ? $this->get($id) : null;
+        if ($current && (int) $current->country_id === $countryId) {
+            $curParent = (int) $current->parent_id;
+            $parentOk = $parentId < 1 ? ($curParent < 1) : ($curParent === $parentId);
+            if ($parentOk) {
+                $this->save(array('name' => $name), (int) $current->id);
+                return (int) $current->id;
+            }
+        }
+        return $this->find_or_create($countryId, $name, $parentId);
+    }
+
+    public function ids_from_selection($countryId, $categoryId, $subcategoryId)
+    {
+        $ids = array();
+        $countryId = (int) $countryId;
+        $categoryId = (int) $categoryId;
+        $subcategoryId = (int) $subcategoryId;
+        if ($categoryId > 0) {
+            $cat = $this->get($categoryId);
+            if ($cat && (int) $cat->country_id === $countryId) {
+                $ids[] = $categoryId;
+            }
+        }
+        if ($subcategoryId > 0) {
+            $sub = $this->get($subcategoryId);
+            if ($sub && (int) $sub->country_id === $countryId) {
+                if (!$categoryId || !(int) $sub->parent_id || (int) $sub->parent_id === $categoryId) {
+                    $ids[] = $subcategoryId;
+                    $parentId = (int) $sub->parent_id;
+                    if ($parentId && !in_array($parentId, $ids, true)) {
+                        $ids[] = $parentId;
+                    }
+                }
+            }
+        }
+        return array_values(array_unique($ids));
     }
 
     public function set_product_categories($productId, $categoryIds)
@@ -410,6 +565,7 @@ class Ec_category_model extends CI_Model {
             return null;
         }
         $setting = $this->store_setting($storeId, $category->id);
+        $category->display_name = category_store_name($category);
         $category->display_image = ($setting && trim((string) $setting->image) !== '') ? $setting->image : $category->image;
         $category->display_hero = ($setting && trim((string) $setting->hero_image) !== '') ? $setting->hero_image : $category->hero_image;
         $storeSeoTitle = $setting ? trim((string) $setting->seo_title) : '';
@@ -417,7 +573,7 @@ class Ec_category_model extends CI_Model {
         $storeSeoKeys = $setting ? trim((string) $setting->seo_keywords) : '';
         $category->display_seo_title = $storeSeoTitle !== ''
             ? $storeSeoTitle
-            : (trim((string) $category->seo_title) !== '' ? $category->seo_title : $category->name);
+            : (trim((string) $category->seo_title) !== '' ? $category->seo_title : $category->display_name);
         $category->display_seo_description = $storeSeoDesc !== ''
             ? $storeSeoDesc
             : (trim((string) $category->seo_description) !== '' ? $category->seo_description : (string) $category->description);
@@ -481,6 +637,14 @@ class Ec_category_model extends CI_Model {
         }
         $category->display_hero_disc_on = $discOn === 1 ? 1 : 0;
 
+        $extraText = 1;
+        if ($setting && isset($setting->hero_extra_text)) {
+            $extraText = (int) $setting->hero_extra_text;
+        } elseif (isset($category->hero_extra_text)) {
+            $extraText = (int) $category->hero_extra_text;
+        }
+        $category->display_hero_extra_text = $extraText === 1 ? 1 : 0;
+
         $category->store_enabled = $setting ? (int) $setting->enabled : 0;
         $category->show_on_home = $setting ? (int) $setting->show_on_home : 0;
         return $category;
@@ -493,7 +657,7 @@ class Ec_category_model extends CI_Model {
             ->select('categories.*, COUNT(DISTINCT products.id) as product_count, scs.enabled, scs.show_on_home, scs.image as store_image', false)
             ->from('categories')
             ->join('product_categories', 'product_categories.category_id = categories.id', 'left')
-            ->join('products', 'products.id = product_categories.product_id AND products.store_id = ' . (int) $storeId . ' AND products.status = 1', 'left', false)
+            ->join('products', 'products.id = product_categories.product_id AND products.store_id = ' . (int) $storeId . ' AND products.status = 1' . ($this->db->table_exists('products') && $this->db->field_exists('parent_sku', 'products') ? " AND (products.parent_sku IS NULL OR products.parent_sku = '')" : ''), 'left', false)
             ->join('store_category_settings scs', 'scs.category_id = categories.id AND scs.store_id = ' . (int) $storeId, 'left', false)
             ->where('categories.status', 1)
             ->group_by('categories.id')
@@ -503,6 +667,94 @@ class Ec_category_model extends CI_Model {
             $this->db->where('categories.country_id', (int) $countryId);
         }
         return $this->db->get()->result();
+    }
+
+    public function store_product_counts($storeId, $categoryIds)
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) $categoryIds))));
+        $counts = array();
+        foreach ($ids as $id) {
+            $counts[$id] = 0;
+        }
+        if (empty($ids) || !$this->db->table_exists('product_categories')) {
+            return $counts;
+        }
+        $rows = $this->db
+            ->select('product_categories.category_id, COUNT(DISTINCT products.id) as product_count', false)
+            ->from('product_categories')
+            ->join('products', 'products.id = product_categories.product_id', 'inner')
+            ->where('products.store_id', (int) $storeId)
+            ->where('products.status', 1)
+            ->where_in('product_categories.category_id', $ids);
+        if ($this->db->field_exists('parent_sku', 'products')) {
+            $this->db->group_start()
+                ->where('products.parent_sku', '')
+                ->or_where('products.parent_sku IS NULL', null, false)
+                ->group_end();
+        }
+        $rows = $this->db
+            ->group_by('product_categories.category_id')
+            ->get()
+            ->result();
+        foreach ($rows as $row) {
+            $counts[(int) $row->category_id] = (int) $row->product_count;
+        }
+        return $counts;
+    }
+
+    public function storefront_children($parentId, $storeId, $hideEmpty = false)
+    {
+        $children = $this->children($parentId);
+        foreach ($children as $child) {
+            $this->resolve_for_store($child, $storeId);
+        }
+        if (!$hideEmpty || empty($children)) {
+            return $children;
+        }
+
+        $countIds = array();
+        $childIds = array();
+        foreach ($children as $child) {
+            $cid = (int) $child->id;
+            $childIds[] = $cid;
+            $countIds[] = $cid;
+        }
+
+        $grandchildren = array();
+        if (!empty($childIds)) {
+            $rows = $this->db
+                ->select('id, parent_id')
+                ->where('status', 1)
+                ->where_in('parent_id', $childIds)
+                ->get('categories')
+                ->result();
+            foreach ($rows as $row) {
+                $pid = (int) $row->parent_id;
+                $gid = (int) $row->id;
+                if (!isset($grandchildren[$pid])) {
+                    $grandchildren[$pid] = array();
+                }
+                $grandchildren[$pid][] = $gid;
+                $countIds[] = $gid;
+            }
+        }
+
+        $counts = $this->store_product_counts($storeId, $countIds);
+        $visible = array();
+        foreach ($children as $child) {
+            $cid = (int) $child->id;
+            $total = isset($counts[$cid]) ? (int) $counts[$cid] : 0;
+            if (!empty($grandchildren[$cid])) {
+                foreach ($grandchildren[$cid] as $gid) {
+                    $total += isset($counts[$gid]) ? (int) $counts[$gid] : 0;
+                }
+            }
+            $child->product_count = $total;
+            if ($total > 0) {
+                $visible[] = $child;
+            }
+        }
+        return $visible;
     }
 
     public function category_product_ids($categoryId, $includeChildren = true)
@@ -601,7 +853,7 @@ class Ec_category_model extends CI_Model {
         if ($format === 'name_parent') {
             return $this->plan_name_parent_import((int) $countryId, $rows);
         }
-        return $this->plan_full_import($rows);
+        return $this->plan_full_import($rows, (int) $countryId);
     }
 
     public function execute_csv_import($plan)
@@ -656,9 +908,10 @@ class Ec_category_model extends CI_Model {
         return $plan;
     }
 
-    protected function plan_full_import($rows)
+    protected function plan_full_import($rows, $countryId = 0)
     {
         $this->ensure_tables();
+        $countryId = (int) $countryId;
         $countries = array();
         foreach ($this->db->select('id, name')->get('countries')->result() as $country) {
             $countries[(int) $country->id] = $country->name;
@@ -727,7 +980,6 @@ class Ec_category_model extends CI_Model {
 
         foreach ((array) $rows as $row) {
             $line = isset($row['line']) ? (int) $row['line'] : 0;
-            $countryId = (int) (isset($row['country_id']) ? $row['country_id'] : 0);
             $parentName = trim((string) (isset($row['parent']) ? $row['parent'] : ''));
             $name = trim((string) (isset($row['name']) ? $row['name'] : ''));
             $slugIn = trim((string) (isset($row['slug']) ? $row['slug'] : ''));
@@ -737,6 +989,7 @@ class Ec_category_model extends CI_Model {
             $heroKicker = trim((string) (isset($row['hero_kicker']) ? $row['hero_kicker'] : ''));
             $heroTitle = trim((string) (isset($row['hero_title']) ? $row['hero_title'] : ''));
             $heroText = trim((string) (isset($row['hero_text']) ? $row['hero_text'] : ''));
+            $localName = trim((string) (isset($row['local_name']) ? $row['local_name'] : ''));
 
             $item = array(
                 'line' => $line,
@@ -806,6 +1059,7 @@ class Ec_category_model extends CI_Model {
                 'country_id' => $countryId,
                 'parent_id' => $parentId ? $parentId : null,
                 'name' => $name,
+                'local_name' => $localName,
                 'slug' => $slug,
                 'icon' => $icon,
                 'image' => '',
@@ -862,10 +1116,10 @@ class Ec_category_model extends CI_Model {
     protected function validate_import_row($countries, $name, $countryId, $parentName, $slugIn, $icon, $imageUrl, $heroUrl, $heroKicker, $heroTitle)
     {
         if ($countryId < 1) {
-            return 'country_id is required and must be a database ID.';
+            return 'Please select a country.';
         }
         if (!isset($countries[$countryId])) {
-            return 'country_id ' . $countryId . ' does not exist.';
+            return 'Selected country was not found.';
         }
         if ($name === '') {
             return 'Name is required.';
@@ -1008,6 +1262,7 @@ class Ec_category_model extends CI_Model {
 
             $newChildren[$plannedChildKey] = array(
                 'name' => $name,
+                'local_name' => isset($row['local_name']) ? trim((string) $row['local_name']) : '',
                 'parent' => $parent,
                 'parent_key' => $parentKey,
             );
@@ -1038,6 +1293,7 @@ class Ec_category_model extends CI_Model {
                 'country_id' => $countryId,
                 'parent_id' => isset($rootByKey[$child['parent_key']]) ? (int) $rootByKey[$child['parent_key']]->id : null,
                 'name' => $child['name'],
+                'local_name' => isset($child['local_name']) ? $child['local_name'] : '',
                 'slug' => $this->unique_slug($countryId, $child['name'], $usedSlugs),
                 'icon' => '',
                 'image' => '',

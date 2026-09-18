@@ -11,7 +11,7 @@ $currentMethod = strtolower($this->router->fetch_method());
   <title><?= htmlspecialchars($title); ?> | Store Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="<?= $assets; ?>css/store-admin.css?v=2" rel="stylesheet">
+  <link href="<?= $assets; ?>css/store-admin.css?v=4" rel="stylesheet">
 </head>
 <body class="<?= $isAuth ? '' : 'store-admin'; ?>">
 
@@ -26,11 +26,16 @@ $currentMethod = strtolower($this->router->fetch_method());
   <nav class="nav flex-column py-3 flex-grow-1">
     <a class="nav-link <?= ($currentClass === 'dashboard') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/dashboard"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
     <a class="nav-link <?= ($currentClass === 'products' && $currentMethod === 'index') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/products"><i class="bi bi-box-seam me-2"></i> Available Products</a>
+    <a class="nav-link <?= ($currentClass === 'hunting') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/hunting"><i class="bi bi-search me-2"></i> Product Hunting</a>
     <a class="nav-link <?= ($currentClass === 'products' && $currentMethod !== 'index') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/my-products"><i class="bi bi-bag-check me-2"></i> My Products</a>
     <a class="nav-link <?= ($currentClass === 'categories') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/categories"><i class="bi bi-tags me-2"></i> Categories</a>
+    <a class="nav-link <?= ($currentClass === 'reviews') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/reviews"><i class="bi bi-star me-2"></i> Reviews</a>
+    <a class="nav-link <?= ($currentClass === 'faqs') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/faqs"><i class="bi bi-question-circle me-2"></i> FAQs</a>
     <a class="nav-link <?= ($currentClass === 'theme_settings' || $currentClass === 'homepage_hero') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/theme-settings"><i class="bi bi-palette2 me-2"></i> Theme Settings</a>
     <a class="nav-link <?= ($currentClass === 'orders') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/orders"><i class="bi bi-bag me-2"></i> Orders</a>
+    <a class="nav-link <?= ($currentClass === 'accounting') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/accounting"><i class="bi bi-cash-coin me-2"></i> Accounting</a>
     <a class="nav-link <?= ($currentClass === 'customers') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/customers"><i class="bi bi-people me-2"></i> Customers</a>
+    <a class="nav-link <?= ($currentClass === 'channels') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/channels"><i class="bi bi-broadcast me-2"></i> Sales Channels</a>
     <a class="nav-link <?= ($currentClass === 'apps') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/apps"><i class="bi bi-grid me-2"></i> Apps</a>
     <a class="nav-link <?= ($currentClass === 'themes') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/themes"><i class="bi bi-palette me-2"></i> Themes</a>
     <a class="nav-link <?= ($currentClass === 'appearance') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/custom-css"><i class="bi bi-filetype-css me-2"></i> Custom CSS</a>

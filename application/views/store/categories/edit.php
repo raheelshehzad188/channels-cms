@@ -57,6 +57,21 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
       </div>
 
       <h6 class="mt-2 mb-3">Category page hero</h6>
+      <?php $heroExtraOn = (int) $val('hero_extra_text', 1) === 1; ?>
+      <div class="mb-3">
+        <label class="form-label">Category page hero image</label>
+        <input type="file" name="hero_image" class="form-control" accept="image/*">
+        <div class="form-text" id="hero-image-hint" data-just-img="Just image (full banner): 1600 × 480 px. The photo covers the whole hero." data-with-text="With extra text: 1280 × 640 px. The photo sits on the right of the hero.">Just image (full banner): 1600 × 480 px. The photo covers the whole hero.</div>
+        <?php if ($displayHero): ?>
+          <img src="<?= base_url($displayHero) ?>" alt="" class="mt-2" style="height:72px;object-fit:cover;border-radius:8px">
+        <?php endif; ?>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="hero_extra_text" value="1" id="extra_text" <?= $heroExtraOn ? 'checked' : '' ?>>
+        <label class="form-check-label" for="extra_text">Extra text</label>
+        <div class="form-text">Leave unchecked to use only the hero image. Check to add kicker, title, button, and badge.</div>
+      </div>
+      <div id="extra-text-fields" <?= $heroExtraOn ? '' : 'hidden' ?>>
       <div class="mb-3">
         <label class="form-label">Hero kicker</label>
         <input type="text" name="hero_kicker" class="form-control" value="<?= htmlspecialchars($val('hero_kicker')) ?>" placeholder="Modern Living">
@@ -102,6 +117,7 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
           <input type="text" name="hero_disc_span" class="form-control" value="<?= htmlspecialchars($val('hero_disc_span')) ?>" placeholder="OFF">
         </div>
       </div>
+      </div>
       <div class="row g-3 mb-4">
         <div class="col-md-6">
           <label class="form-label">Category image (home / circles)</label>
@@ -109,14 +125,6 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
           <div class="form-text">Size: 200 × 200 px</div>
           <?php if ($displayImage): ?>
             <img src="<?= base_url($displayImage) ?>" alt="" class="mt-2" style="height:72px;object-fit:cover;border-radius:8px">
-          <?php endif; ?>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Category page hero image</label>
-          <input type="file" name="hero_image" class="form-control" accept="image/*">
-          <div class="form-text">Size: 1280 × 640 px</div>
-          <?php if ($displayHero): ?>
-            <img src="<?= base_url($displayHero) ?>" alt="" class="mt-2" style="height:72px;object-fit:cover;border-radius:8px">
           <?php endif; ?>
         </div>
       </div>
@@ -138,3 +146,17 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
     </form>
   </div>
 </div>
+<script>
+(function () {
+  var extra = document.getElementById('extra_text');
+  var fields = document.getElementById('extra-text-fields');
+  var hint = document.getElementById('hero-image-hint');
+  function syncExtra() {
+    var on = extra && extra.checked;
+    if (fields) fields.hidden = !on;
+    if (hint) hint.textContent = on ? hint.getAttribute('data-with-text') : hint.getAttribute('data-just-img');
+  }
+  if (extra) extra.addEventListener('change', syncExtra);
+  syncExtra();
+})();
+</script>

@@ -40,8 +40,15 @@
                             <a href="http://<?= htmlspecialchars($store->domain) ?>/" target="_blank"><?= htmlspecialchars($store->domain) ?></a>
                             <?php
                             $localHost = preg_replace('/\.ecommerce\.test$/', '.localhost', $store->domain);
+                            if ($store->domain === 'cartvibe.co.uk') {
+                                $localHost = 'cartvibe.localhost';
+                            } elseif ($store->domain === 'zenvello.se') {
+                                $localHost = 'zenvellose.localhost';
+                            }
                             ?>
+                            <?php if ($localHost !== $store->domain): ?>
                             <div><a class="small" href="http://<?= htmlspecialchars($localHost) ?>/" target="_blank">Open <?= htmlspecialchars($localHost) ?></a></div>
+                            <?php endif; ?>
                         </td>
                         <td><?= htmlspecialchars($store->theme_name ?: '-') ?></td>
                         <td><?= htmlspecialchars($store->country_name ?: '-') ?></td>

@@ -10,8 +10,8 @@
             <input type="email" name="email" required value="<?= htmlspecialchars(set_value('email')) ?>">
             <label>Password</label>
             <input type="password" name="password" required>
-            <label>Phone</label>
-            <input type="text" name="phone" value="<?= htmlspecialchars(set_value('phone')) ?>">
+            <label>WhatsApp number</label>
+            <input type="text" name="phone" value="<?= htmlspecialchars(set_value('phone')) ?>" placeholder="923004210607">
             <button class="ec-btn" type="submit">Create account</button>
         </form>
         <p class="ec-links">Already have an account? <a href="<?= storefront_url('account/login') ?>">Login</a></p>

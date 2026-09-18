@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `product_reviews` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `store_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `customer_id` int(11) NOT NULL DEFAULT 0,
+  `customer_name` varchar(150) NOT NULL DEFAULT '',
+  `rating` tinyint(1) NOT NULL DEFAULT 5,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `content` text NOT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `approval_status` varchar(20) NOT NULL DEFAULT 'pending',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `store_id` (`store_id`),
+  KEY `product_id` (`product_id`),
+  KEY `approval_status` (`approval_status`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -15,8 +15,11 @@ class Settings extends Store_base {
     {
         $this->requireAuth();
         $this->requirePermission('settings');
+        ensure_store_pricing_columns();
 
         $storeId = (int) $this->store->id;
+        $this->store = $this->db->where('id', $storeId)->get('stores')->row();
+        $this->tenant->set_store($this->store);
 
         if ($this->input->post()) {
             $keys = array(
@@ -26,10 +29,34 @@ class Settings extends Store_base {
                 'tax_enabled', 'tax_rate', 'tax_label',
                 'shipping_enabled', 'shipping_flat_rate',
                 'notify_new_order', 'notify_low_stock', 'notify_new_customer',
+                'hide_empty_subcategories', 'whatsapp_number', 'product_detail_design',
             );
             foreach ($keys as $key) {
-                $this->Store_settings_model->set($storeId, $key, $this->input->post($key));
+                $value = $this->input->post($key);
+                if ($key === 'hide_empty_subcategories') {
+                    $value = $value ? '1' : '0';
+                }
+                if ($key === 'product_detail_design') {
+                    $value = $value === 'new' ? 'new' : 'old';
+                }
+                $this->Store_settings_model->set($storeId, $key, $value);
             }
+
+            ensure_store_pricing_columns();
+            $plus = max(0, (float) $this->input->post('price_plus_amount'));
+            $autoAdd = $this->input->post('auto_add_products') ? 1 : 0;
+            $this->db->where('id', $storeId)->update('stores', array(
+                'auto_add_products' => $autoAdd,
+                'price_plus_amount' => $plus,
+            ));
+            $this->store = $this->db->where('id', $storeId)->get('stores')->row();
+            $this->tenant->set_store($this->store);
+
+            if ($autoAdd) {
+                $this->load->model('Store_product_model');
+                $this->Store_product_model->auto_add_available_to_store($this->store);
+            }
+
             $this->session->set_flashdata('success', 'Settings saved successfully.');
             redirect('store/settings');
         }

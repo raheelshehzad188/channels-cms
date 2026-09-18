@@ -16,6 +16,19 @@ class User_model extends CI_Model {
             ->result();
     }
 
+    public function ecommerce_users()
+    {
+        return $this->db
+            ->select('users.*, roles.name as role_name')
+            ->from($this->table)
+            ->join('roles', 'roles.roleID = users.roleID', 'left')
+            ->where('users.roleID', ROLE_ECOMMERCE)
+            ->order_by('users.first_name', 'asc')
+            ->order_by('users.uname', 'asc')
+            ->get()
+            ->result();
+    }
+
     public function get($id)
     {
         return $this->db->where('UserID', (int) $id)->get($this->table)->row();

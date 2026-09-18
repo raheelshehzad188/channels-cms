@@ -38,8 +38,27 @@
   /* product page: single column above the fold */
   .pdp__top { grid-template-columns: 1fr; gap: var(--sp-6); }
   .pdp__grid-2 { grid-template-columns: 1fr; }
-  .pdp__gallery { max-width: 560px; }
-  .pdp__stage { aspect-ratio: 1 / 1; }
+  .pdp__gallery,
+  .pdp__gallery.has-thumbs {
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "stage"
+      "thumbs";
+  }
+  .pdp__thumbs {
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .pdp__thumb {
+    flex: 0 0 68px;
+    width: 68px;
+    height: 68px;
+  }
+  .pdp__stage { aspect-ratio: 1 / 1; min-height: 280px; }
   .hero__body { padding-left: 48px; }
   .hero__arrow--prev { left: 8px; }
   .hero__arrow--next { right: 8px; }
@@ -128,6 +147,16 @@
   .hero__disc b { font-size: 20px; }
   .hero__arrow { top: 84px; }
 
+  .hero__slide.is-image-only {
+    min-height: 180px;
+  }
+  .hero__slide.is-image-only .hero__bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+  }
+
   /* Category / PDP banners get more room for their copy */
   .cathero__body { padding: 22px 22px 24px; }
   .pdp__banner-body { width: 68%; }
@@ -150,6 +179,8 @@
 
   .hero { margin-top: 8px; }
   .hero__bg { height: 148px; }
+  .hero__slide.is-image-only { min-height: 160px; }
+  .hero__slide.is-image-only .hero__bg { height: 100%; min-height: 160px; }
   .hero__body { padding: 18px 16px 40px; }
   .hero__title { font-size: 1.6rem; }
   .hero__text { font-size: var(--fs-13); max-width: 100%; }
@@ -180,14 +211,17 @@
 
   .pdp__title { font-size: var(--fs-24); }
   .pdp__price-now { font-size: var(--fs-28); }
-  .pdp__gallery { grid-template-columns: 1fr; }
+  .pdp__gallery,
+  .pdp__gallery.has-thumbs {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "stage"
+      "thumbs";
+  }
   .pdp__thumbs {
-    grid-auto-flow: column;
-    grid-template-columns: none;
-    grid-auto-columns: 62px;
+    flex-direction: row;
+    grid-auto-flow: unset;
     overflow-x: auto;
-    order: 2;
-    padding-bottom: 4px;
   }
 
   .pagination a, .pagination span { min-width: 29px; height: 29px; font-size: var(--fs-12); }
@@ -199,7 +233,8 @@
 /* ---------------- Small phone (≤400px) ---------------- */
 @media (max-width: 400px) {
   .grid-6, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .pcard { padding: 9px; }
+  .pcard { padding: 0 9px 9px; }
+  .pcard__media { margin: 0 -9px 10px; }
   .pcard__title { font-size: var(--fs-12); }
   .btn--cart { font-size: var(--fs-11); padding: 8px 6px; }
   .circles,

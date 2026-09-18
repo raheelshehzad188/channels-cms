@@ -22,6 +22,10 @@
                     <?php endif; ?>
                     <table class="table table-bordered">
                         <tr><th width="180">SKU</th><td><?= htmlspecialchars($product->sku ?: '-') ?></td></tr>
+                        <tr><th>Parent SKU</th><td><?= htmlspecialchars(!empty($product->parent_sku) ? $product->parent_sku : '-') ?></td></tr>
+                        <tr><th>Default child</th><td><?= !empty($product->is_default) ? 'Yes' : 'No' ?></td></tr>
+                        <tr><th>Brand</th><td><?= htmlspecialchars(!empty($product->brand) ? $product->brand : '-') ?></td></tr>
+                        <tr><th>Made by</th><td><?= htmlspecialchars(!empty($product->made_by) ? $product->made_by : '-') ?></td></tr>
                         <tr><th>Price</th><td><?= format_money((float) $product->price, product_currency($product)) ?></td></tr>
                         <tr><th>Stock</th><td><?= (int) $product->stock ?></td></tr>
                         <tr><th>Supplier</th><td><?= htmlspecialchars($product->supplier_name ?: '-') ?></td></tr>

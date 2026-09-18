@@ -160,6 +160,14 @@ body.store-admin {
   color: var(--store-muted);
 }
 
+.store-product-filters .form-label {
+  font-weight: 600;
+}
+.store-product-filters .form-control,
+.store-product-filters .form-select {
+  min-height: 38px;
+}
+
 /* Inspinia ecommerce products grid */
 .store-product-grid .ibox {
   margin-bottom: 1.5rem;
@@ -258,6 +266,20 @@ body.store-admin {
 [data-bs-theme="dark"] .store-product-grid .product-box.active {
   box-shadow: 0 3px 10px rgba(0,0,0,.45);
 }
+
+.channel-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+.channel-logo.meta { background: #1877f2; }
+.channel-logo.tiktok { background: #111; }
 
 @media (max-width: 991px) {
   .store-sidebar {

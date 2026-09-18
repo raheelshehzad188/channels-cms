@@ -51,20 +51,37 @@
             <li class="<?= $this->uri->segment(2) == 'smtp' ? 'active' : '' ?>">
                 <a href="<?= base_url('admin/smtp') ?>"><i class="fa fa-envelope"></i> <span class="nav-label">SMTP</span></a>
             </li>
+            <li class="<?= $this->uri->segment(2) == 'whatsapp' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/whatsapp') ?>"><i class="fa fa-whatsapp"></i> <span class="nav-label">WhatsApp</span></a>
+            </li>
             <li class="<?= $this->uri->segment(2) == 'paypal' ? 'active' : '' ?>">
                 <a href="<?= base_url('admin/paypal') ?>"><i class="fa fa-credit-card"></i> <span class="nav-label">Gateway</span></a>
             </li>
+            <li class="<?= $this->uri->segment(2) == 'social' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/social') ?>"><i class="fa fa-share-alt"></i> <span class="nav-label">Social</span></a>
+            </li>
             <?php endif; ?>
 
+            <li class="<?= $this->uri->segment(2) == 'accounting' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/accounting') ?>"><i class="fa fa-calculator"></i> <span class="nav-label">Accounting</span></a>
+                                    </li>
             <li class="<?= $this->uri->segment(2) == 'orders' ? 'active' : '' ?>">
                 <a href="<?= base_url('admin/orders') ?>"><i class="fa fa-shopping-cart"></i> <span class="nav-label">Orders</span></a>
                                     </li>
+            <?php if (ec_is_admin()): ?>
+            <li class="<?= $this->uri->segment(2) == 'listings' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/listings') ?>"><i class="fa fa-th-list"></i> <span class="nav-label">Store Listings</span></a>
+            </li>
+            <?php endif; ?>
             <li class="<?= $this->uri->segment(2) == 'products' ? 'active' : '' ?>">
                 <a href="<?= base_url('admin/products') ?>"><i class="fa fa-cubes"></i> <span class="nav-label">Products</span></a>
                                     </li>
+            <li class="<?= $this->uri->segment(2) == 'hunting' ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/hunting') ?>"><i class="fa fa-search"></i> <span class="nav-label">Product Hunting</span></a>
+                                    </li>
             <?php if (ec_is_admin()): ?>
             <li class="<?= $this->uri->segment(3) == 'unknown' ? 'active' : '' ?>">
-                <a href="<?= base_url('admin/products/unknown') ?>"><i class="fa fa-question-circle"></i> <span class="nav-label">Unknown Imports</span></a>
+                <a href="<?= base_url('admin/products/unknown') ?>"><i class="fa fa-question-circle"></i> <span class="nav-label">Failed Imports</span></a>
             </li>
             <li class="<?= $this->uri->segment(2) == 'flush-data' ? 'active' : '' ?>">
                 <a href="<?= base_url('admin/flush-data') ?>"><i class="fa fa-trash"></i> <span class="nav-label">Flush Data</span></a>

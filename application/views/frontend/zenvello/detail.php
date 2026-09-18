@@ -1,21 +1,40 @@
 <?php
+$cartProduct = isset($cart_product) && $cart_product ? $cart_product : $product;
 $gallery = product_gallery_urls($product, isset($product_images) ? $product_images : array());
 $placeholder = $assets . 'assets/images/products/mask-main.jpg';
 $main = !empty($gallery) ? $gallery[0] : $placeholder;
 $hasThumbs = count($gallery) > 1;
-$compare = isset($product->compare_price) ? (float) $product->compare_price : 0;
-$showCompare = $compare > (float) $product->price;
+$compare = isset($cartProduct->compare_price) ? (float) $cartProduct->compare_price : 0;
+$showCompare = $compare > (float) $cartProduct->price;
+$stock = (int) $cartProduct->stock;
+$qtyMax = max(0, min(10, $stock));
+$category = isset($product_category) ? $product_category : null;
+$subcategory = isset($product_subcategory) ? $product_subcategory : null;
+$madeBy = isset($product->made_by) ? trim((string) $product->made_by) : '';
+$sku = !empty($cartProduct->sku) ? $cartProduct->sku : (isset($product->sku) ? $product->sku : '');
 ?>
 <nav class="container breadcrumb" aria-label="Breadcrumb">
   <ol>
     <li><a href="<?= storefront_url('shop/index') ?>">Home</a></li>
     <li><a href="<?= storefront_url('shop') ?>">Shop</a></li>
+    <?php if ($category && !empty($category->slug)): ?>
+    <li><a href="<?= storefront_url('category/' . rawurlencode($category->slug)) ?>"><?= htmlspecialchars(category_store_name($category)) ?></a></li>
+    <?php endif; ?>
+    <?php if ($subcategory && !empty($subcategory->slug)): ?>
+    <li><a href="<?= storefront_url('category/' . rawurlencode($subcategory->slug)) ?>"><?= htmlspecialchars(category_store_name($subcategory)) ?></a></li>
+    <?php endif; ?>
     <li aria-current="page"><?= htmlspecialchars($product->name) ?></li>
   </ol>
 </nav>
 
 <div class="container pdp__top">
-  <div class="pdp__gallery<?= $hasThumbs ? ' has-thumbs' : '' ?>" data-gallery>
+    <div class="pdp__gallery<?= $hasThumbs ? ' has-thumbs' : '' ?>" data-gallery>
+    <div class="pdp__stage">
+      <img src="<?= htmlspecialchars($main) ?>" alt="<?= htmlspecialchars($product->name) ?>" data-gallery-main>
+      <button class="pdp__zoom" type="button" aria-label="Zoom image" aria-pressed="false" data-zoom>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8.5v5M8.5 11h5"/></svg>
+      </button>
+    </div>
     <?php if ($hasThumbs): ?>
     <div class="pdp__thumbs">
       <?php foreach ($gallery as $i => $src): ?>
@@ -25,33 +44,70 @@ $showCompare = $compare > (float) $product->price;
       <?php endforeach; ?>
     </div>
     <?php endif; ?>
-    <div class="pdp__stage">
-      <img src="<?= htmlspecialchars($main) ?>" alt="<?= htmlspecialchars($product->name) ?>" data-gallery-main>
-      <button class="pdp__zoom" type="button" aria-label="Zoom image" aria-pressed="false" data-zoom>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8.5v5M8.5 11h5"/></svg>
-      </button>
-    </div>
   </div>
 
   <div class="pdp__info">
-    <p class="pdp__sku"><?= htmlspecialchars($product->sku ?: 'Product') ?></p>
+    <?php if (!empty($product->brand)): ?>
+    <p class="pdp__brand"><?= htmlspecialchars($product->brand) ?></p>
+    <?php endif; ?>
     <h1 class="pdp__title"><?= htmlspecialchars($product->name) ?></h1>
+    <?php if ($sku !== ''): ?>
+    <p class="pdp__sku">SKU: <?= htmlspecialchars($sku) ?></p>
+    <?php endif; ?>
+    <?php if ($category || $subcategory || $madeBy !== ''): ?>
+    <ul class="pdp__facts">
+      <?php if ($category): ?>
+      <li><span>Category</span>
+        <?php if (!empty($category->slug)): ?>
+          <a href="<?= storefront_url('category/' . rawurlencode($category->slug)) ?>"><?= htmlspecialchars(category_store_name($category)) ?></a>
+        <?php else: ?>
+          <b><?= htmlspecialchars(category_store_name($category)) ?></b>
+        <?php endif; ?>
+      </li>
+      <?php endif; ?>
+      <?php if ($subcategory): ?>
+      <li><span>Sub category</span>
+        <?php if (!empty($subcategory->slug)): ?>
+          <a href="<?= storefront_url('category/' . rawurlencode($subcategory->slug)) ?>"><?= htmlspecialchars(category_store_name($subcategory)) ?></a>
+        <?php else: ?>
+          <b><?= htmlspecialchars(category_store_name($subcategory)) ?></b>
+        <?php endif; ?>
+      </li>
+      <?php endif; ?>
+      <?php if ($madeBy !== ''): ?>
+      <li><span>Made by</span> <b><?= htmlspecialchars($madeBy) ?></b></li>
+      <?php endif; ?>
+    </ul>
+    <?php endif; ?>
     <div class="pdp__price">
-      <span class="pdp__price-now"><?= format_money((float) $product->price) ?></span>
+      <span class="pdp__price-now"><?= format_money((float) $cartProduct->price) ?></span>
       <?php if ($showCompare): ?>
         <span class="pdp__price-was"><?= format_money($compare) ?></span>
       <?php endif; ?>
     </div>
-    <p class="pdp__stock">In stock: <?= (int) $product->stock ?></p>
-    <?php $this->load->view('frontend/shared/shipping_eta', array('product' => $product, 'shipping_variant' => 'zenvello')); ?>
-    <div class="pdp__bullets">
-      <p><?= nl2br(htmlspecialchars($product->description ?: 'Selected for the ZENVello collection.')) ?></p>
-    </div>
+    <p class="pdp__stock">In stock: <?= $stock ?></p>
+    <?php $this->load->view('frontend/shared/shipping_eta', array('product' => $cartProduct, 'shipping_variant' => 'zenvello')); ?>
+    <?php $this->load->view('frontend/shared/child_options'); ?>
     <?php if (empty($is_preview)): ?>
-      <a class="btn btn--yellow btn--lg" href="<?= storefront_url('cart/add/' . $product->id) ?>">Add to Cart</a>
+      <?php if ($qtyMax > 0): ?>
+      <form class="pdp__buy" method="get" action="<?= storefront_url('cart/add/' . $cartProduct->id) ?>">
+        <label class="visually-hidden" for="pdp-qty">Quantity</label>
+        <select class="qty-select" id="pdp-qty" name="qty" aria-label="Quantity">
+          <?php for ($i = 1; $i <= $qtyMax; $i++): ?>
+            <option value="<?= $i ?>"><?= $i ?></option>
+          <?php endfor; ?>
+        </select>
+        <button class="btn btn--yellow" type="submit">Add to Cart</button>
+      </form>
+      <?php else: ?>
+        <p class="pdp__oos">Out of stock</p>
+      <?php endif; ?>
     <?php else: ?>
       <a class="btn btn--yellow btn--lg" href="<?= htmlspecialchars($preview_back) ?>">Back to products</a>
     <?php endif; ?>
+    <div class="pdp__bullets">
+      <p><?= nl2br(htmlspecialchars($product->description ?: 'Selected for the ZENVello collection.')) ?></p>
+    </div>
   </div>
 </div>
 

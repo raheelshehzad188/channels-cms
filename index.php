@@ -1,6 +1,8 @@
 <?php
 $host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
-if (preg_match('/^(theme1|theme2|fruitables|zenvello)\.(ecommerce\.test|localhost)$/', $host)) {
+if (preg_match('/^(theme1|theme2|fruitables|zenvello|cartvibe|zenvellose)\.(ecommerce\.test|localhost)$/', $host)
+	|| preg_match('/^(www\.)?cartvibe\.co\.uk$/', $host)
+	|| preg_match('/^(www\.)?zenvello\.se$/', $host)) {
 	$uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/';
 	$uri = preg_replace('#^/ec3(/index\.php)?#', '', $uri);
 	if ($uri === '' || $uri[0] !== '/') {

@@ -85,14 +85,16 @@ class Theme_settings extends Store_base {
         }
 
         if ($this->input->post()) {
+            $extraText = (int) $this->input->post('extra_text') === 1 ? 1 : 0;
             $title = trim((string) $this->input->post('title'));
-            if ($title === '') {
-                $this->session->set_flashdata('error', 'Title is required.');
+            if ($extraText === 1 && $title === '') {
+                $this->session->set_flashdata('error', 'Title is required when Extra text is on.');
                 redirect($id ? 'store/theme-settings/slide/' . (int) $id : 'store/theme-settings/slide');
                 return;
             }
 
             $payload = array(
+                'extra_text' => $extraText,
                 'kicker' => trim((string) $this->input->post('kicker')),
                 'kicker_color' => $this->normalize_color(trim((string) $this->input->post('kicker_color')), ''),
                 'title' => $title,
@@ -111,10 +113,10 @@ class Theme_settings extends Store_base {
                 'starts_on' => $this->date_value('starts_on'),
                 'ends_on' => $this->date_value('ends_on'),
             );
-            if ($payload['btn_text'] === '') {
+            if ($extraText === 1 && $payload['btn_text'] === '') {
                 $payload['btn_text'] = 'Shop Now';
             }
-            if ($payload['btn_link'] === '') {
+            if ($extraText === 1 && $payload['btn_link'] === '') {
                 $payload['btn_link'] = 'shop';
             }
             if (!$id && $payload['sort_order'] <= 0) {

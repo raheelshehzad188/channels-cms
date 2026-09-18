@@ -21,8 +21,9 @@
               <input type="email" name="email" required value="<?= htmlspecialchars($customer ? $customer->email : '') ?>" autocomplete="email">
             </div>
             <div>
-              <label>Phone</label>
-              <input type="text" name="phone" value="<?= htmlspecialchars($customer && !empty($customer->phone) ? $customer->phone : '') ?>" autocomplete="tel">
+              <label>WhatsApp number</label>
+              <input type="text" name="phone" required value="<?= htmlspecialchars($customer && !empty($customer->phone) ? $customer->phone : '') ?>" autocomplete="tel" placeholder="923004210607">
+              <span class="ec-hint">Required for order updates. Use country code without +.</span>
             </div>
           </div>
           <label>Address</label>

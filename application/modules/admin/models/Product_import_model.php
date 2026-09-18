@@ -5,6 +5,7 @@ class Product_import_model extends CI_Model {
 
     public function find_source($host)
     {
+        $this->ensure_sources_table();
         $host = $this->normalize_host($host);
         if ($host === '') {
             return null;
@@ -28,6 +29,191 @@ class Product_import_model extends CI_Model {
         return $suffixMatch;
     }
 
+    public function learn_source($host, $countryId = 0)
+    {
+        return $this->ensure_source($host, $countryId);
+    }
+
+    public function ensure_source($host, $countryId = 0)
+    {
+        $this->ensure_sources_table();
+        $host = $this->normalize_host($host);
+        if ($host === '') {
+            return null;
+        }
+
+        $spec = $this->marketplace_spec($host, $countryId);
+        if ($spec && $this->has_importer_class($spec['class'])) {
+            $supplierId = $this->find_or_create_supplier($spec['supplier'], $spec['country']);
+            if (!$supplierId) {
+                return $this->find_source($host);
+            }
+            $payload = array(
+                'domain' => $spec['domain'],
+                'importer_class' => $spec['class'],
+                'supplier_id' => $supplierId,
+                'country_id' => $this->country_id_from_code($spec['country']),
+                'status' => 1,
+            );
+            $row = $this->db->where('domain', $spec['domain'])->get('product_import_sources')->row();
+            if ($row) {
+                $this->db->where('id', (int) $row->id)->update('product_import_sources', $payload);
+            } else {
+                $this->db->insert('product_import_sources', $payload);
+            }
+            return $this->find_source($host);
+        }
+
+        $existing = $this->find_source($host);
+        if ($existing && $this->has_importer_class($existing->importer_class)) {
+            return $existing;
+        }
+        return $existing;
+    }
+
+    public function country_id_for_host($host)
+    {
+        $this->ensure_sources_table();
+        $host = $this->normalize_host($host);
+        if ($host === '') {
+            return 0;
+        }
+        $source = $this->ensure_source($host);
+        if ($source && !empty($source->country_id)) {
+            return (int) $source->country_id;
+        }
+        $spec = $this->marketplace_spec($host);
+        if ($spec) {
+            $id = $this->country_id_from_code($spec['country']);
+            if ($id) {
+                return $id;
+            }
+        }
+        if ($source && !empty($source->supplier_id) && $this->db->table_exists('suppliers')) {
+            $supplier = $this->db->select('country_id')->where('id', (int) $source->supplier_id)->get('suppliers')->row();
+            if ($supplier) {
+                return (int) $supplier->country_id;
+            }
+        }
+        return 0;
+    }
+
+    public function country_id_from_code($code)
+    {
+        $code = strtoupper(trim((string) $code));
+        if ($code === '' || !$this->db->table_exists('countries')) {
+            return 0;
+        }
+        $row = $this->db->select('id')->where('code', $code)->get('countries')->row();
+        return $row ? (int) $row->id : 0;
+    }
+
+    protected function marketplace_spec($host, $countryId = 0)
+    {
+        $map = array(
+            'amazon.co.uk' => array('domain' => 'amazon.co.uk', 'class' => 'Amazon_uk', 'supplier' => 'AP UK', 'country' => 'GB'),
+            'amazon.com.au' => array('domain' => 'amazon.com.au', 'class' => 'Amazon_au', 'supplier' => 'Amazon AU', 'country' => 'AU'),
+            'amazon.in' => array('domain' => 'amazon.in', 'class' => 'Amazon_in', 'supplier' => 'MN IN', 'country' => 'IN'),
+            'amazon.com' => array('domain' => 'amazon.com', 'class' => 'Amazon_uk', 'supplier' => 'AP UK', 'country' => 'US'),
+            'onworks.net' => array('domain' => 'onworks.net', 'class' => 'Onworks', 'supplier' => 'AP UK', 'country' => 'GB'),
+            'ebay.co.uk' => array('domain' => 'ebay.co.uk', 'class' => 'Ebay_uk', 'supplier' => 'AP UK', 'country' => 'GB'),
+            'ebay.com' => array('domain' => 'ebay.com', 'class' => 'Ebay_com', 'supplier' => 'eBay US', 'country' => 'US'),
+            'godropship.co.uk' => array('domain' => 'godropship.co.uk', 'class' => 'Godropship_uk', 'supplier' => 'AP UK', 'country' => 'GB'),
+            'aw-dropship.com' => array('domain' => 'aw-dropship.com', 'class' => 'Aw_dropship', 'supplier' => 'AW Dropship', 'country' => 'GB'),
+            'discountpartysupplies.com.au' => array('domain' => 'discountpartysupplies.com.au', 'class' => 'Discountpartysupplies_au', 'supplier' => 'Discount Party Supplies', 'country' => 'AU'),
+            'spotlightstores.com' => array('domain' => 'spotlightstores.com', 'class' => 'Spotlight_au', 'supplier' => 'Spotlight Australia', 'country' => 'AU'),
+            'fyndiq.se' => array('domain' => 'fyndiq.se', 'class' => 'Fyndiq_se', 'supplier' => 'FYNDIQ SE', 'country' => 'SE'),
+            'cdon.se' => array('domain' => 'cdon.se', 'class' => 'Cdon_se', 'supplier' => 'CDON SE', 'country' => 'SE'),
+            'partyhallen.se' => array('domain' => 'partyhallen.se', 'class' => 'Partyhallen_se', 'supplier' => 'Partyhallen SE', 'country' => 'SE'),
+            'dollarstore.se' => array('domain' => 'dollarstore.se', 'class' => 'Dollarstore_se', 'supplier' => 'Dollarstore SE', 'country' => 'SE'),
+        );
+        foreach ($map as $domain => $spec) {
+            if ($host === $domain || substr($host, -strlen('.' . $domain)) === '.' . $domain) {
+                return $spec;
+            }
+        }
+        if (preg_match('/(^|\.)amazon\./', $host)) {
+            $country = $this->country_code((int) $countryId);
+            if ($country === 'AU') {
+                return $map['amazon.com.au'];
+            }
+            if ($country === 'IN') {
+                return $map['amazon.in'];
+            }
+            return $map['amazon.co.uk'];
+        }
+        if (preg_match('/(^|\.)ebay\.com$/', $host)) {
+            return $map['ebay.com'];
+        }
+        if (preg_match('/(^|\.)ebay\./', $host)) {
+            return $map['ebay.co.uk'];
+        }
+        return null;
+    }
+
+    protected function country_code($countryId)
+    {
+        if ($countryId < 1 || !$this->db->table_exists('countries')) {
+            return '';
+        }
+        $row = $this->db->select('code')->where('id', (int) $countryId)->get('countries')->row();
+        return $row ? strtoupper((string) $row->code) : '';
+    }
+
+    protected function find_or_create_supplier($name, $countryCode)
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return 0;
+        }
+        $countryId = $this->country_id_from_code($countryCode);
+        if ($countryId) {
+            $row = $this->db->where('name', $name)->where('country_id', $countryId)->get('suppliers')->row();
+            if ($row) {
+                return (int) $row->id;
+            }
+        }
+        $row = $this->db->where('name', $name)->get('suppliers')->row();
+        if ($row) {
+            return (int) $row->id;
+        }
+        if (!$countryId) {
+            $country = $this->db->order_by('id', 'asc')->limit(1)->get('countries')->row();
+            $countryId = $country ? (int) $country->id : 0;
+        }
+        if (!$countryId) {
+            return 0;
+        }
+        $this->db->insert('suppliers', array(
+            'country_id' => $countryId,
+            'name' => $name,
+            'email' => '',
+            'phone' => '',
+            'company' => $name,
+            'address' => '',
+            'status' => 1,
+        ));
+        return (int) $this->db->insert_id();
+    }
+
+    public function ensure_sources_table()
+    {
+        $this->db->query("CREATE TABLE IF NOT EXISTS `product_import_sources` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `domain` varchar(190) NOT NULL,
+            `importer_class` varchar(100) NOT NULL,
+            `supplier_id` int(11) NOT NULL,
+            `country_id` int(11) DEFAULT NULL,
+            `status` tinyint(1) NOT NULL DEFAULT 1,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `domain` (`domain`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        if ($this->db->table_exists('product_import_sources') && !$this->db->field_exists('country_id', 'product_import_sources')) {
+            $this->db->query("ALTER TABLE product_import_sources ADD COLUMN country_id INT(11) DEFAULT NULL AFTER supplier_id");
+        }
+    }
+
     public function class_file($className)
     {
         $className = preg_replace('/[^A-Za-z0-9_]/', '', (string) $className);
@@ -45,40 +231,160 @@ class Product_import_model extends CI_Model {
 
     public function record_unknown($url, $domain, $countryId, $userId)
     {
-        $url = trim((string) $url);
-        $domain = $this->normalize_host($domain);
+        return $this->record_failed(array(
+            'url' => $url,
+            'domain' => $domain,
+            'country_id' => $countryId,
+            'user_id' => $userId,
+            'error' => 'Unknown domain',
+        ));
+    }
+
+    public function ensure_failed_table()
+    {
+        $this->db->query("CREATE TABLE IF NOT EXISTS `product_import_unknown_links` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `url` text NOT NULL,
+            `product_name` varchar(255) NOT NULL DEFAULT '',
+            `url_hash` char(40) NOT NULL,
+            `domain` varchar(190) NOT NULL,
+            `country_id` int(11) DEFAULT NULL,
+            `user_id` int(11) NOT NULL DEFAULT 0,
+            `category_id` int(11) DEFAULT NULL,
+            `subcategory_id` int(11) DEFAULT NULL,
+            `base_price` decimal(12,2) NOT NULL DEFAULT 0.00,
+            `ship_min_days` int(11) NOT NULL DEFAULT 0,
+            `ship_max_days` int(11) NOT NULL DEFAULT 0,
+            `stock` int(11) NOT NULL DEFAULT 0,
+            `error_message` varchar(255) NOT NULL DEFAULT '',
+            `hit_count` int(11) NOT NULL DEFAULT 1,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `last_seen_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `url_user` (`url_hash`, `user_id`),
+            KEY `domain` (`domain`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $cols = array(
+            'category_id' => "ALTER TABLE product_import_unknown_links ADD COLUMN category_id INT(11) DEFAULT NULL AFTER user_id",
+            'subcategory_id' => "ALTER TABLE product_import_unknown_links ADD COLUMN subcategory_id INT(11) DEFAULT NULL AFTER category_id",
+            'base_price' => "ALTER TABLE product_import_unknown_links ADD COLUMN base_price DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER subcategory_id",
+            'ship_min_days' => "ALTER TABLE product_import_unknown_links ADD COLUMN ship_min_days INT(11) NOT NULL DEFAULT 0 AFTER base_price",
+            'ship_max_days' => "ALTER TABLE product_import_unknown_links ADD COLUMN ship_max_days INT(11) NOT NULL DEFAULT 0 AFTER ship_min_days",
+            'stock' => "ALTER TABLE product_import_unknown_links ADD COLUMN stock INT(11) NOT NULL DEFAULT 0 AFTER ship_max_days",
+            'error_message' => "ALTER TABLE product_import_unknown_links ADD COLUMN error_message VARCHAR(255) NOT NULL DEFAULT '' AFTER stock",
+            'product_name' => "ALTER TABLE product_import_unknown_links ADD COLUMN product_name VARCHAR(255) NOT NULL DEFAULT '' AFTER url",
+        );
+        foreach ($cols as $field => $sql) {
+            if (!$this->db->field_exists($field, 'product_import_unknown_links')) {
+                $this->db->query($sql);
+            }
+        }
+
+        $unique = $this->db->query("SHOW INDEX FROM product_import_unknown_links WHERE Key_name = 'url_hash'")->result();
+        if ($unique) {
+            $this->db->query('ALTER TABLE product_import_unknown_links DROP INDEX url_hash');
+        }
+        $userIdx = $this->db->query("SHOW INDEX FROM product_import_unknown_links WHERE Key_name = 'url_user'")->result();
+        if (empty($userIdx)) {
+            $this->db->query('ALTER TABLE product_import_unknown_links ADD KEY url_user (url_hash, user_id)');
+        }
+    }
+
+    public function record_failed($data)
+    {
+        $this->ensure_failed_table();
+        $url = trim((string) (isset($data['url']) ? $data['url'] : ''));
+        if ($url === '') {
+            return 0;
+        }
+        $host = isset($data['domain']) ? $this->normalize_host($data['domain']) : '';
+        if ($host === '') {
+            $parts = parse_url($url);
+            $host = $this->normalize_host(isset($parts['host']) ? $parts['host'] : '');
+        }
+        $userId = isset($data['user_id']) ? (int) $data['user_id'] : 0;
         $hash = sha1($url);
-        $existing = $this->db->where('url_hash', $hash)->get('product_import_unknown_links')->row();
+        $payload = array(
+            'url' => $url,
+            'url_hash' => $hash,
+            'domain' => $host,
+            'country_id' => !empty($data['country_id']) ? (int) $data['country_id'] : null,
+            'user_id' => $userId,
+            'category_id' => !empty($data['category_id']) ? (int) $data['category_id'] : null,
+            'subcategory_id' => !empty($data['subcategory_id']) ? (int) $data['subcategory_id'] : null,
+            'base_price' => isset($data['base_price']) && $data['base_price'] !== null && $data['base_price'] !== ''
+                ? (float) $data['base_price'] : 0,
+            'ship_min_days' => max(0, (int) (isset($data['ship_min_days']) ? $data['ship_min_days'] : 0)),
+            'ship_max_days' => max(0, (int) (isset($data['ship_max_days']) ? $data['ship_max_days'] : 0)),
+            'stock' => max(0, (int) (isset($data['stock']) ? $data['stock'] : 0)),
+            'error_message' => substr(trim((string) (isset($data['error']) ? $data['error'] : '')), 0, 255),
+            'product_name' => substr(trim((string) (isset($data['product_name']) ? $data['product_name'] : '')), 0, 255),
+            'last_seen_at' => date('Y-m-d H:i:s'),
+        );
+
+        $existing = $this->db
+            ->where('url_hash', $hash)
+            ->where('user_id', $userId)
+            ->get('product_import_unknown_links')
+            ->row();
+        if (!$existing) {
+            $rows = $this->db->where('url_hash', $hash)->get('product_import_unknown_links')->result();
+            foreach ($rows as $row) {
+                if ((int) $row->user_id === $userId || (int) $row->user_id === 0) {
+                    $existing = $row;
+                    break;
+                }
+            }
+        }
         if ($existing) {
-            $this->db->where('id', (int) $existing->id)->update('product_import_unknown_links', array(
-                'hit_count' => (int) $existing->hit_count + 1,
-                'country_id' => $countryId ? (int) $countryId : $existing->country_id,
-                'user_id' => $userId ? (int) $userId : $existing->user_id,
-                'last_seen_at' => date('Y-m-d H:i:s'),
-            ));
+            if ($payload['product_name'] === '' && !empty($existing->product_name)) {
+                unset($payload['product_name']);
+            }
+            $payload['hit_count'] = (int) $existing->hit_count + 1;
+            $this->db->where('id', (int) $existing->id)->update('product_import_unknown_links', $payload);
             return (int) $existing->id;
         }
 
-        $this->db->insert('product_import_unknown_links', array(
-            'url' => $url,
-            'url_hash' => $hash,
-            'domain' => $domain,
-            'country_id' => $countryId ? (int) $countryId : null,
-            'user_id' => $userId ? (int) $userId : null,
-            'hit_count' => 1,
-            'created_at' => date('Y-m-d H:i:s'),
-            'last_seen_at' => date('Y-m-d H:i:s'),
-        ));
+        $payload['hit_count'] = 1;
+        $payload['created_at'] = date('Y-m-d H:i:s');
+        $this->db->insert('product_import_unknown_links', $payload);
         return (int) $this->db->insert_id();
+    }
+
+    public function get_failed($id)
+    {
+        $this->ensure_failed_table();
+        return $this->db->where('id', (int) $id)->get('product_import_unknown_links')->row();
     }
 
     public function unknown_links()
     {
+        $this->ensure_failed_table();
+        $select = array('product_import_unknown_links.*');
+        $select[] = $this->db->table_exists('countries')
+            ? 'countries.name as country_name'
+            : 'NULL as country_name';
+        $select[] = $this->db->table_exists('categories')
+            ? 'cat.name as category_name, sub.name as subcategory_name'
+            : 'NULL as category_name, NULL as subcategory_name';
+        $select[] = $this->db->table_exists('users')
+            ? 'CONCAT(users.first_name, " ", users.last_name) as user_name, users.uname'
+            : 'NULL as user_name, NULL as uname';
+        $this->db
+            ->select(implode(', ', $select), false)
+            ->from('product_import_unknown_links');
+        if ($this->db->table_exists('countries')) {
+            $this->db->join('countries', 'countries.id = product_import_unknown_links.country_id', 'left');
+        }
+        if ($this->db->table_exists('categories')) {
+            $this->db->join('categories cat', 'cat.id = product_import_unknown_links.category_id', 'left');
+            $this->db->join('categories sub', 'sub.id = product_import_unknown_links.subcategory_id', 'left');
+        }
+        if ($this->db->table_exists('users')) {
+            $this->db->join('users', 'users.UserID = product_import_unknown_links.user_id', 'left');
+        }
         return $this->db
-            ->select('product_import_unknown_links.*, countries.name as country_name, CONCAT(users.first_name, " ", users.last_name) as user_name, users.uname', false)
-            ->from('product_import_unknown_links')
-            ->join('countries', 'countries.id = product_import_unknown_links.country_id', 'left')
-            ->join('users', 'users.UserID = product_import_unknown_links.user_id', 'left')
             ->order_by('product_import_unknown_links.last_seen_at', 'desc')
             ->get()
             ->result();
@@ -86,12 +392,47 @@ class Product_import_model extends CI_Model {
 
     public function unknown_count()
     {
+        $this->ensure_failed_table();
         return (int) $this->db->count_all('product_import_unknown_links');
+    }
+
+    public function unknown_ids()
+    {
+        $this->ensure_failed_table();
+        $rows = $this->db
+            ->select('id')
+            ->order_by('id', 'asc')
+            ->get('product_import_unknown_links')
+            ->result();
+        $ids = array();
+        foreach ($rows as $row) {
+            $ids[] = (int) $row->id;
+        }
+        return $ids;
     }
 
     public function delete_unknown($id)
     {
+        $this->ensure_failed_table();
         return $this->db->where('id', (int) $id)->delete('product_import_unknown_links');
+    }
+
+    public function clear_failed($url, $userId = 0)
+    {
+        $this->ensure_failed_table();
+        $url = trim((string) $url);
+        if ($url === '') {
+            return;
+        }
+        $hash = sha1($url);
+        $this->db->where('url_hash', $hash);
+        if ($userId) {
+            $this->db->group_start()
+                ->where('user_id', (int) $userId)
+                ->or_where('user_id', 0)
+                ->group_end();
+        }
+        $this->db->delete('product_import_unknown_links');
     }
 
     public function normalize_host($host)

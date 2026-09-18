@@ -27,7 +27,8 @@ $heroSlides = !empty($hero_slides) ? $hero_slides : array();
             $titleStyle = $light ? 'color:#fff' : '';
             $textStyle = $light ? 'color:#e4e0dc' : '';
             $heading = $i === 0 ? 'h1' : 'h2';
-            $hasDisc = (!isset($slide->disc_on) || (int) $slide->disc_on === 1)
+            $extraText = !isset($slide->extra_text) || (int) $slide->extra_text === 1;
+            $hasDisc = $extraText && (!isset($slide->disc_on) || (int) $slide->disc_on === 1)
                 && (trim((string) $slide->disc_small) !== '' || trim((string) $slide->disc_big) !== '' || trim((string) $slide->disc_span) !== '');
             $discStyle = trim((string) $slide->disc_bg) !== '' ? 'background:' . $slide->disc_bg : '';
             $alt = trim(preg_replace('/\s+/', ' ', str_replace(array("\r", "\n"), ' ', (string) $slide->title)));
@@ -35,8 +36,9 @@ $heroSlides = !empty($hero_slides) ? $hero_slides : array();
                 $alt = $store->name;
             }
           ?>
-          <article class="hero__slide"<?php if ($slideStyle !== ''): ?> style="<?= htmlspecialchars($slideStyle) ?>"<?php endif; ?>>
+          <article class="hero__slide<?= $extraText ? '' : ' is-image-only' ?>"<?php if ($slideStyle !== ''): ?> style="<?= htmlspecialchars($slideStyle) ?>"<?php endif; ?>>
             <img class="hero__bg" src="<?= htmlspecialchars($slideImg) ?>" alt="<?= htmlspecialchars($alt) ?>">
+            <?php if ($extraText): ?>
             <div class="hero__body"<?php if ($bodyStyle !== ''): ?> style="<?= htmlspecialchars($bodyStyle) ?>"<?php endif; ?>>
               <?php if (trim((string) $slide->kicker) !== ''): ?>
                 <p class="hero__kicker"<?php if ($kickerStyle !== ''): ?> style="<?= htmlspecialchars($kickerStyle) ?>"<?php endif; ?>><?= htmlspecialchars($slide->kicker) ?></p>
@@ -47,6 +49,7 @@ $heroSlides = !empty($hero_slides) ? $hero_slides : array();
               <?php endif; ?>
               <a class="btn btn--yellow btn--lg" href="<?= htmlspecialchars($btnLink) ?>"><?= htmlspecialchars($btnText) ?> <span class="arrow" aria-hidden="true">&rarr;</span></a>
             </div>
+            <?php endif; ?>
             <?php if ($hasDisc): ?>
               <div class="hero__disc" aria-hidden="true"<?php if ($discStyle !== ''): ?> style="<?= htmlspecialchars($discStyle) ?>"<?php endif; ?>>
                 <?php if (trim((string) $slide->disc_small) !== ''): ?><small><?= htmlspecialchars($slide->disc_small) ?></small><?php endif; ?>
@@ -113,7 +116,7 @@ $heroSlides = !empty($hero_slides) ? $hero_slides : array();
           <?php else: ?>
             <span class="circle__ring" aria-hidden="true"><?= htmlspecialchars($cat->icon ?: '•') ?></span>
           <?php endif; ?>
-          <span class="circle__label"><?= htmlspecialchars($cat->name) ?></span>
+          <span class="circle__label"><?= htmlspecialchars(category_store_name($cat)) ?></span>
         </a>
       </li>
     <?php endforeach; ?>

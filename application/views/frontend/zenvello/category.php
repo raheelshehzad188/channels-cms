@@ -19,12 +19,14 @@ $discSmall = !empty($category->display_hero_disc_small) ? $category->display_her
 $discBig = !empty($category->display_hero_disc_big) ? $category->display_hero_disc_big : '50%';
 $discSpan = !empty($category->display_hero_disc_span) ? $category->display_hero_disc_span : 'OFF';
 $showDisc = !empty($category->display_hero_disc_on) && trim($discSmall . $discBig . $discSpan) !== '';
+$extraText = !isset($category->display_hero_extra_text) || (int) $category->display_hero_extra_text === 1;
 ?>
 <div class="container">
-  <section class="hero hero--static" aria-label="<?= htmlspecialchars($category->name) ?>">
+  <section class="hero hero--static" aria-label="<?= htmlspecialchars(category_store_name($category)) ?>">
     <div class="hero__track">
-      <article class="hero__slide">
-        <img class="hero__bg" src="<?= $hero ?>" alt="<?= htmlspecialchars($category->name) ?>">
+      <article class="hero__slide<?= $extraText ? '' : ' is-image-only' ?>">
+        <img class="hero__bg" src="<?= $hero ?>" alt="<?= htmlspecialchars(category_store_name($category)) ?>">
+        <?php if ($extraText): ?>
         <div class="hero__body">
           <p class="hero__kicker"><?= htmlspecialchars($heroKicker) ?></p>
           <h1 class="hero__title"><?= nl2br(htmlspecialchars($heroTitle)) ?></h1>
@@ -38,21 +40,34 @@ $showDisc = !empty($category->display_hero_disc_on) && trim($discSmall . $discBi
           <?php if ($discSpan !== ''): ?><span><?= htmlspecialchars($discSpan) ?></span><?php endif; ?>
         </div>
         <?php endif; ?>
+        <?php endif; ?>
       </article>
     </div>
   </section>
 </div>
 
-<?php if (!empty($subcategories)): ?>
+<?php
+$hideEmptySubs = setting_flag_on($settings, 'hide_empty_subcategories');
+$visibleSubs = array();
+if (!empty($subcategories)) {
+    foreach ($subcategories as $sub) {
+        if ($hideEmptySubs && isset($sub->product_count) && (int) $sub->product_count < 1) {
+            continue;
+        }
+        $visibleSubs[] = $sub;
+    }
+}
+?>
+<?php if (!empty($visibleSubs)): ?>
 <section class="container catstrip" aria-label="Sub categories">
   <div class="section-head" style="margin-bottom:1rem">
     <div>
       <h2 class="section-title">Shop by sub-category</h2>
-      <p class="section-sub">Browse within <?= htmlspecialchars($category->name) ?></p>
+      <p class="section-sub">Browse within <?= htmlspecialchars(category_store_name($category)) ?></p>
     </div>
   </div>
   <ul class="circles">
-    <?php foreach ($subcategories as $sub): ?>
+    <?php foreach ($visibleSubs as $sub): ?>
       <?php
         $img = !empty($sub->display_image) ? $sub->display_image : $sub->image;
       ?>
@@ -63,7 +78,7 @@ $showDisc = !empty($category->display_hero_disc_on) && trim($discSmall . $discBi
           <?php else: ?>
             <span class="circle__ring" aria-hidden="true"><?= htmlspecialchars($sub->icon ?: '•') ?></span>
           <?php endif; ?>
-          <span class="circle__label"><?= htmlspecialchars($sub->name) ?></span>
+          <span class="circle__label"><?= htmlspecialchars(category_store_name($sub)) ?></span>
         </a>
       </li>
     <?php endforeach; ?>
@@ -74,11 +89,11 @@ $showDisc = !empty($category->display_hero_disc_on) && trim($discSmall . $discBi
 <section class="container section" id="category-products" aria-labelledby="cat-products">
   <div class="section-head">
     <div>
-      <h2 class="section-title" id="cat-products"><?= htmlspecialchars($category->name) ?> products</h2>
+      <h2 class="section-title" id="cat-products"><?= htmlspecialchars(category_store_name($category)) ?> products</h2>
       <p class="section-sub"><?= (int) $products_total ?> item<?= ((int) $products_total === 1) ? '' : 's' ?></p>
     </div>
   </div>
-  <div class="grid-6" id="category-product-grid" data-offset="<?= count($products) ?>" data-has-more="<?= !empty($has_more) ? '1' : '0' ?>" data-url="<?= htmlspecialchars($load_more_url) ?>">
+  <div class="grid-4" id="category-product-grid" data-offset="<?= count($products) ?>" data-has-more="<?= !empty($has_more) ? '1' : '0' ?>" data-url="<?= htmlspecialchars($load_more_url) ?>">
     <?php if (empty($products)): ?>
       <p class="section-sub">No products in this category yet.</p>
     <?php else: ?>

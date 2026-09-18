@@ -8,6 +8,8 @@ class Users extends CI_Controller {
         parent::__construct();
         ec_require_admin();
         $this->load->model('User_model');
+        ensure_whatsapp_schema();
+        ensure_user_commission_schema();
     }
 
     public function index()
@@ -71,14 +73,17 @@ class Users extends CI_Controller {
             $roleID = ROLE_ECOMMERCE;
         }
 
+        ensure_whatsapp_schema();
         $payload = array(
             'first_name' => trim($this->input->post('first_name')),
             'last_name' => trim($this->input->post('last_name')),
             'email' => $email,
             'uname' => $uname,
             'phone' => trim($this->input->post('phone')),
+            'whatsapp_number' => trim((string) $this->input->post('whatsapp_number')),
             'roleID' => $roleID,
             'commission' => $roleID === ROLE_ECOMMERCE ? (float) $this->input->post('commission') : 0,
+            'commission_percent' => $roleID === ROLE_ECOMMERCE ? max(0, min(100, (float) $this->input->post('commission_percent'))) : 0,
             'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
         );
 
@@ -88,7 +93,18 @@ class Users extends CI_Controller {
         }
 
         $this->User_model->save($payload, $id);
-        $this->session->set_flashdata('success', $id ? 'User updated successfully.' : 'User added successfully.');
+        if (function_exists('product_owner_commission_reset_cache')) {
+            product_owner_commission_reset_cache();
+        }
+        $repriced = 0;
+        if ($id && $roleID === ROLE_ECOMMERCE && function_exists('ec_refresh_store_copy_costs')) {
+            $repriced = ec_refresh_store_copy_costs(0, (int) $id);
+        }
+        $message = $id ? 'User updated successfully.' : 'User added successfully.';
+        if ($id && $roleID === ROLE_ECOMMERCE) {
+            $message .= ' ' . (int) $repriced . ' already-listed store products were repriced from the new commission.';
+        }
+        $this->session->set_flashdata('success', $message);
         redirect('/admin/users');
     }
 

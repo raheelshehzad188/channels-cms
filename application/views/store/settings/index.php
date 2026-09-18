@@ -19,11 +19,56 @@ function s($settings, $key, $default = '') {
   <div class="row g-3">
     <div class="col-lg-6">
       <div class="store-card mb-3">
+        <div class="card-header">Product pricing</div>
+        <div class="card-body">
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="auto_add_products" value="1" id="autoAddProducts" <?= !empty($store->auto_add_products) ? 'checked' : ''; ?>>
+            <label class="form-check-label" for="autoAddProducts">Auto-add new catalog products</label>
+          </div>
+          <div class="form-text mb-3">When ecommerce or admin marks a product “Auto add to recommended stores”, it is copied here with your plus amount.</div>
+          <div class="mb-0">
+            <label class="form-label">Plus amount (<?= htmlspecialchars(store_currency($store)); ?>)</label>
+            <input type="number" step="0.01" min="0" name="price_plus_amount" class="form-control" value="<?= htmlspecialchars(isset($store->price_plus_amount) ? $store->price_plus_amount : '0'); ?>">
+            <div class="form-text">Added to your cost price when a product is auto-added. Example: cost 10 + plus 4 = selling price 14.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="store-card mb-3">
         <div class="card-header">General</div>
         <div class="card-body">
           <div class="mb-3"><label class="form-label">Store Name</label><input type="text" name="general_store_name" class="form-control" value="<?= s($settings, 'general_store_name', $store->name); ?>"></div>
           <div class="mb-3"><label class="form-label">Contact Email</label><input type="email" name="general_contact_email" class="form-control" value="<?= s($settings, 'general_contact_email', $store->email); ?>"></div>
           <div class="mb-0"><label class="form-label">Support Phone</label><input type="text" name="general_support_phone" class="form-control" value="<?= s($settings, 'general_support_phone', $store->phone); ?>"></div>
+        </div>
+      </div>
+
+      <div class="store-card mb-3">
+        <div class="card-header">Product Detail Design</div>
+        <div class="card-body">
+          <?php $pdpDesign = isset($settings['product_detail_design']) ? $settings['product_detail_design'] : 'old'; ?>
+          <div class="mb-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="product_detail_design" id="pdpDesignOld" value="old" <?= $pdpDesign !== 'new' ? 'checked' : '' ?>>
+              <label class="form-check-label" for="pdpDesignOld">Old Design</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="product_detail_design" id="pdpDesignNew" value="new" <?= $pdpDesign === 'new' ? 'checked' : '' ?>>
+              <label class="form-check-label" for="pdpDesignNew">New Design</label>
+            </div>
+          </div>
+          <div class="form-text">Old Design keeps the current product page. New Design uses the modern gallery, variation cards, reviews and FAQs layout. Header and footer stay the same.</div>
+        </div>
+      </div>
+
+      <div class="store-card mb-3">
+        <div class="card-header">Categories</div>
+        <div class="card-body">
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" name="hide_empty_subcategories" value="1" id="hideEmptySubcategories" <?= !empty($settings['hide_empty_subcategories']) ? 'checked' : ''; ?>>
+            <label class="form-check-label" for="hideEmptySubcategories">Hide empty sub categories</label>
+          </div>
+          <div class="form-text">On category pages, hide sub categories that have no products in this store.</div>
         </div>
       </div>
 
@@ -39,6 +84,11 @@ function s($settings, $key, $default = '') {
       <div class="store-card">
         <div class="card-header">Notifications</div>
         <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">WhatsApp number</label>
+            <input type="text" name="whatsapp_number" class="form-control" value="<?= s($settings, 'whatsapp_number', $store->phone); ?>" placeholder="923004210607">
+            <div class="form-text">Used for new-order WhatsApp alerts. Include country code without +.</div>
+          </div>
           <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="notify_new_order" value="1" <?= s($settings, 'notify_new_order') ? 'checked' : ''; ?> id="n1"><label class="form-check-label" for="n1">New order alerts</label></div>
           <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="notify_low_stock" value="1" <?= s($settings, 'notify_low_stock') ? 'checked' : ''; ?> id="n2"><label class="form-check-label" for="n2">Low stock alerts</label></div>
           <div class="form-check"><input class="form-check-input" type="checkbox" name="notify_new_customer" value="1" <?= s($settings, 'notify_new_customer') ? 'checked' : ''; ?> id="n3"><label class="form-check-label" for="n3">New customer alerts</label></div>

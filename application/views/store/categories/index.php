@@ -21,7 +21,7 @@
         <div class="mb-3">
           <label class="form-label">Upload / replace default category hero</label>
           <input type="file" name="category_hero_default" class="form-control" accept="image/*">
-          <div class="form-text">Size: 1280 × 640 px</div>
+          <div class="form-text">Default category hero. Just image: 1600 × 480 px. With extra text: 1280 × 640 px.</div>
         </div>
         <div class="table-responsive">
           <table class="table align-middle">

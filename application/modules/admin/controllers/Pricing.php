@@ -30,7 +30,7 @@ class Pricing extends CI_Controller {
 
     public function save()
     {
-        $this->form_validation->set_rules('platform_fee', 'Platform Fee', 'required|numeric');
+        $this->form_validation->set_rules('platform_fee', 'Platform Fee %', 'required|numeric');
         $this->form_validation->set_rules('vat', 'VAT', 'required|numeric');
         $this->form_validation->set_rules('platform_country_id', 'Platform Country', 'required|integer');
 
@@ -49,8 +49,10 @@ class Pricing extends CI_Controller {
         }
 
         $this->save_setting('platform_country_id', (string) $countryId);
-        $this->save_setting('platform_fee', number_format((float) $this->input->post('platform_fee'), 2, '.', ''));
+        $feePercent = max(0, min(100, (float) $this->input->post('platform_fee')));
+        $this->save_setting('platform_fee', number_format($feePercent, 2, '.', ''));
         $this->save_setting('vat', number_format((float) $this->input->post('vat'), 2, '.', ''));
+        $updated = ec_refresh_store_copy_costs();
 
         $platformCurrency = strtoupper(trim($country->currency));
         $this->save_rate($platformCurrency, 1);
@@ -66,7 +68,7 @@ class Pricing extends CI_Controller {
             }
         }
 
-        $this->session->set_flashdata('success', 'Platform pricing and currency settings updated.');
+        $this->session->set_flashdata('success', 'Platform pricing updated. Store product costs and selling prices were recalculated from the new platform fee' . ($updated ? ' (' . $updated . ' listed products).' : '.'));
         redirect('/admin/pricing');
     }
 

@@ -82,6 +82,53 @@ function theme_setting($settings, $key, $default = '')
     return (isset($settings[$key]) && $settings[$key] !== '') ? $settings[$key] : $default;
 }
 
+function setting_flag_on($settings, $key)
+{
+    $value = theme_setting($settings, $key, '');
+    if (is_bool($value)) {
+        return $value;
+    }
+    return in_array(strtolower(trim((string) $value)), array('1', 'true', 'on', 'yes'), true);
+}
+
+function store_setting_row_pair($row)
+{
+    if (is_object($row)) {
+        $row = (array) $row;
+    }
+    if (!is_array($row)) {
+        return null;
+    }
+    $key = '';
+    $value = '';
+    if (!empty($row['field_key'])) {
+        $key = $row['field_key'];
+        $value = isset($row['field_value']) ? $row['field_value'] : '';
+    } elseif (!empty($row['setting_key'])) {
+        $key = $row['setting_key'];
+        $value = isset($row['setting_value']) ? $row['setting_value'] : '';
+    }
+    if ($key === '') {
+        return null;
+    }
+    return array($key, $value);
+}
+
+function category_store_name($category)
+{
+    if (!is_object($category)) {
+        return '';
+    }
+    $local = isset($category->local_name) ? trim((string) $category->local_name) : '';
+    if ($local !== '') {
+        return $local;
+    }
+    if (!empty($category->display_name)) {
+        return trim((string) $category->display_name);
+    }
+    return isset($category->name) ? trim((string) $category->name) : '';
+}
+
 function storefront_url($path = '')
 {
     $url = site_url($path);
@@ -108,16 +155,34 @@ function product_url($product)
     return $id > 0 ? storefront_url('product/' . $id) : storefront_url('shop');
 }
 
+function storefront_asset_url($path = '')
+{
+    $path = trim((string) $path);
+    if ($path === '') {
+        return '';
+    }
+    if (preg_match('#^https?://#i', $path) || strpos($path, '//') === 0) {
+        return $path;
+    }
+    $full = base_url(ltrim($path, '/'));
+    $parts = parse_url($full);
+    $rel = (isset($parts['path']) && $parts['path'] !== '') ? $parts['path'] : '/' . ltrim($path, '/');
+    if ($rel[0] !== '/') {
+        $rel = '/' . $rel;
+    }
+    if (!empty($parts['query'])) {
+        $rel .= '?' . $parts['query'];
+    }
+    return $rel;
+}
+
 function product_image_url($path, $fallback = '')
 {
     $path = trim((string) $path);
     if ($path === '') {
         return $fallback;
     }
-    if (preg_match('#^https?://#i', $path) || strpos($path, '//') === 0) {
-        return $path;
-    }
-    return base_url(ltrim($path, '/'));
+    return storefront_asset_url($path);
 }
 
 function product_gallery_urls($product, $images = array())
@@ -146,6 +211,154 @@ function product_gallery_urls($product, $images = array())
         }
     }
     return $urls;
+}
+
+function ensure_product_parent_columns()
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+    $CI =& get_instance();
+    if (!$CI->db->table_exists('products')) {
+        return;
+    }
+    if (!$CI->db->field_exists('parent_sku', 'products')) {
+        $CI->db->query("ALTER TABLE products ADD COLUMN parent_sku VARCHAR(100) NOT NULL DEFAULT '' AFTER sku");
+    }
+    if (!$CI->db->field_exists('is_default', 'products')) {
+        $CI->db->query("ALTER TABLE products ADD COLUMN is_default TINYINT(1) NOT NULL DEFAULT 0 AFTER parent_sku");
+    }
+    if (!$CI->db->table_exists('product_images')) {
+        $CI->db->query("CREATE TABLE IF NOT EXISTS product_images (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            product_id INT(11) NOT NULL,
+            image VARCHAR(255) NOT NULL DEFAULT '',
+            sort_order INT(11) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY product_id (product_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+}
+
+function product_family($product, $activeOnly = true)
+{
+    $empty = array(
+        'parent' => $product,
+        'selected' => $product,
+        'children' => array(),
+    );
+    if (!$product) {
+        return $empty;
+    }
+    ensure_product_parent_columns();
+    $CI =& get_instance();
+    $storeId = !empty($product->store_id) ? (int) $product->store_id : 0;
+    $parentSku = isset($product->parent_sku) ? trim((string) $product->parent_sku) : '';
+    $parent = $product;
+    $groupSku = isset($product->sku) ? trim((string) $product->sku) : '';
+
+    if ($parentSku !== '') {
+        $CI->db->from('products');
+        product_scope_store($storeId);
+        $CI->db->where('products.sku', $parentSku);
+        if ($activeOnly) {
+            $CI->db->where('products.status', 1);
+        }
+        $found = $CI->db->get()->row();
+        if ($found) {
+            $parent = $found;
+            $groupSku = trim((string) $found->sku);
+        } else {
+            $groupSku = $parentSku;
+        }
+    }
+
+    $children = array();
+    if ($groupSku !== '') {
+        $CI->db->from('products');
+        product_scope_store($storeId);
+        $CI->db->where('products.parent_sku', $groupSku);
+        if ($activeOnly) {
+            $CI->db->where('products.status', 1);
+        }
+        $CI->db->order_by('products.is_default', 'desc');
+        $CI->db->order_by('products.id', 'asc');
+        $children = $CI->db->get()->result();
+    }
+
+    $selected = $product;
+    if ($parentSku === '' && !empty($children)) {
+        $selected = $children[0];
+        foreach ($children as $child) {
+            if (!empty($child->is_default)) {
+                $selected = $child;
+                break;
+            }
+        }
+    }
+
+    return array(
+        'parent' => $parent,
+        'selected' => $selected,
+        'children' => $children,
+    );
+}
+
+function product_scope_store($storeId)
+{
+    $CI =& get_instance();
+    $storeId = (int) $storeId;
+    if ($storeId > 0) {
+        $CI->db->where('products.store_id', $storeId);
+        return;
+    }
+    $CI->db->group_start()
+        ->where('products.store_id IS NULL', null, false)
+        ->or_where('products.store_id', 0)
+        ->group_end();
+}
+
+function product_sync_default_child($productId)
+{
+    ensure_product_parent_columns();
+    $CI =& get_instance();
+    $product = $CI->db->where('id', (int) $productId)->get('products')->row();
+    if (!$product) {
+        return;
+    }
+    $parentSku = isset($product->parent_sku) ? trim((string) $product->parent_sku) : '';
+    if ($parentSku === '') {
+        if (!empty($product->is_default)) {
+            $CI->db->where('id', (int) $product->id)->update('products', array('is_default' => 0));
+        }
+        return;
+    }
+    if (empty($product->is_default)) {
+        return;
+    }
+    $storeId = !empty($product->store_id) ? (int) $product->store_id : 0;
+    if ($storeId > 0) {
+        $CI->db->where('store_id', $storeId);
+    } else {
+        $CI->db->group_start()
+            ->where('store_id IS NULL', null, false)
+            ->or_where('store_id', 0)
+            ->group_end();
+    }
+    $CI->db->where('parent_sku', $parentSku);
+    $CI->db->where('id !=', (int) $product->id);
+    $CI->db->update('products', array('is_default' => 0));
+}
+
+function product_option_url($child, $isPreview = false, $themeSlug = '')
+{
+    if ($isPreview && $themeSlug !== '') {
+        return base_url('admin/products/preview/' . (int) $child->id . '/' . rawurlencode($themeSlug));
+    }
+    return product_url($child);
 }
 
 function sanitize_custom_css($css)
@@ -428,18 +641,141 @@ function convert_money($amount, $from, $to)
     return round(($amount * $fromRate) / $toRate, 2);
 }
 
+function platform_fee_percent()
+{
+    return max(0, (float) platform_setting('platform_fee', 0));
+}
+
 function product_platform_fee($storeId = 0, $product = null)
 {
-    $fee = (float) platform_setting('platform_fee', 0);
-    $target = '';
-    if ($storeId) {
-        $target = store_currency($storeId);
-    } elseif ($product) {
-        $target = product_currency($product);
-    } else {
-        $target = platform_currency();
+    $percent = platform_fee_percent();
+    if ($percent <= 0) {
+        return 0.0;
     }
-    return convert_money($fee, platform_currency(), $target);
+    $base = product_platform_fee_base($product);
+    return round($base * ($percent / 100), 2);
+}
+
+function product_platform_fee_base($product)
+{
+    return product_commission_base($product);
+}
+
+function ec_refresh_store_copy_costs($storeId = 0, $ownerUserId = 0)
+{
+    $CI =& get_instance();
+    if (!$CI->db->table_exists('products')) {
+        return 0;
+    }
+    ensure_user_commission_schema();
+    product_owner_commission_reset_cache();
+
+    $catalogIds = array();
+    if ($ownerUserId) {
+        $catalogRows = $CI->db
+            ->select('id')
+            ->from('products')
+            ->where('created_by', (int) $ownerUserId)
+            ->group_start()
+                ->where('store_id IS NULL', null, false)
+                ->or_where('store_id', 0)
+            ->group_end()
+            ->get()
+            ->result();
+        foreach ($catalogRows as $row) {
+            $catalogIds[] = (int) $row->id;
+        }
+    }
+
+    $CI->db
+        ->where('store_id IS NOT NULL', null, false)
+        ->where('store_id !=', 0)
+        ->where('source_product_id IS NOT NULL', null, false)
+        ->where('source_product_id !=', 0);
+    if ($storeId) {
+        $CI->db->where('store_id', (int) $storeId);
+    }
+    if ($ownerUserId) {
+        $CI->db->group_start();
+        if ($catalogIds) {
+            $CI->db->where_in('source_product_id', $catalogIds);
+            $CI->db->or_where('created_by', (int) $ownerUserId);
+        } else {
+            $CI->db->where('created_by', (int) $ownerUserId);
+        }
+        $CI->db->group_end();
+    }
+    $copies = $CI->db->get('products')->result();
+    if (!$copies) {
+        return 0;
+    }
+
+    $sourceIds = array();
+    $storeIds = array();
+    foreach ($copies as $copy) {
+        $sourceIds[(int) $copy->source_product_id] = true;
+        $storeIds[(int) $copy->store_id] = true;
+    }
+
+    $sources = array();
+    $ids = array_keys($sourceIds);
+    foreach (array_chunk($ids, 500) as $chunk) {
+        $rows = $CI->db
+            ->select('products.*, users.commission as owner_commission, users.commission_percent as owner_commission_percent', false)
+            ->from('products')
+            ->join('users', 'users.UserID = products.created_by', 'left')
+            ->where_in('products.id', $chunk)
+            ->get()
+            ->result();
+        foreach ($rows as $row) {
+            $sources[(int) $row->id] = $row;
+        }
+    }
+
+    $plusByStore = array();
+    foreach (array_keys($storeIds) as $sid) {
+        $plusByStore[(int) $sid] = store_price_plus_amount((int) $sid);
+    }
+
+    $updated = 0;
+    foreach ($copies as $copy) {
+        $source = isset($sources[(int) $copy->source_product_id]) ? $sources[(int) $copy->source_product_id] : null;
+        if (!$source) {
+            continue;
+        }
+        $wholesale = product_wholesale_price($source, (int) $copy->store_id);
+        $plus = isset($plusByStore[(int) $copy->store_id]) ? $plusByStore[(int) $copy->store_id] : 0.0;
+        $payload = ec_store_copy_price_payload($copy, $wholesale, $plus);
+        if (!$payload) {
+            continue;
+        }
+        $CI->db->where('id', (int) $copy->id)->update('products', $payload);
+        $updated++;
+    }
+    return $updated;
+}
+
+function ec_store_copy_price_payload($copy, $wholesale, $plus = 0.0)
+{
+    $oldCost = (float) $copy->cost_price;
+    $oldPrice = (float) $copy->price;
+    $payload = array('cost_price' => round((float) $wholesale, 2));
+    $wholesale = (float) $payload['cost_price'];
+    if ($oldCost > 0) {
+        $newPrice = round($oldPrice + ($wholesale - $oldCost), 2);
+    } else {
+        $newPrice = round($wholesale + max(0, (float) $plus), 2);
+    }
+    if ($newPrice < $wholesale) {
+        $newPrice = $wholesale;
+    }
+    if (abs($newPrice - $oldPrice) > 0.001) {
+        $payload['price'] = $newPrice;
+    }
+    if (abs($wholesale - $oldCost) < 0.001 && !isset($payload['price'])) {
+        return null;
+    }
+    return $payload;
 }
 
 function order_amount_in_platform($order, $kind = 'platform_fee')
@@ -505,17 +841,145 @@ function product_pricing_breakdown($product, $storeId = 0)
     );
 }
 
-function product_commission_amount($product)
+function ensure_user_commission_schema()
 {
-    if (isset($product->owner_commission) && $product->owner_commission !== null && $product->owner_commission !== '') {
-        return (float) $product->owner_commission;
+    static $done = false;
+    if ($done) {
+        return;
     }
-    if (empty($product->created_by)) {
+    $done = true;
+    $CI =& get_instance();
+    if (!$CI->db->table_exists('users')) {
+        return;
+    }
+    if (!$CI->db->field_exists('commission_percent', 'users')) {
+        $CI->db->query("ALTER TABLE users ADD COLUMN commission_percent DECIMAL(8,2) NOT NULL DEFAULT 0.00 AFTER commission");
+    }
+}
+
+function product_owner_commission_reset_cache()
+{
+    product_owner_commission_rates(null);
+}
+
+function product_owner_commission_rates($product)
+{
+    static $cache = array();
+    if ($product === null) {
+        $cache = array();
+        return array('flat' => 0.0, 'percent' => 0.0);
+    }
+    $flat = null;
+    $percent = null;
+    if (isset($product->owner_commission) && $product->owner_commission !== null && $product->owner_commission !== '') {
+        $flat = (float) $product->owner_commission;
+    }
+    if (isset($product->owner_commission_percent) && $product->owner_commission_percent !== null && $product->owner_commission_percent !== '') {
+        $percent = (float) $product->owner_commission_percent;
+    }
+    if (($flat === null || $percent === null) && !empty($product->created_by)) {
+        $uid = (int) $product->created_by;
+        if (!isset($cache[$uid])) {
+            ensure_user_commission_schema();
+            $CI =& get_instance();
+            $fields = 'commission';
+            if ($CI->db->field_exists('commission_percent', 'users')) {
+                $fields .= ', commission_percent';
+            }
+            $user = $CI->db->select($fields)->where('UserID', $uid)->get('users')->row();
+            $cache[$uid] = array(
+                'flat' => $user ? (float) $user->commission : 0.0,
+                'percent' => ($user && isset($user->commission_percent)) ? (float) $user->commission_percent : 0.0,
+            );
+        }
+        if ($flat === null) {
+            $flat = $cache[$uid]['flat'];
+        }
+        if ($percent === null) {
+            $percent = $cache[$uid]['percent'];
+        }
+    }
+    return array(
+        'flat' => max(0, (float) $flat),
+        'percent' => max(0, (float) $percent),
+    );
+}
+
+function product_commission_base($product)
+{
+    if (!$product) {
         return 0.0;
     }
+    if (empty($product->store_id)) {
+        return product_base_price($product);
+    }
+    $rates = product_owner_commission_rates($product);
+    $wholesale = (isset($product->cost_price) && (float) $product->cost_price > 0)
+        ? (float) $product->cost_price
+        : 0.0;
+    if ($wholesale <= 0) {
+        return 0.0;
+    }
+    $divisor = 1 + ($rates['percent'] / 100) + (platform_fee_percent() / 100);
+    if ($divisor <= 0) {
+        return 0.0;
+    }
+    return max(0, round(($wholesale - $rates['flat']) / $divisor, 2));
+}
+
+function product_commission_amount($product)
+{
+    $rates = product_owner_commission_rates($product);
+    $base = product_commission_base($product);
+    return round($rates['flat'] + ($base * ($rates['percent'] / 100)), 2);
+}
+
+function ec_catalog_import_user_id($countryId = 0, $fallback = 0)
+{
     $CI =& get_instance();
-    $user = $CI->db->select('commission')->where('UserID', (int) $product->created_by)->get('users')->row();
-    return $user ? (float) $user->commission : 0.0;
+    ensure_user_commission_schema();
+    $countryId = (int) $countryId;
+    $fallback = (int) $fallback;
+    if ($countryId > 0 && $CI->db->table_exists('products')) {
+        $row = $CI->db
+            ->select('products.created_by, COUNT(*) as owned', false)
+            ->from('products')
+            ->join('users', 'users.UserID = products.created_by')
+            ->where('users.roleID', ROLE_ECOMMERCE)
+            ->where('users.status', 1)
+            ->group_start()
+                ->where('users.commission >', 0)
+                ->or_where('users.commission_percent >', 0)
+            ->group_end()
+            ->group_start()
+                ->where('products.store_id IS NULL', null, false)
+                ->or_where('products.store_id', 0)
+            ->group_end()
+            ->where('products.country_id', $countryId)
+            ->group_by('products.created_by')
+            ->order_by('owned', 'DESC')
+            ->order_by('products.created_by', 'ASC')
+            ->limit(1)
+            ->get()
+            ->row();
+        if ($row) {
+            return (int) $row->created_by;
+        }
+    }
+    $ecom = $CI->db
+        ->where('roleID', ROLE_ECOMMERCE)
+        ->where('status', 1)
+        ->group_start()
+            ->where('commission >', 0)
+            ->or_where('commission_percent >', 0)
+        ->group_end()
+        ->order_by('UserID', 'asc')
+        ->get('users')
+        ->row();
+    if ($ecom) {
+        return (int) $ecom->UserID;
+    }
+    return $fallback > 0 ? $fallback : 1;
 }
 
 function product_wholesale_price($product, $storeId = 0)
@@ -537,11 +1001,122 @@ function product_store_markup($storeId, $productId)
     return $row ? (float) $row->markup : 0.0;
 }
 
+function ensure_whatsapp_schema()
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+    $CI =& get_instance();
+    if (!$CI->db->table_exists('platform_settings')) {
+        $CI->db->query("CREATE TABLE IF NOT EXISTS `platform_settings` (
+            `setting_key` varchar(100) NOT NULL,
+            `setting_value` varchar(255) NOT NULL DEFAULT '',
+            PRIMARY KEY (`setting_key`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+    if ($CI->db->table_exists('users') && !$CI->db->field_exists('whatsapp_number', 'users')) {
+        $after = $CI->db->field_exists('phone', 'users') ? ' AFTER phone' : '';
+        $CI->db->query("ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(40) NOT NULL DEFAULT ''" . $after);
+    }
+}
+
+function ensure_store_pricing_columns()
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $CI =& get_instance();
+    if (!$CI->db->table_exists('stores')) {
+        $done = true;
+        return;
+    }
+    if (!$CI->db->field_exists('auto_add_products', 'stores')) {
+        $CI->db->query("ALTER TABLE stores ADD COLUMN auto_add_products TINYINT(1) NOT NULL DEFAULT 0 AFTER country_id");
+    }
+    if (!$CI->db->field_exists('price_plus_amount', 'stores')) {
+        $CI->db->query("ALTER TABLE stores ADD COLUMN price_plus_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER auto_add_products");
+    }
+    $done = true;
+}
+
+function store_price_plus_amount($store = null)
+{
+    ensure_store_pricing_columns();
+    if (is_object($store) && isset($store->price_plus_amount)) {
+        return max(0, (float) $store->price_plus_amount);
+    }
+    $storeId = is_numeric($store) ? (int) $store : 0;
+    if ($storeId < 1) {
+        return 0.0;
+    }
+    $CI =& get_instance();
+    $row = $CI->db->select('price_plus_amount')->where('id', $storeId)->get('stores')->row();
+    return $row ? max(0, (float) $row->price_plus_amount) : 0.0;
+}
+
+function store_auto_add_enabled($store = null)
+{
+    ensure_store_pricing_columns();
+    if (is_object($store) && isset($store->auto_add_products)) {
+        return (int) $store->auto_add_products === 1;
+    }
+    $storeId = is_numeric($store) ? (int) $store : 0;
+    if ($storeId < 1) {
+        return false;
+    }
+    $CI =& get_instance();
+    $row = $CI->db->select('auto_add_products')->where('id', $storeId)->get('stores')->row();
+    return $row && (int) $row->auto_add_products === 1;
+}
+
+function ec_load_store_product_model()
+{
+    $CI =& get_instance();
+    if (isset($CI->Store_product_model)) {
+        return $CI->Store_product_model;
+    }
+    $CI->load->model('store/Store_product_model');
+    if (isset($CI->Store_product_model)) {
+        return $CI->Store_product_model;
+    }
+    $CI->load->model('Store_product_model');
+    return isset($CI->Store_product_model) ? $CI->Store_product_model : null;
+}
+
+function ec_auto_add_catalog_product($productId, $mark = false)
+{
+    $productId = (int) $productId;
+    if ($productId < 1) {
+        return 0;
+    }
+    $CI =& get_instance();
+    if ($mark && $CI->db->table_exists('products')) {
+        if (isset($CI->Product_model) && method_exists($CI->Product_model, 'ensure_auto_add_column')) {
+            $CI->Product_model->ensure_auto_add_column();
+        } elseif (!$CI->db->field_exists('auto_add_to_stores', 'products')) {
+            $CI->db->query("ALTER TABLE products ADD COLUMN auto_add_to_stores TINYINT(1) NOT NULL DEFAULT 0 AFTER status");
+        }
+        $CI->db->where('id', $productId)->update('products', array('auto_add_to_stores' => 1));
+    }
+    $model = ec_load_store_product_model();
+    if (!$model) {
+        return 0;
+    }
+    return $model->auto_add_catalog_to_stores($productId);
+}
+
 function product_customer_price($product, $storeId)
 {
-    // Product price includes base + ecommerce commission + platform fee + store markup.
+    // Product price includes base + ecommerce commission + platform fee + store plus/markup.
     // VAT is applied once at checkout on the order subtotal, not per product.
-    return round(product_wholesale_price($product, $storeId) + product_store_markup($storeId, isset($product->id) ? $product->id : 0), 2);
+    $extra = product_store_markup($storeId, isset($product->id) ? $product->id : 0);
+    if ($extra <= 0) {
+        $extra = store_price_plus_amount($storeId);
+    }
+    return round(product_wholesale_price($product, $storeId) + $extra, 2);
 }
 
 function cart_vat_amount($subtotal)
@@ -889,7 +1464,45 @@ function ec_sanitize_product_html($html)
     $allowed = '<p><br><ul><ol><li><strong><b><em><i><u><h2><h3><h4><h5><table><thead><tbody><tr><th><td><img><a><span><div><blockquote><hr><sup><sub>';
     $html = strip_tags($html, $allowed);
     $html = preg_replace('/(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', '', $html);
-    return trim($html);
+    $html = preg_replace('#<a\b[^>]*href\s*=\s*(["\']?)void\s*\(\s*0\s*\)\1[^>]*>.*?</a>#is', '', $html);
+    return ec_balance_html_fragment(trim($html));
+}
+
+function ec_balance_html_fragment($html)
+{
+    if ($html === '' || !class_exists('DOMDocument')) {
+        return $html;
+    }
+    $prev = libxml_use_internal_errors(true);
+    $doc = new DOMDocument();
+    $wrapped = '<article id="ec-html-root">' . $html . '</article>';
+    $ok = @$doc->loadHTML('<?xml encoding="UTF-8">' . $wrapped);
+    if (!$ok) {
+        libxml_clear_errors();
+        libxml_use_internal_errors($prev);
+        return $html;
+    }
+    $root = $doc->getElementById('ec-html-root');
+    if (!$root) {
+        foreach ($doc->getElementsByTagName('article') as $node) {
+            if ($node->getAttribute('id') === 'ec-html-root') {
+                $root = $node;
+                break;
+            }
+        }
+    }
+    if (!$root) {
+        libxml_clear_errors();
+        libxml_use_internal_errors($prev);
+        return $html;
+    }
+    $inner = '';
+    foreach ($root->childNodes as $child) {
+        $inner .= $doc->saveHTML($child);
+    }
+    libxml_clear_errors();
+    libxml_use_internal_errors($prev);
+    return trim($inner);
 }
 
 function ec_product_details_html($product)
@@ -927,4 +1540,281 @@ function apply_storefront_pricing($products, $storeId)
         $product->price = $product->customer_price;
     }
     return $products;
+}
+
+function product_detail_design($settings = array())
+{
+    $value = '';
+    if (is_array($settings) && isset($settings['product_detail_design'])) {
+        $value = strtolower(trim((string) $settings['product_detail_design']));
+    }
+    return $value === 'new' ? 'new' : 'old';
+}
+
+function product_option_label($child, $parent = null)
+{
+    $shipLabel = product_ship_option_label($child);
+    $name = trim((string) (is_object($child) && isset($child->name) ? $child->name : ''));
+    $parentName = '';
+    if (is_object($parent) && isset($parent->name)) {
+        $parentName = trim((string) $parent->name);
+    }
+    if ($parentName !== '' && $name !== '' && stripos($name, $parentName) === 0) {
+        $rest = trim(substr($name, strlen($parentName)), " \t-–—:|,");
+        if ($rest !== '') {
+            return $rest;
+        }
+    }
+    if ($shipLabel !== '' && ($name === '' || ($parentName !== '' && strcasecmp($name, $parentName) === 0))) {
+        return $shipLabel;
+    }
+    return $name !== '' ? $name : ($shipLabel !== '' ? $shipLabel : 'Option');
+}
+
+function product_ship_option_label($product)
+{
+    $days = function_exists('product_ship_days') ? product_ship_days($product) : null;
+    if (!$days) {
+        return '';
+    }
+    if ((int) $days['min'] === (int) $days['max']) {
+        $n = (int) $days['min'];
+        return $n . ' day delivery';
+    }
+    return (int) $days['min'] . '–' . (int) $days['max'] . ' day delivery';
+}
+
+function product_description_bullets($product)
+{
+    if (!$product || empty($product->description)) {
+        return array();
+    }
+    $text = trim(html_entity_decode(strip_tags((string) $product->description), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    if ($text === '') {
+        return array();
+    }
+    $parts = preg_split('/\r\n|\r|\n|(?<=\.)\s+(?=[A-Z])/', $text);
+    $bullets = array();
+    foreach ((array) $parts as $part) {
+        $line = trim((string) $part, " \t-•*");
+        if ($line === '') {
+            continue;
+        }
+        $bullets[] = $line;
+    }
+    return $bullets;
+}
+
+function product_feature_highlights($product, $attributes = array(), $cartProduct = null)
+{
+    $items = array();
+    foreach ((array) $attributes as $attr) {
+        $title = trim((string) (isset($attr->name) ? $attr->name : ''));
+        $text = trim((string) (isset($attr->values_text) ? $attr->values_text : ''));
+        if ($title === '') {
+            continue;
+        }
+        $items[] = array('title' => $title, 'text' => $text);
+        if (count($items) >= 6) {
+            return $items;
+        }
+    }
+
+    $source = $cartProduct ? $cartProduct : $product;
+    if ($product) {
+        if (!empty($product->brand)) {
+            $items[] = array('title' => 'Brand', 'text' => trim((string) $product->brand));
+        }
+        if (!empty($product->made_by)) {
+            $items[] = array('title' => 'Made by', 'text' => trim((string) $product->made_by));
+        }
+    }
+    if ($source && function_exists('product_delivery_window')) {
+        $window = product_delivery_window($source);
+        if ($window && !empty($window['short'])) {
+            $items[] = array('title' => 'Delivery', 'text' => $window['short']);
+        }
+    }
+    foreach (product_description_bullets($product) as $line) {
+        if (count($items) >= 6) {
+            break;
+        }
+        $items[] = array('title' => $line, 'text' => '');
+    }
+    $unique = array();
+    $out = array();
+    foreach ($items as $item) {
+        $key = strtolower($item['title']);
+        if (isset($unique[$key])) {
+            continue;
+        }
+        $unique[$key] = true;
+        $out[] = $item;
+        if (count($out) >= 6) {
+            break;
+        }
+    }
+    return $out;
+}
+
+function product_spec_rows($product, $cartProduct = null, $attributes = array())
+{
+    $cartProduct = $cartProduct ? $cartProduct : $product;
+    $rows = array();
+    $sku = '';
+    if ($cartProduct && !empty($cartProduct->sku)) {
+        $sku = $cartProduct->sku;
+    } elseif ($product && !empty($product->sku)) {
+        $sku = $product->sku;
+    }
+    if ($sku !== '') {
+        $rows[] = array('label' => 'SKU', 'value' => $sku);
+    }
+    if ($product && !empty($product->brand)) {
+        $rows[] = array('label' => 'Brand', 'value' => $product->brand);
+    }
+    if ($product && !empty($product->made_by)) {
+        $rows[] = array('label' => 'Made by', 'value' => $product->made_by);
+    }
+    foreach ((array) $attributes as $attr) {
+        $label = trim((string) (isset($attr->name) ? $attr->name : ''));
+        $value = trim((string) (isset($attr->values_text) ? $attr->values_text : ''));
+        if ($label === '' || $value === '') {
+            continue;
+        }
+        $rows[] = array('label' => $label, 'value' => $value);
+    }
+    if ($cartProduct && isset($cartProduct->stock)) {
+        $stock = (int) $cartProduct->stock;
+        $rows[] = array('label' => 'Availability', 'value' => $stock > 0 ? 'In stock' : 'Out of stock');
+    }
+    return $rows;
+}
+
+function product_trust_items($store, $settings = array())
+{
+    $settings = is_array($settings) ? $settings : array();
+    $items = array();
+    $promo = function_exists('theme_setting') ? theme_setting($settings, 'promo_text', '') : '';
+    $shippingOn = function_exists('setting_flag_on') ? setting_flag_on($settings, 'shipping_enabled') : !empty($settings['shipping_enabled']);
+    $rate = isset($settings['shipping_flat_rate']) ? (float) $settings['shipping_flat_rate'] : 0;
+    if ($shippingOn && $rate <= 0) {
+        $items[] = array(
+            'key' => 'delivery',
+            'title' => 'Free Delivery',
+            'text' => $promo !== '' ? $promo : 'On qualifying orders',
+        );
+    } elseif ($shippingOn) {
+        $items[] = array(
+            'key' => 'delivery',
+            'title' => 'Delivery',
+            'text' => 'Flat rate ' . format_money($rate),
+        );
+    } elseif ($promo !== '') {
+        $items[] = array(
+            'key' => 'delivery',
+            'title' => 'Delivery',
+            'text' => $promo,
+        );
+    } else {
+        $items[] = array(
+            'key' => 'delivery',
+            'title' => 'Delivery',
+            'text' => 'Tracked shipping available',
+        );
+    }
+    $items[] = array('key' => 'returns', 'title' => 'Easy Returns', 'text' => 'Simple returns process');
+    $items[] = array('key' => 'secure', 'title' => 'Secure Checkout', 'text' => 'Protected payments');
+    $support = '';
+    if (!empty($settings['general_support_phone'])) {
+        $support = trim((string) $settings['general_support_phone']);
+    } elseif ($store && !empty($store->phone)) {
+        $support = trim((string) $store->phone);
+    } elseif (!empty($settings['general_contact_email'])) {
+        $support = trim((string) $settings['general_contact_email']);
+    } elseif ($store && !empty($store->email)) {
+        $support = trim((string) $store->email);
+    }
+    $items[] = array(
+        'key' => 'support',
+        'title' => 'Customer Support',
+        'text' => $support !== '' ? $support : 'We are here to help',
+    );
+    return $items;
+}
+
+function product_video_embed($product)
+{
+    $html = '';
+    if ($product && !empty($product->details)) {
+        $html .= ' ' . $product->details;
+    }
+    if ($product && !empty($product->description)) {
+        $html .= ' ' . $product->description;
+    }
+    if (preg_match('#(?:youtube\.com/embed/|youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]{6,})#i', $html, $m)) {
+        return 'https://www.youtube.com/embed/' . $m[1];
+    }
+    if (preg_match('#vimeo\.com/(?:video/)?([0-9]+)#i', $html, $m)) {
+        return 'https://player.vimeo.com/video/' . $m[1];
+    }
+    return '';
+}
+
+function storefront_wishlist($storeId)
+{
+    $storeId = (int) $storeId;
+    if ($storeId < 1) {
+        return array();
+    }
+    if (empty($_SESSION['storefront_wishlist'][$storeId]) || !is_array($_SESSION['storefront_wishlist'][$storeId])) {
+        return array();
+    }
+    $ids = array();
+    foreach ($_SESSION['storefront_wishlist'][$storeId] as $id) {
+        $id = (int) $id;
+        if ($id > 0) {
+            $ids[$id] = $id;
+        }
+    }
+    return $ids;
+}
+
+function product_in_wishlist($storeId, $productId)
+{
+    $ids = storefront_wishlist($storeId);
+    return isset($ids[(int) $productId]);
+}
+
+function product_star_html($rating, $max = 5)
+{
+    $rating = max(0, min((float) $max, (float) $rating));
+    $html = '<span class="pdp-new-stars" aria-label="' . htmlspecialchars(number_format($rating, 1)) . ' out of ' . (int) $max . '">';
+    for ($i = 1; $i <= (int) $max; $i++) {
+        $fill = 0;
+        if ($rating >= $i) {
+            $fill = 100;
+        } elseif ($rating > ($i - 1)) {
+            $fill = (int) round(($rating - ($i - 1)) * 100);
+        }
+        $html .= '<span class="pdp-new-star"><span class="pdp-new-star__fill" style="width:' . $fill . '%">★</span>★</span>';
+    }
+    $html .= '</span>';
+    return $html;
+}
+
+function product_attributes_rows($productId)
+{
+    $CI =& get_instance();
+    $productId = (int) $productId;
+    if ($productId < 1 || !$CI->db->table_exists('product_attributes')) {
+        return array();
+    }
+    $rows = $CI->db
+        ->where('product_id', $productId)
+        ->order_by('sort_order', 'asc')
+        ->order_by('id', 'asc')
+        ->get('product_attributes')
+        ->result();
+    return $rows ? $rows : array();
 }

@@ -29,6 +29,7 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                         <li><a data-toggle="tab" href="#tab-images">Images</a></li>
                         <li><a data-toggle="tab" href="#tab-pricing">Pricing</a></li>
                         <li><a data-toggle="tab" href="#tab-source">Source</a></li>
+                        <li><a data-toggle="tab" href="#tab-creatives">Creatives</a></li>
                         <li><a data-toggle="tab" href="#tab-variation">Variation</a></li>
                         <li><a data-toggle="tab" href="#tab-shipping">Shipping Info</a></li>
                         <li><a data-toggle="tab" href="#tab-seo">SEO</a></li>
@@ -41,8 +42,34 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                     <div class="col-sm-9"><input type="text" name="name" class="form-control" required value="<?= htmlspecialchars($val('name')) ?>"></div>
                                 </div>
                                 <div class="form-group">
+                                    <label class="col-sm-2 control-label">Brand</label>
+                                    <div class="col-sm-9"><input type="text" name="brand" class="form-control" maxlength="150" placeholder="e.g. Samsung, Nike" value="<?= htmlspecialchars($val('brand')) ?>"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Made by</label>
+                                    <div class="col-sm-9"><input type="text" name="made_by" class="form-control" maxlength="150" placeholder="Manufacturer / made by" value="<?= htmlspecialchars($val('made_by')) ?>"></div>
+                                </div>
+                                <div class="form-group">
                                     <label class="col-sm-2 control-label">SKU</label>
                                     <div class="col-sm-9"><input type="text" name="sku" class="form-control" value="<?= htmlspecialchars($val('sku')) ?>"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Parent SKU</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="parent_sku" class="form-control" maxlength="100" placeholder="Leave empty for a parent product" value="<?= htmlspecialchars($val('parent_sku')) ?>">
+                                        <span class="help-block">If this is a sub-product, enter the parent product SKU. Sub-products appear as option boxes on the parent page.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Default child</label>
+                                    <div class="col-sm-9">
+                                        <div class="checkbox" style="padding-top:5px;">
+                                            <label>
+                                                <input type="checkbox" name="is_default" value="1" <?= $isEdit && !empty($product->is_default) ? 'checked' : '' ?>>
+                                                Use as the default option when the parent product opens
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">Supplier</label>
@@ -60,7 +87,7 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">Country</label>
                                     <div class="col-sm-9">
-                                        <select name="country_id" class="form-control" required>
+                                        <select name="country_id" id="productCountry" class="form-control" required>
                                             <option value="">Select country</option>
                                             <?php foreach ($countries as $country): ?>
                                                 <option value="<?= (int) $country->id ?>" <?= $isEdit && (int)$product->country_id === (int)$country->id ? 'selected' : '' ?>>
@@ -68,6 +95,50 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                    </div>
+                                </div>
+                                <?php
+                                $categoryTree = isset($category_tree) ? $category_tree : array();
+                                $selectedCategoryId = isset($selected_category_id) ? (int) $selected_category_id : 0;
+                                $selectedSubcategoryId = isset($selected_subcategory_id) ? (int) $selected_subcategory_id : 0;
+                                $selectedCategoryName = isset($selected_category_name) ? $selected_category_name : '';
+                                $selectedSubcategoryName = isset($selected_subcategory_name) ? $selected_subcategory_name : '';
+                                $selectedParent = null;
+                                foreach ($categoryTree as $parentCat) {
+                                    if ((int) $parentCat['id'] === $selectedCategoryId) {
+                                        $selectedParent = $parentCat;
+                                        break;
+                                    }
+                                }
+                                $subOptions = $selectedParent && !empty($selectedParent['children']) ? $selectedParent['children'] : array();
+                                ?>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Category</label>
+                                    <div class="col-sm-9">
+                                        <select name="category_id" id="productCategory" class="form-control">
+                                            <option value="">Select category</option>
+                                            <?php foreach ($categoryTree as $parentCat): ?>
+                                                <option value="<?= (int) $parentCat['id'] ?>" <?= (int) $parentCat['id'] === $selectedCategoryId ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($parentCat['name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input type="text" name="category_name" id="productCategoryName" class="form-control" style="margin-top:8px;" maxlength="150" placeholder="Type to create or update category name" value="<?= htmlspecialchars($selectedCategoryName) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Sub category</label>
+                                    <div class="col-sm-9">
+                                        <select name="subcategory_id" id="productSubcategory" class="form-control">
+                                            <option value="">Select sub category</option>
+                                            <?php foreach ($subOptions as $childCat): ?>
+                                                <option value="<?= (int) $childCat['id'] ?>" <?= (int) $childCat['id'] === $selectedSubcategoryId ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($childCat['name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input type="text" name="subcategory_name" id="productSubcategoryName" class="form-control" style="margin-top:8px;" maxlength="150" placeholder="Type to create or update sub category name" value="<?= htmlspecialchars($selectedSubcategoryName) ?>">
+                                        <span class="help-block">Pick from the list, or type a name to create a new one / update the selected one. Changing a name updates that category for every product using it. Options change with the selected country.</span>
                                     </div>
                                 </div>
                                 <?php if (ec_is_admin()): ?>
@@ -96,6 +167,19 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                             <option value="1" <?= !$isEdit || (int)$product->status === 1 ? 'selected' : '' ?>>Active</option>
                                             <option value="0" <?= $isEdit && (int)$product->status === 0 ? 'selected' : '' ?>>Inactive</option>
                                         </select>
+                                        <span class="help-block">Inactive catalog products stay hidden from store owners and customers. Ecommerce users can still open this detail page.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Recommended stores</label>
+                                    <div class="col-sm-9">
+                                        <div class="checkbox" style="padding-top:5px;">
+                                            <label>
+                                                <input type="checkbox" name="auto_add_to_stores" value="1" <?= $isEdit && !empty($product->auto_add_to_stores) ? 'checked' : '' ?>>
+                                                Auto add to recommended stores
+                                            </label>
+                                        </div>
+                                        <span class="help-block">Copies this product to every store in the selected country that has Auto-add enabled. Each store’s plus amount is added to the selling price.</span>
                                     </div>
                                 </div>
                             </div>
@@ -151,7 +235,7 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                             <div class="panel-body">
                                 <?php if ($priceLocked): ?>
                                 <div class="alert alert-warning">
-                                    Price is locked because <?= count($storeCopies) ?> store<?= count($storeCopies) === 1 ? ' has' : 's have' ?> already added this product.
+                                    Selling, compare and cost prices are locked because <?= count($storeCopies) ?> store<?= count($storeCopies) === 1 ? ' has' : 's have' ?> already added this product.
                                     <?php
                                     $copyNames = array();
                                     foreach ($storeCopies as $copy) {
@@ -163,6 +247,7 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                         echo ' (' . htmlspecialchars(implode(', ', $copyNames)) . ')';
                                     }
                                     ?>
+                                    Max Sale Price can still be changed.
                                 </div>
                                 <?php endif; ?>
                                 <div class="form-group">
@@ -172,8 +257,8 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">Max Sale Price</label>
                                     <div class="col-sm-9">
-                                        <input type="number" step="0.01" name="max_sale_price" class="form-control"<?= $ro ?> value="<?= htmlspecialchars($val('max_sale_price', '0.00')) ?>">
-                                        <span class="help-block">Store owners are recommended not to sell above this price.</span>
+                                        <input type="number" step="0.01" name="max_sale_price" class="form-control" value="<?= htmlspecialchars($val('max_sale_price', '0.00')) ?>">
+                                        <span class="help-block">Store owners are recommended not to sell above this price. This can be updated even after stores add the product.</span>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -184,7 +269,7 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                     <label class="col-sm-2 control-label">Base / Cost Price</label>
                                     <div class="col-sm-9">
                                         <input type="number" step="0.01" name="cost_price" class="form-control"<?= $ro ?> value="<?= htmlspecialchars($val('cost_price', '0.00')) ?>">
-                                        <span class="help-block">Catalog base price. Store owners pay this plus commission and platform fee, then add their markup on top.</span>
+                                        <span class="help-block">Catalog base price. Store owners pay this plus commission and <?= number_format(platform_fee_percent(), 2) ?>% platform fee, then add their markup on top.</span>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -221,6 +306,34 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                     </tbody>
                                 </table>
                                 <button type="button" class="btn btn-white btn-sm" id="add-source">Add source link</button>
+                            </div>
+                        </div>
+
+                        <div id="tab-creatives" class="tab-pane">
+                            <div class="panel-body">
+                                <p class="text-muted">Ad / creative links for this product. Store owners never see this tab. You can also add these when importing.</p>
+                                <table class="table table-bordered" id="creative-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="180">Label (optional)</th>
+                                            <th>Creative link</th>
+                                            <th width="90"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $creativeRows = !empty($creatives) ? $creatives : array((object) array('label' => '', 'link' => ''));
+                                        foreach ($creativeRows as $ci => $creative):
+                                        ?>
+                                        <tr class="creative-row">
+                                            <td><input type="text" name="creatives[<?= $ci ?>][label]" class="form-control" placeholder="Facebook / TikTok" value="<?= htmlspecialchars($creative->label) ?>"></td>
+                                            <td><input type="text" name="creatives[<?= $ci ?>][link]" class="form-control" placeholder="https://..." value="<?= htmlspecialchars($creative->link) ?>"></td>
+                                            <td><button type="button" class="btn btn-white btn-sm js-remove-creative">Remove</button></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                                <button type="button" class="btn btn-white btn-sm" id="add-creative">Add creative link</button>
                             </div>
                         </div>
 
@@ -368,9 +481,108 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
 (function ($) {
     var attrIndex = $('#attribute-table tbody tr').length;
     var sourceIndex = $('#source-table tbody tr').length;
+    var creativeIndex = $('#creative-table tbody tr').length;
     var defaultPrice = $('input[name="price"]').val() || '0';
     var priceLocked = <?= $priceLocked ? 'true' : 'false' ?>;
     var priceReadonly = priceLocked ? ' readonly' : '';
+    var categoriesUrl = <?= json_encode(base_url('admin/products/import_categories')) ?>;
+    var categoryTree = <?= json_encode(isset($category_tree) ? $category_tree : array()) ?>;
+    var savedCategoryId = <?= (int) (isset($selected_category_id) ? $selected_category_id : 0) ?>;
+    var savedSubcategoryId = <?= (int) (isset($selected_subcategory_id) ? $selected_subcategory_id : 0) ?>;
+
+    function fillCategorySelect($el, placeholder, items, selectedId) {
+        $el.empty().append($('<option/>').val('').text(placeholder));
+        $.each(items || [], function (_, item) {
+            var opt = $('<option/>').val(item.id).text(item.name);
+            if (selectedId && String(item.id) === String(selectedId)) {
+                opt.prop('selected', true);
+            }
+            $el.append(opt);
+        });
+    }
+    function selectedOptionText($el) {
+        var val = $el.val();
+        if (!val) {
+            return '';
+        }
+        return $.trim($el.find('option:selected').text());
+    }
+    function syncCategoryName() {
+        $('#productCategoryName').val(selectedOptionText($('#productCategory')));
+    }
+    function syncSubcategoryName() {
+        $('#productSubcategoryName').val(selectedOptionText($('#productSubcategory')));
+    }
+    function selectedCategoryParent() {
+        var id = parseInt($('#productCategory').val(), 10) || 0;
+        var found = null;
+        $.each(categoryTree, function (_, parent) {
+            if (parseInt(parent.id, 10) === id) {
+                found = parent;
+                return false;
+            }
+        });
+        return found;
+    }
+    function renderProductSubcategories(selectedId) {
+        var parent = selectedCategoryParent();
+        fillCategorySelect($('#productSubcategory'), 'Select sub category', parent ? parent.children : [], selectedId || '');
+        if (!selectedId) {
+            syncSubcategoryName();
+        }
+    }
+    function loadProductCategories(countryId, categoryId, subcategoryId, keepNames) {
+        var $cat = $('#productCategory');
+        var $sub = $('#productSubcategory');
+        categoryTree = [];
+        fillCategorySelect($cat, 'Select category', [], '');
+        fillCategorySelect($sub, 'Select sub category', [], '');
+        if (!keepNames) {
+            $('#productCategoryName').val('');
+            $('#productSubcategoryName').val('');
+        }
+        if (!countryId) {
+            return;
+        }
+        $cat.prop('disabled', true);
+        $sub.prop('disabled', true);
+        $.get(categoriesUrl, { country_id: countryId })
+            .done(function (res) {
+                categoryTree = (res && res.categories) ? res.categories : [];
+                fillCategorySelect($cat, 'Select category', categoryTree, categoryId || '');
+                renderProductSubcategories(subcategoryId || '');
+                if (!keepNames || !$('#productCategoryName').val()) {
+                    syncCategoryName();
+                }
+                if (!keepNames || !$('#productSubcategoryName').val()) {
+                    syncSubcategoryName();
+                }
+            })
+            .fail(function () {
+                fillCategorySelect($cat, 'Could not load categories', [], '');
+            })
+            .always(function () {
+                $cat.prop('disabled', false);
+                $sub.prop('disabled', false);
+            });
+    }
+    $('#productCountry').on('change', function () {
+        savedCategoryId = 0;
+        savedSubcategoryId = 0;
+        loadProductCategories($(this).val(), '', '', false);
+    });
+    $('#productCategory').on('change', function () {
+        savedSubcategoryId = 0;
+        syncCategoryName();
+        renderProductSubcategories('');
+        $('#productSubcategoryName').val('');
+    });
+    $('#productSubcategory').on('change', function () {
+        syncSubcategoryName();
+    });
+    if (!$('#productCategory option').filter(function () { return this.value !== ''; }).length && $('#productCountry').val()) {
+        loadProductCategories($('#productCountry').val(), savedCategoryId, savedSubcategoryId, true);
+    }
 
     $('#add-source').on('click', function () {
         var html = '<tr class="source-row">' +
@@ -384,6 +596,24 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
     });
     $(document).on('click', '.js-remove-source', function () {
         var $tbody = $('#source-table tbody');
+        if ($tbody.find('tr').length <= 1) {
+            $(this).closest('tr').find('input').val('');
+            return;
+        }
+        $(this).closest('tr').remove();
+    });
+
+    $('#add-creative').on('click', function () {
+        var html = '<tr class="creative-row">' +
+            '<td><input type="text" name="creatives[' + creativeIndex + '][label]" class="form-control" placeholder="Facebook / TikTok"></td>' +
+            '<td><input type="text" name="creatives[' + creativeIndex + '][link]" class="form-control" placeholder="https://..."></td>' +
+            '<td><button type="button" class="btn btn-white btn-sm js-remove-creative">Remove</button></td>' +
+            '</tr>';
+        $('#creative-table tbody').append(html);
+        creativeIndex++;
+    });
+    $(document).on('click', '.js-remove-creative', function () {
+        var $tbody = $('#creative-table tbody');
         if ($tbody.find('tr').length <= 1) {
             $(this).closest('tr').find('input').val('');
             return;

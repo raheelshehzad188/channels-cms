@@ -43,13 +43,13 @@ $contactUrl = storefront_url('page/contact');
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= $assets ?>css/reset.css">
 <link rel="stylesheet" href="<?= $assets ?>css/variables.css">
-<link rel="stylesheet" href="<?= $assets ?>css/global.css">
-<link rel="stylesheet" href="<?= $assets ?>css/components.css">
-<link rel="stylesheet" href="<?= $assets ?>css/pages/<?= htmlspecialchars($pageCss) ?>.css">
+<link rel="stylesheet" href="<?= $assets ?>css/global.css?v=6">
+<link rel="stylesheet" href="<?= $assets ?>css/components.css?v=9">
+<link rel="stylesheet" href="<?= $assets ?>css/pages/<?= htmlspecialchars($pageCss) ?>.css?v=8">
 <?php foreach ($extraCss as $cssFile): ?>
 <link rel="stylesheet" href="<?= $assets ?>css/pages/<?= htmlspecialchars($cssFile) ?>.css">
 <?php endforeach; ?>
-<link rel="stylesheet" href="<?= $assets ?>css/responsive.css">
+<link rel="stylesheet" href="<?= $assets ?>css/responsive.css?v=8">
 <?php $this->load->view('frontend/shared/custom_css'); ?>
 <style>:root { --brand-yellow: <?= htmlspecialchars($primary) ?>; --brand-black: <?= htmlspecialchars($secondary) ?>; }</style>
 </head>
@@ -129,14 +129,14 @@ $contactUrl = storefront_url('page/contact');
           <li>
             <a class="<?= (!empty($active_category_slug) && $active_category_slug === $navCat->slug) ? 'is-active' : '' ?><?= $navCat->slug === 'deals' ? ' nav-deals' : '' ?>"
                href="<?= storefront_url('category/' . rawurlencode($navCat->slug)) ?>">
-              <?= htmlspecialchars($navCat->name) ?>
+              <?= htmlspecialchars(category_store_name($navCat)) ?>
             </a>
           </li>
         <?php endforeach; ?>
       <?php else: ?>
         <li><a href="<?= storefront_url('shop?category=deals') ?>">Deals</a></li>
       <?php endif; ?>
-      <li><a href="<?= $contactUrl ?>">Contact</a></li>
+      <li><a class="<?= ($current === 'contact') ? 'is-active' : '' ?>" href="<?= $contactUrl ?>">Contact</a></li>
     </ul>
   </div>
 </nav>
@@ -152,7 +152,7 @@ $contactUrl = storefront_url('page/contact');
     <a href="<?= $shopUrl ?>">Shop</a>
     <?php if (!empty($nav_categories)): ?>
       <?php foreach ($nav_categories as $navCat): ?>
-        <a href="<?= storefront_url('category/' . rawurlencode($navCat->slug)) ?>"><?= htmlspecialchars(($navCat->icon ? $navCat->icon . ' ' : '') . $navCat->name) ?></a>
+        <a href="<?= storefront_url('category/' . rawurlencode($navCat->slug)) ?>"><?= htmlspecialchars(($navCat->icon ? $navCat->icon . ' ' : '') . category_store_name($navCat)) ?></a>
       <?php endforeach; ?>
     <?php endif; ?>
     <div class="drawer__sep"></div>

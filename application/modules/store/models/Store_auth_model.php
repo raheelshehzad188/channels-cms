@@ -97,6 +97,12 @@ class Store_auth_model extends CI_Model {
         $domain = strtolower(trim($domain));
         $domain = preg_replace('/^https?:\/\//', '', $domain);
         $domain = rtrim($domain, '/');
+        if (preg_match('/^cartvibe\.(localhost|ecommerce\.test)$/', $domain)) {
+            return 'cartvibe.co.uk';
+        }
+        if (preg_match('/^zenvellose\.(localhost|ecommerce\.test)$/', $domain)) {
+            return 'zenvello.se';
+        }
         if (preg_match('/^(theme[12]|fruitables|zenvello)\.localhost$/', $domain, $match)) {
             return $match[1] . '.ecommerce.test';
         }

@@ -14,7 +14,7 @@
                 <div class="ibox-title"><h5>Platform Pricing</h5></div>
                 <div class="ibox-content">
                     <?php $this->load->view('flash'); ?>
-                    <p class="text-muted">Storefronts show and charge PayPal in each store’s country currency. Super Admin earnings are converted into the platform country currency selected here. Platform fee is stored in that currency and converted onto other country stores using the rates below.</p>
+                    <p class="text-muted">Storefronts show and charge PayPal in each store’s country currency. Super Admin earnings are converted into the platform country currency selected here. Platform fee is a percent of catalog base price and is added to every store’s product cost. Changing it also raises or lowers selling prices on products already listed in stores, while keeping each store’s extra markup.</p>
                     <form method="post" action="<?= base_url('admin/pricing/save') ?>" class="form-horizontal">
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Platform country</label>
@@ -31,10 +31,13 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-3 control-label">Platform Fee (<?= htmlspecialchars($platform_currency) ?>)</label>
+                            <label class="col-sm-3 control-label">Platform Fee (%)</label>
                             <div class="col-sm-6">
-                                <input type="number" step="0.01" min="0" name="platform_fee" class="form-control" required value="<?= htmlspecialchars($platform_fee) ?>">
-                                <span class="help-block">Per product, in platform currency. Converted to the store country currency at checkout.</span>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" max="100" name="platform_fee" class="form-control" required value="<?= htmlspecialchars($platform_fee) ?>">
+                                    <span class="input-group-addon">%</span>
+                                </div>
+                                <span class="help-block">Percent of catalog base price, added to store cost: base + ecommerce commission + this fee. Saving this updates cost and selling price on every store-listed product (keeps each store’s extra markup).</span>
                             </div>
                         </div>
                         <div class="form-group">
@@ -48,7 +51,7 @@
                         <?php if (!empty($rate_currencies)): ?>
                         <div class="hr-line-dashed"></div>
                         <h4>Exchange rates</h4>
-                        <p class="text-muted">How much 1 unit of another country currency is worth in <?= htmlspecialchars($platform_currency) ?>. Used to convert platform fee onto stores and Super Admin earnings back into <?= htmlspecialchars($platform_currency) ?>.</p>
+                        <p class="text-muted">How much 1 unit of another country currency is worth in <?= htmlspecialchars($platform_currency) ?>. Used to convert Super Admin earnings back into <?= htmlspecialchars($platform_currency) ?>.</p>
                         <?php foreach ($rate_currencies as $code): ?>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">1 <?= htmlspecialchars($code) ?></label>

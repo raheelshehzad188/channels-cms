@@ -53,11 +53,30 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
               <input type="text" name="sku" class="form-control" <?= $lockCore ? 'disabled' : '' ?> value="<?= htmlspecialchars($val('sku')) ?>">
             </div>
             <div class="col-md-6">
+              <label class="form-label">Parent SKU</label>
+              <input type="text" name="parent_sku" class="form-control" maxlength="100" <?= $lockCore ? 'disabled' : '' ?> placeholder="Empty for parent product" value="<?= htmlspecialchars($val('parent_sku')) ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Brand</label>
+              <input type="text" name="brand" class="form-control" maxlength="150" <?= $lockCore ? 'disabled' : '' ?> value="<?= htmlspecialchars($val('brand')) ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Made by</label>
+              <input type="text" name="made_by" class="form-control" maxlength="150" placeholder="Manufacturer / made by" value="<?= htmlspecialchars($val('made_by')) ?>">
+            </div>
+            <div class="col-md-6">
               <label class="form-label">Status</label>
               <select name="status" class="form-select" <?= $lockCore ? 'disabled' : '' ?>>
                 <option value="1" <?= (int) $val('status', 1) === 1 ? 'selected' : '' ?>>Active</option>
                 <option value="0" <?= (int) $val('status', 1) === 0 ? 'selected' : '' ?>>Inactive</option>
               </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label d-block">Default child</label>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" name="is_default" value="1" id="isDefaultChild" <?= $lockCore ? 'disabled' : '' ?> <?= $isEdit && !empty($product->is_default) ? 'checked' : '' ?>>
+                <label class="form-check-label" for="isDefaultChild">Selected by default when the parent product opens</label>
+              </div>
             </div>
             <div class="col-12">
               <label class="form-label">Description</label>
@@ -105,6 +124,7 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
             <div class="col-md-4">
               <label class="form-label">Your cost (<?= htmlspecialchars(store_currency($store)) ?>)</label>
               <input type="text" class="form-control" value="<?= number_format($costPrice, 2) ?>" disabled>
+              <span class="help-block text-muted">Includes ecommerce commission and <?= number_format(platform_fee_percent(), 2) ?>% platform fee.</span>
             </div>
             <div class="col-md-4">
               <label class="form-label">Recommended max</label>

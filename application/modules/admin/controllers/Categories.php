@@ -14,11 +14,47 @@ class Categories extends CI_Controller {
     public function index()
     {
         $countryId = (int) $this->input->get('country_id');
+        $q = trim((string) $this->input->get('q'));
+        $parentRaw = $this->input->get('parent_id');
+        $parentId = ($parentRaw === null || $parentRaw === '') ? null : (int) $parentRaw;
+
+        $parentFilters = array('parent_id' => 0);
+        if ($countryId) {
+            $parentFilters['country_id'] = $countryId;
+        }
+        $parents = $this->Ec_category_model->all($parentFilters);
+        if ($parentId) {
+            $valid = false;
+            foreach ($parents as $parent) {
+                if ((int) $parent->id === $parentId) {
+                    $valid = true;
+                    break;
+                }
+            }
+            if (!$valid) {
+                $parentId = null;
+            }
+        }
+
+        $filters = array();
+        if ($countryId) {
+            $filters['country_id'] = $countryId;
+        }
+        if ($q !== '') {
+            $filters['q'] = $q;
+        }
+        if ($parentId !== null) {
+            $filters['parent_id'] = $parentId;
+        }
+
         $data = array(
             'title' => 'Categories',
             'countries' => $this->Country_model->all(),
             'country_id' => $countryId,
-            'categories' => $this->Ec_category_model->all($countryId ? array('country_id' => $countryId) : array()),
+            'parent_id' => $parentId,
+            'q' => $q,
+            'parents' => $parents,
+            'categories' => $this->Ec_category_model->all($filters),
         );
         $this->template->admin('categories/index', $data);
     }
@@ -66,6 +102,7 @@ class Categories extends CI_Controller {
             'country_id' => $countryId,
             'parent_id' => $parentId ? $parentId : null,
             'name' => $name,
+            'local_name' => trim((string) $this->input->post('local_name')),
             'slug' => $slug,
             'icon' => trim((string) $this->input->post('icon')),
             'description' => trim((string) $this->input->post('description')),
@@ -77,6 +114,7 @@ class Categories extends CI_Controller {
             'hero_text' => trim((string) $this->input->post('hero_text')),
             'hero_btn_text' => trim((string) $this->input->post('hero_btn_text')),
             'hero_btn_link' => trim((string) $this->input->post('hero_btn_link')),
+            'hero_extra_text' => (int) $this->input->post('hero_extra_text') === 1 ? 1 : 0,
             'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
             'sort_order' => (int) $this->input->post('sort_order'),
         );
@@ -141,6 +179,20 @@ class Categories extends CI_Controller {
             );
         }
         $this->json_out($out);
+    }
+
+    public function csv_template()
+    {
+        $header = 'parent,name,local_name,slug,icon,category_image_url,default_hero_image_url,hero_kicker,hero_title,hero_text';
+        $samples = array(
+            'Electronics & Tech,Phone Accessories,Mobilaccessoarer,phone-accessories,,,,Phone,Phone Accessories,Cases and chargers',
+            'Halloween,Halloween Decorations,Halloween dekorationer,halloween-decorations,,,,Decor,Halloween Decorations,Party décor',
+        );
+        $csv = "\xEF\xBB\xBF" . $header . "\n" . implode("\n", $samples) . "\n";
+        $this->output
+            ->set_content_type('text/csv', 'utf-8')
+            ->set_header('Content-Disposition: attachment; filename="category_import_template.csv"')
+            ->set_output($csv);
     }
 
     public function import_preview()
@@ -230,15 +282,11 @@ class Categories extends CI_Controller {
         }
 
         $countryId = (int) $this->input->post('country_id');
-        if ($parsed['format'] === 'name_parent') {
-            if (!$countryId) {
-                return array('ok' => false, 'error' => 'Please select a country before importing a Name/Parent CSV.');
-            }
-            if (!$this->Country_model->get($countryId)) {
-                return array('ok' => false, 'error' => 'Selected country was not found.');
-            }
-        } elseif (!empty($parsed['rows'][0]['country_id'])) {
-            $countryId = (int) $parsed['rows'][0]['country_id'];
+        if (!$countryId) {
+            return array('ok' => false, 'error' => 'Please select a country before importing.');
+        }
+        if (!$this->Country_model->get($countryId)) {
+            return array('ok' => false, 'error' => 'Selected country was not found.');
         }
         $parsed['country_id'] = $countryId;
         return $parsed;
@@ -274,7 +322,7 @@ class Categories extends CI_Controller {
         }
 
         $fullCols = array(
-            'country_id', 'parent', 'name', 'slug', 'icon',
+            'parent', 'name', 'slug', 'icon',
             'category_image_url', 'default_hero_image_url',
             'hero_kicker', 'hero_title', 'hero_text',
         );
@@ -287,7 +335,7 @@ class Categories extends CI_Controller {
             }
         }
 
-        $isNameParent = isset($map['name']) && isset($map['parent']) && !isset($map['country_id']);
+        $isNameParent = isset($map['name']) && isset($map['parent']);
         if (!$isFull && !$isNameParent) {
             fclose($fh);
             $hint = isset($map['parent_id'])
@@ -323,12 +371,14 @@ class Categories extends CI_Controller {
                 foreach ($fullCols as $col) {
                     $row[$col] = isset($data[$map[$col]]) ? trim((string) $data[$map[$col]]) : '';
                 }
+                $row['local_name'] = $this->csv_mapped_value($data, $map, array('local_name', 'local_lang', 'name_local'));
                 $rows[] = $row;
             } else {
                 $rows[] = array(
                     'line' => $line,
                     'name' => isset($data[$map['name']]) ? trim((string) $data[$map['name']]) : '',
                     'parent' => isset($data[$map['parent']]) ? trim((string) $data[$map['parent']]) : '',
+                    'local_name' => $this->csv_mapped_value($data, $map, array('local_name', 'local_lang', 'name_local')),
                 );
             }
         }
@@ -339,6 +389,16 @@ class Categories extends CI_Controller {
         }
 
         return array('ok' => true, 'format' => $format, 'rows' => $rows);
+    }
+
+    protected function csv_mapped_value($data, $map, $keys)
+    {
+        foreach ((array) $keys as $key) {
+            if (isset($map[$key]) && isset($data[$map[$key]])) {
+                return trim((string) $data[$map[$key]]);
+            }
+        }
+        return '';
     }
 
     protected function json_out($data, $code = 200)

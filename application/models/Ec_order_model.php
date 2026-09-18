@@ -10,10 +10,42 @@ class Ec_order_model extends CI_Model {
             'confirmed' => 'Confirmed',
             'processing' => 'Processing',
             'shipped' => 'Shipped',
+            'dispatching' => 'Dispatching',
             'delivered' => 'Delivered',
             'completed' => 'Completed',
+            'refund_requested' => 'Refund requested',
+            'refunded' => 'Refunded',
             'cancelled' => 'Cancelled',
         );
+    }
+
+    public static function item_statuses()
+    {
+        return array(
+            'pending' => 'Pending',
+            'processing' => 'Processing',
+            'dispatching' => 'Dispatching',
+            'delivered' => 'Delivered',
+            'completed' => 'Completed',
+            'refund_requested' => 'Refund requested',
+            'refunded' => 'Refunded',
+            'cancelled' => 'Cancelled',
+        );
+    }
+
+    public static function ecommerce_next_status($current)
+    {
+        $map = array(
+            'pending' => 'processing',
+            'processing' => 'dispatching',
+            'dispatching' => 'delivered',
+        );
+        return isset($map[$current]) ? $map[$current] : '';
+    }
+
+    public static function refund_allowed($status)
+    {
+        return in_array($status, array('pending', 'processing'), true);
     }
 
     public function get($id)
@@ -34,11 +66,89 @@ class Ec_order_model extends CI_Model {
 
     public function items($orderId)
     {
+        $this->ensure_item_columns();
         return $this->db
-            ->where('order_id', (int) $orderId)
-            ->order_by('id', 'asc')
-            ->get('store_order_items')
+            ->select('store_order_items.*, products.id as linked_product_id, products.slug as product_slug, products.image as product_image')
+            ->from('store_order_items')
+            ->join('products', 'products.id = store_order_items.product_id', 'left')
+            ->where('store_order_items.order_id', (int) $orderId)
+            ->order_by('store_order_items.id', 'asc')
+            ->get()
             ->result();
+    }
+
+    public function get_item($itemId)
+    {
+        $this->ensure_item_columns();
+        return $this->db
+            ->select('store_order_items.*, store_orders.store_id, store_orders.order_no, store_orders.currency, store_orders.status as order_status, store_orders.payout_status')
+            ->from('store_order_items')
+            ->join('store_orders', 'store_orders.id = store_order_items.order_id')
+            ->where('store_order_items.id', (int) $itemId)
+            ->get()
+            ->row();
+    }
+
+    public function item_logs($itemId)
+    {
+        if (!$this->db->table_exists('order_item_status_logs')) {
+            return array();
+        }
+        return $this->db
+            ->where('item_id', (int) $itemId)
+            ->order_by('id', 'asc')
+            ->get('order_item_status_logs')
+            ->result();
+    }
+
+    public function item_status_counts($items)
+    {
+        $counts = array(
+            'pending' => 0,
+            'processing' => 0,
+            'dispatching' => 0,
+            'delivered' => 0,
+            'completed' => 0,
+            'refund_requested' => 0,
+            'refunded' => 0,
+            'cancelled' => 0,
+        );
+        foreach ($items as $item) {
+            $status = !empty($item->fulfillment_status) ? $item->fulfillment_status : 'pending';
+            if (!isset($counts[$status])) {
+                $counts[$status] = 0;
+            }
+            $counts[$status]++;
+        }
+        return $counts;
+    }
+
+    public function for_customer($storeId, $customerId)
+    {
+        return $this->db
+            ->select('store_orders.*, (SELECT COUNT(*) FROM store_order_items WHERE store_order_items.order_id = store_orders.id) as item_count', false)
+            ->where('store_id', (int) $storeId)
+            ->where('customer_id', (int) $customerId)
+            ->order_by('id', 'desc')
+            ->get('store_orders')
+            ->result();
+    }
+
+    public function for_customer_by_no($storeId, $customerId, $orderNo)
+    {
+        $orderNo = trim((string) $orderNo);
+        if ($orderNo === '') {
+            return null;
+        }
+        return $this->db
+            ->select('store_orders.*, stores.name as store_name, stores.email as store_email, stores.domain as store_domain')
+            ->from('store_orders')
+            ->join('stores', 'stores.id = store_orders.store_id', 'left')
+            ->where('store_orders.store_id', (int) $storeId)
+            ->where('store_orders.customer_id', (int) $customerId)
+            ->where('store_orders.order_no', $orderNo)
+            ->get()
+            ->row();
     }
 
     public function logs($orderId)
@@ -67,6 +177,27 @@ class Ec_order_model extends CI_Model {
             ->from('store_orders')
             ->join('stores', 'stores.id = store_orders.store_id', 'left')
             ->order_by('store_orders.id', 'desc');
+        $this->apply_order_filters($filters);
+        return $this->db->get()->result();
+    }
+
+    public function for_ecommerce($userId, $filters = array())
+    {
+        $filters['ecommerce_user_id'] = (int) $userId;
+        $this->db
+            ->select('store_orders.*, stores.name as store_name')
+            ->from('store_orders')
+            ->join('stores', 'stores.id = store_orders.store_id', 'left')
+            ->join('store_order_items', 'store_order_items.order_id = store_orders.id')
+            ->where('store_order_items.ecommerce_user_id', (int) $userId)
+            ->group_by('store_orders.id')
+            ->order_by('store_orders.id', 'desc');
+        $this->apply_order_filters($filters, true);
+        return $this->db->get()->result();
+    }
+
+    protected function apply_order_filters($filters, $itemsJoined = false)
+    {
         if (!empty($filters['status'])) {
             $this->db->where('store_orders.status', $filters['status']);
         }
@@ -76,21 +207,28 @@ class Ec_order_model extends CI_Model {
         if (!empty($filters['store_id'])) {
             $this->db->where('store_orders.store_id', (int) $filters['store_id']);
         }
-        return $this->db->get()->result();
-    }
-
-    public function for_ecommerce($userId)
-    {
-        return $this->db
-            ->select('store_orders.*, stores.name as store_name')
-            ->from('store_orders')
-            ->join('stores', 'stores.id = store_orders.store_id', 'left')
-            ->join('store_order_items', 'store_order_items.order_id = store_orders.id')
-            ->where('store_order_items.ecommerce_user_id', (int) $userId)
-            ->group_by('store_orders.id')
-            ->order_by('store_orders.id', 'desc')
-            ->get()
-            ->result();
+        if (!empty($filters['supplier_id']) || !empty($filters['country_id'])) {
+            $sql = 'store_orders.id IN (
+                SELECT soi.order_id FROM store_order_items soi
+                LEFT JOIN products p ON p.id = soi.product_id
+                LEFT JOIN products sp ON sp.id = IFNULL(NULLIF(soi.source_product_id, 0), soi.product_id)
+                WHERE 1=1';
+            if (!empty($filters['ecommerce_user_id'])) {
+                $sql .= ' AND soi.ecommerce_user_id = ' . (int) $filters['ecommerce_user_id'];
+            }
+            if (!empty($filters['supplier_id'])) {
+                $sid = (int) $filters['supplier_id'];
+                $sql .= ' AND (p.supplier_id = ' . $sid . ' OR sp.supplier_id = ' . $sid . ')';
+            }
+            if (!empty($filters['country_id'])) {
+                $cid = (int) $filters['country_id'];
+                $sql .= ' AND (p.country_id = ' . $cid . ' OR sp.country_id = ' . $cid . ' OR EXISTS (
+                    SELECT 1 FROM stores st WHERE st.id = (SELECT o2.store_id FROM store_orders o2 WHERE o2.id = soi.order_id LIMIT 1) AND st.country_id = ' . $cid . '
+                ))';
+            }
+            $sql .= ')';
+            $this->db->where($sql, null, false);
+        }
     }
 
     public function create_from_cart($store, $customer, $cartItems, $shipping, $payment = array())
@@ -98,9 +236,9 @@ class Ec_order_model extends CI_Model {
         $this->ensure_vat_columns();
         $this->ensure_payment_columns();
         $this->ensure_fx_columns();
+        $this->ensure_item_columns();
         $currency = store_currency($store);
         $fxRate = currency_rate_to_platform($currency);
-        $platformFeeUnit = product_platform_fee($store->id);
         $items = array();
         $subtotal = 0;
         $platformTotal = 0;
@@ -111,7 +249,7 @@ class Ec_order_model extends CI_Model {
             $unit = (float) $product->price;
             $line = round($unit * $qty, 2);
             $commissionUnit = product_commission_amount($product);
-            $feeUnit = $platformFeeUnit;
+            $feeUnit = product_platform_fee($store->id, $product);
 
             // Prefer stored wholesale/cost for store-owned copies.
             if (!empty($product->store_id) && isset($product->cost_price) && (float) $product->cost_price > 0) {
@@ -145,6 +283,7 @@ class Ec_order_model extends CI_Model {
                 'platform_fee' => $fee,
                 'commission' => $commission,
                 'store_markup' => $markup,
+                'fulfillment_status' => 'pending',
             );
             $subtotal += $line;
             $platformTotal += $fee;
@@ -231,7 +370,238 @@ class Ec_order_model extends CI_Model {
 
         $this->db->where('id', (int) $orderId)->update('store_orders', $payload);
         $this->add_log($orderId, $status, $note, $byType, $byId);
+
+        if ($status === 'cancelled') {
+            $this->bulk_set_open_items($orderId, 'cancelled', $note, $byType, $byId);
+        } elseif ($status === 'completed') {
+            $this->complete_delivered_items($orderId, $note, $byType, $byId, true);
+        }
+
         return $this->get($orderId);
+    }
+
+    public function add_item_log($orderId, $itemId, $status, $note, $byType = '', $byId = 0)
+    {
+        if (!$this->db->table_exists('order_item_status_logs')) {
+            return;
+        }
+        $this->db->insert('order_item_status_logs', array(
+            'order_id' => (int) $orderId,
+            'item_id' => (int) $itemId,
+            'status' => $status,
+            'note' => $note,
+            'created_by_type' => $byType,
+            'created_by_id' => $byId ? (int) $byId : null,
+        ));
+    }
+
+    public function update_item_status($itemId, $status, $note, $byType, $byId, $role = 'ecommerce')
+    {
+        $this->ensure_item_columns();
+        $item = $this->get_item($itemId);
+        if (!$item) {
+            return false;
+        }
+        $current = !empty($item->fulfillment_status) ? $item->fulfillment_status : 'pending';
+        $allowed = array_keys(self::item_statuses());
+        if (!in_array($status, $allowed, true) || $status === $current) {
+            return false;
+        }
+
+        if ($role === 'ecommerce') {
+            $next = self::ecommerce_next_status($current);
+            $canRefund = ($status === 'refunded' && $current === 'refund_requested');
+            $canReject = ($status === $item->fulfillment_status);
+            if ($status === 'refunded' && $current !== 'refund_requested') {
+                return false;
+            }
+            if ($status === 'processing' && $current === 'refund_requested') {
+                // reject refund, back to processing/pending handled separately
+            } elseif (!$canRefund && $next !== $status) {
+                return false;
+            }
+        } elseif ($role === 'customer') {
+            if ($status !== 'refund_requested' || !self::refund_allowed($current)) {
+                return false;
+            }
+        } elseif ($role === 'admin') {
+            if ($status === 'completed' && $current !== 'delivered' && $current !== 'completed') {
+                return false;
+            }
+        }
+
+        $payload = array(
+            'fulfillment_status' => $status,
+            'status_updated_at' => date('Y-m-d H:i:s'),
+        );
+        if ($status === 'refund_requested') {
+            $payload['refund_reason'] = $note;
+            $payload['refund_requested_at'] = date('Y-m-d H:i:s');
+        }
+        $this->db->where('id', (int) $itemId)->update('store_order_items', $payload);
+        $this->add_item_log($item->order_id, $itemId, $status, $note, $byType, $byId);
+
+        $updated = $this->get_item($itemId);
+        if ($status === 'completed') {
+            $order = $this->get($item->order_id);
+            $this->load->model('Accounting_model');
+            $this->Accounting_model->credit_from_item($order, $updated);
+        }
+
+        $this->sync_order_status($item->order_id, $byType, $byId);
+        return $this->get_item($itemId);
+    }
+
+    public function reject_item_refund($itemId, $note, $byType, $byId)
+    {
+        $item = $this->get_item($itemId);
+        if (!$item || $item->fulfillment_status !== 'refund_requested') {
+            return false;
+        }
+        $back = 'processing';
+        $logs = $this->item_logs($itemId);
+        foreach ($logs as $log) {
+            if ($log->status === 'pending' || $log->status === 'processing') {
+                $back = $log->status;
+            }
+        }
+        $this->db->where('id', (int) $itemId)->update('store_order_items', array(
+            'fulfillment_status' => $back,
+            'status_updated_at' => date('Y-m-d H:i:s'),
+        ));
+        $this->add_item_log($item->order_id, $itemId, $back, $note ?: 'Refund request declined', $byType, $byId);
+        $this->sync_order_status($item->order_id, $byType, $byId);
+        return $this->get_item($itemId);
+    }
+
+    public function complete_delivered_items($orderId, $note, $byType, $byId, $forceAll = false)
+    {
+        $items = $this->items($orderId);
+        $count = 0;
+        foreach ($items as $item) {
+            $status = !empty($item->fulfillment_status) ? $item->fulfillment_status : 'pending';
+            if ($status === 'delivered' || ($forceAll && !in_array($status, array('completed', 'refunded', 'cancelled', 'refund_requested'), true))) {
+                if ($status !== 'delivered' && !$forceAll) {
+                    continue;
+                }
+                $this->db->where('id', (int) $item->id)->update('store_order_items', array(
+                    'fulfillment_status' => 'completed',
+                    'status_updated_at' => date('Y-m-d H:i:s'),
+                ));
+                $this->add_item_log($orderId, $item->id, 'completed', $note, $byType, $byId);
+                $updated = $this->get_item($item->id);
+                $order = $this->get($orderId);
+                $this->load->model('Accounting_model');
+                $this->Accounting_model->credit_from_item($order, $updated);
+                $count++;
+            }
+        }
+        $this->sync_order_status($orderId, $byType, $byId);
+        return $count;
+    }
+
+    public function bulk_set_open_items($orderId, $status, $note, $byType, $byId)
+    {
+        $items = $this->items($orderId);
+        foreach ($items as $item) {
+            $current = !empty($item->fulfillment_status) ? $item->fulfillment_status : 'pending';
+            if (in_array($current, array('completed', 'refunded', 'cancelled'), true)) {
+                continue;
+            }
+            $this->db->where('id', (int) $item->id)->update('store_order_items', array(
+                'fulfillment_status' => $status,
+                'status_updated_at' => date('Y-m-d H:i:s'),
+            ));
+            $this->add_item_log($orderId, $item->id, $status, $note, $byType, $byId);
+        }
+    }
+
+    public function sync_order_status($orderId, $byType = 'system', $byId = 0)
+    {
+        $order = $this->get($orderId);
+        if (!$order) {
+            return;
+        }
+        $items = $this->items($orderId);
+        if (empty($items)) {
+            return;
+        }
+        $counts = $this->item_status_counts($items);
+        $active = (int) $counts['pending'] + (int) $counts['processing'] + (int) $counts['dispatching'] + (int) $counts['delivered'] + (int) $counts['refund_requested'];
+        $newStatus = $order->status;
+        $payout = $order->payout_status;
+
+        if ($active === 0) {
+            if ($counts['completed'] > 0 && $counts['refunded'] + $counts['cancelled'] < count($items)) {
+                $newStatus = 'completed';
+            } elseif ($counts['refunded'] > 0 && $counts['cancelled'] === 0) {
+                $newStatus = 'refunded';
+            } elseif ($counts['cancelled'] === count($items)) {
+                $newStatus = 'cancelled';
+            } elseif ($counts['completed'] === count($items)) {
+                $newStatus = 'completed';
+            } else {
+                $newStatus = 'completed';
+            }
+        } elseif ($counts['delivered'] > 0 && $counts['pending'] + $counts['processing'] + $counts['dispatching'] === 0) {
+            $newStatus = 'delivered';
+        } elseif ($counts['dispatching'] > 0) {
+            $newStatus = 'dispatching';
+        } elseif ($counts['processing'] > 0) {
+            $newStatus = 'processing';
+        } elseif ($counts['refund_requested'] > 0) {
+            $newStatus = 'refund_requested';
+        } else {
+            $newStatus = 'pending';
+        }
+
+        if ($newStatus === 'completed' && $payout === 'waiting') {
+            $payout = 'released';
+        }
+        if ($newStatus === 'cancelled' && $payout === 'waiting') {
+            $payout = 'cancelled';
+        }
+        if ($newStatus === 'refunded' && $payout === 'waiting') {
+            $payout = 'cancelled';
+        }
+
+        $payload = array('status' => $newStatus, 'payout_status' => $payout);
+        if ($payout === 'released' && $order->payout_status !== 'released') {
+            $payload['payout_released_at'] = date('Y-m-d H:i:s');
+        }
+        if ($newStatus !== $order->status || $payout !== $order->payout_status) {
+            $this->db->where('id', (int) $orderId)->update('store_orders', $payload);
+            if ($newStatus !== $order->status) {
+                $this->add_log($orderId, $newStatus, 'Order status updated from item tracking', $byType, $byId);
+            }
+        }
+    }
+
+    public function notify_item_status($order, $item)
+    {
+        $this->load->library('ec_mail');
+        $labels = self::item_statuses();
+        $status = !empty($item->fulfillment_status) ? $item->fulfillment_status : 'pending';
+        $statusLabel = isset($labels[$status]) ? $labels[$status] : $status;
+        $html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">'
+            . '<h2>Order ' . htmlspecialchars($order->order_no) . ' — item update</h2>'
+            . '<p><strong>' . htmlspecialchars($item->product_name) . '</strong> is now <strong>' . htmlspecialchars($statusLabel) . '</strong>.</p>'
+            . '<p>Qty: ' . (int) $item->qty . ' · ' . format_money((float) $item->line_total, $order->currency) . '</p>'
+            . '</div>';
+        $emails = array(
+            $order->customer_email,
+            $order->store_email,
+            platform_setting('admin_notify_email', ''),
+        );
+        if (!empty($item->ecommerce_user_id)) {
+            $user = $this->db->where('UserID', (int) $item->ecommerce_user_id)->get('users')->row();
+            if ($user && !empty($user->email)) {
+                $emails[] = $user->email;
+            }
+        }
+        $this->ec_mail->send_many($emails, 'Order ' . $order->order_no . ': ' . $item->product_name . ' is ' . $statusLabel, $html);
+        $this->load->library('ec_whatsapp');
+        $this->ec_whatsapp->notify_item($order, $item);
     }
 
     public function notify_status($order)
@@ -299,6 +669,8 @@ class Ec_order_model extends CI_Model {
         }
 
         $this->ec_mail->send_many($emails, $subject, $html);
+        $this->load->library('ec_whatsapp');
+        $this->ec_whatsapp->notify_order($order, $items);
         return true;
     }
 
@@ -316,6 +688,7 @@ class Ec_order_model extends CI_Model {
                 ->join('store_orders', 'store_orders.id = store_order_items.order_id')
                 ->where('store_orders.store_id', $storeId)
                 ->where_not_in('store_orders.status', array('cancelled'))
+                ->where_not_in('store_order_items.fulfillment_status', array('refunded', 'cancelled'))
                 ->get()
                 ->row();
             $markupEarnings = $markup && $markup->markup_earnings ? (float) $markup->markup_earnings : 0.0;
@@ -364,5 +737,56 @@ class Ec_order_model extends CI_Model {
     protected function ensure_fx_columns()
     {
         ec_ensure_currency_schema();
+    }
+
+    public function ensure_item_columns()
+    {
+        if (!$this->db->table_exists('store_order_items')) {
+            return;
+        }
+        $added = false;
+        if (!$this->db->field_exists('fulfillment_status', 'store_order_items')) {
+            $this->db->query("ALTER TABLE store_order_items ADD COLUMN fulfillment_status VARCHAR(30) NOT NULL DEFAULT 'pending'");
+            $added = true;
+        }
+        if (!$this->db->field_exists('refund_reason', 'store_order_items')) {
+            $this->db->query("ALTER TABLE store_order_items ADD COLUMN refund_reason VARCHAR(255) NOT NULL DEFAULT ''");
+        }
+        if (!$this->db->field_exists('refund_requested_at', 'store_order_items')) {
+            $this->db->query('ALTER TABLE store_order_items ADD COLUMN refund_requested_at DATETIME NULL');
+        }
+        if (!$this->db->field_exists('status_updated_at', 'store_order_items')) {
+            $this->db->query('ALTER TABLE store_order_items ADD COLUMN status_updated_at DATETIME NULL');
+        }
+        $this->db->query("CREATE TABLE IF NOT EXISTS order_item_status_logs (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            order_id INT(11) NOT NULL,
+            item_id INT(11) NOT NULL,
+            status VARCHAR(30) NOT NULL,
+            note VARCHAR(255) NOT NULL DEFAULT '',
+            created_by_type VARCHAR(30) NOT NULL DEFAULT '',
+            created_by_id INT(11) NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY order_id (order_id),
+            KEY item_id (item_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        if ($added && $this->db->table_exists('store_orders')) {
+            $this->db->query("UPDATE store_order_items soi
+                JOIN store_orders so ON so.id = soi.order_id
+                SET soi.fulfillment_status = CASE so.status
+                    WHEN 'confirmed' THEN 'processing'
+                    WHEN 'processing' THEN 'processing'
+                    WHEN 'shipped' THEN 'dispatching'
+                    WHEN 'dispatching' THEN 'dispatching'
+                    WHEN 'delivered' THEN 'delivered'
+                    WHEN 'completed' THEN 'completed'
+                    WHEN 'cancelled' THEN 'cancelled'
+                    WHEN 'refunded' THEN 'refunded'
+                    ELSE 'pending'
+                END
+                WHERE soi.fulfillment_status = 'pending' OR soi.fulfillment_status = ''");
+        }
     }
 }

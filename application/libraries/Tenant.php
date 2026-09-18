@@ -22,6 +22,7 @@ class Tenant {
         }
 
         $host = $domainHint ? strtolower(trim($domainHint)) : $this->current_host();
+        ensure_store_pricing_columns();
         $this->store = $this->findByHost($this->normalize_host($host));
         $this->resolved = true;
         if ($this->store) {
@@ -45,6 +46,12 @@ class Tenant {
 
     protected function normalize_host($host)
     {
+        if (preg_match('/^cartvibe\.(localhost|ecommerce\.test)$/', $host)) {
+            return 'cartvibe.co.uk';
+        }
+        if (preg_match('/^zenvellose\.(localhost|ecommerce\.test)$/', $host)) {
+            return 'zenvello.se';
+        }
         if (preg_match('/^(theme[12]|fruitables|zenvello)\.localhost$/', $host, $match)) {
             return $match[1] . '.ecommerce.test';
         }
@@ -77,6 +84,9 @@ class Tenant {
         }
 
         $this->theme = $this->CI->db->where('id', $this->store->theme_id)->get('themes')->row();
+        if (!function_exists('store_setting_row_pair')) {
+            $this->CI->load->helper('ec');
+        }
         $rows = $this->CI->db
             ->where('store_id', $this->store->id)
             ->get('store_settings')
@@ -84,7 +94,12 @@ class Tenant {
 
         $this->settings = array();
         foreach ($rows as $row) {
-            $this->settings[$row->field_key] = $row->field_value;
+            $pair = function_exists('store_setting_row_pair') ? store_setting_row_pair($row) : null;
+            if ($pair) {
+                $this->settings[$pair[0]] = $pair[1];
+            } elseif (!empty($row->field_key)) {
+                $this->settings[$row->field_key] = isset($row->field_value) ? $row->field_value : '';
+            }
         }
     }
 

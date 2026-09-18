@@ -7,6 +7,7 @@ abstract class Importer_base {
 
     protected $pageUrl = '';
     protected $downloadImages = true;
+    protected $fetchLanguage = 'en-GB,en;q=0.9';
 
     public function parse($url, $downloadImages = true)
     {
@@ -19,6 +20,9 @@ abstract class Importer_base {
         $data = $this->extract($html, $url);
         if (empty($data['name'])) {
             throw new Exception('Could not read product details from this URL.');
+        }
+        if (empty($data['brand'])) {
+            $data['brand'] = $this->extract_brand($html);
         }
         if (empty($data['details'])) {
             $data['details'] = $this->fallback_details($html, isset($data['description']) ? $data['description'] : '');
@@ -41,7 +45,7 @@ abstract class Importer_base {
             CURLOPT_USERAGENT => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             CURLOPT_HTTPHEADER => array(
                 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language: en-GB,en;q=0.9',
+                'Accept-Language: ' . $this->fetchLanguage,
                 'Cache-Control: no-cache',
             ),
             CURLOPT_ENCODING => '',
@@ -129,14 +133,68 @@ abstract class Importer_base {
         return round((float) $value, 2);
     }
 
+    protected function extract_brand($html)
+    {
+        foreach ($this->json_ld_products($html) as $item) {
+            if (empty($item['brand'])) {
+                continue;
+            }
+            $brand = $item['brand'];
+            if (is_array($brand)) {
+                if (isset($brand['name'])) {
+                    $brand = $brand['name'];
+                } elseif (isset($brand[0]) && is_array($brand[0]) && isset($brand[0]['name'])) {
+                    $brand = $brand[0]['name'];
+                } else {
+                    $brand = '';
+                }
+            }
+            $brand = $this->normalize_brand($brand);
+            if ($brand !== '') {
+                return $brand;
+            }
+        }
+
+        $patterns = array(
+            '/id="bylineInfo"[^>]*>([^<]+)/i',
+            '/id="bylineInfo"[^>]*aria-label="[^"]*brand[:\s]+([^"]+)"/i',
+            '/"brand"\s*:\s*"([^"]{2,80})"/i',
+            '/data-brand="([^"]+)"/i',
+            '/Brand\s*<\/(?:th|span|td)>\s*<[^>]+>([^<]+)/i',
+        );
+        foreach ($patterns as $pattern) {
+            $brand = $this->normalize_brand($this->first_match($pattern, $html));
+            if ($brand !== '') {
+                return $brand;
+            }
+        }
+        return '';
+    }
+
+    protected function normalize_brand($value)
+    {
+        $brand = $this->clean_text($value);
+        $brand = preg_replace('/^Visit the\s+/i', '', $brand);
+        $brand = preg_replace('/\s+Store$/i', '', $brand);
+        $brand = preg_replace('/^Brand:\s*/i', '', $brand);
+        $brand = trim($brand, " \t\n\r\0\x0B-–");
+        if ($brand === '' || preg_match('/^(amazon|visit|store|brand)$/i', $brand)) {
+            return '';
+        }
+        if (function_exists('mb_substr')) {
+            return mb_substr($brand, 0, 150);
+        }
+        return substr($brand, 0, 150);
+    }
+
     protected function json_ld_products($html)
     {
         $out = array();
-        if (!preg_match_all('#<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>#is', $html, $matches)) {
+        if (!preg_match_all('~<script[^>]*type=["\']?application/ld(?:\+|&#x2B;)json["\']?[^>]*>(.*?)</script>~is', $html, $matches)) {
             return $out;
         }
         foreach ($matches[1] as $json) {
-            $decoded = json_decode(html_entity_decode(trim($json), ENT_QUOTES | ENT_HTML5, 'UTF-8'), true);
+            $decoded = $this->decode_ld_json($json);
             if (!is_array($decoded)) {
                 continue;
             }
@@ -155,6 +213,33 @@ abstract class Importer_base {
             }
         }
         return $out;
+    }
+
+    protected function decode_ld_json($json)
+    {
+        $json = html_entity_decode(trim((string) $json), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $decoded = json_decode($json, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+        $json = preg_replace_callback('/"(?:\\\\.|[^"\\\\])*"/s', function ($match) {
+            $value = str_replace(array("\r", "\n", "\t"), array('\\r', '\\n', '\\t'), $match[0]);
+            return preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', ' ', $value);
+        }, $json);
+        $decoded = json_decode($json, true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    protected function ld_offer($item)
+    {
+        if (!is_array($item) || empty($item['offers'])) {
+            return array();
+        }
+        $offers = $item['offers'];
+        if (isset($offers[0]) && is_array($offers[0])) {
+            return $offers[0];
+        }
+        return is_array($offers) ? $offers : array();
     }
 
     protected function asset_url($url)

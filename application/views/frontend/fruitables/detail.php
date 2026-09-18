@@ -27,9 +27,13 @@ $related = !empty($products) ? $products : array();
                         </div>
                     </div>
                     <div class="col-lg-6">
+                        <?php if (!empty($product->brand)): ?>
+                            <p class="mb-2 text-secondary fw-semibold"><?= htmlspecialchars($product->brand) ?></p>
+                        <?php endif; ?>
                         <h4 class="fw-bold mb-3"><?= htmlspecialchars($product->name) ?></h4>
                         <p class="mb-3">SKU: <?= htmlspecialchars(!empty($product->sku) ? $product->sku : '-') ?></p>
-                        <h5 class="fw-bold mb-3"><?= format_money((float) $product->price) ?></h5>
+                        <h5 class="fw-bold mb-3"><?= format_money((float) (isset($cart_product) && $cart_product ? $cart_product->price : $product->price)) ?></h5>
+                        <?php $this->load->view('frontend/shared/child_options'); ?>
                         <div class="d-flex mb-4">
                             <i class="fa fa-star text-secondary"></i>
                             <i class="fa fa-star text-secondary"></i>

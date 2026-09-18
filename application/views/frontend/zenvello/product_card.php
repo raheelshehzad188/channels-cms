@@ -1,7 +1,8 @@
 <?php
 $img = !empty($product->image)
-    ? base_url($product->image)
+    ? storefront_asset_url($product->image)
     : $assets . 'assets/images/products/led-mask.jpg';
+$imgCss = htmlspecialchars($img, ENT_QUOTES, 'UTF-8');
 $url = !empty($is_preview)
     ? base_url('admin/products/preview/' . $product->id . '/zenvello')
     : product_url($product);
@@ -14,8 +15,8 @@ $showCompare = $compare > (float) $product->price;
     <?php $off = (int) round((($compare - (float) $product->price) / $compare) * 100); ?>
     <span class="badge">-<?= $off ?>%</span>
   <?php endif; ?>
-  <a class="pcard__media" href="<?= $url ?>">
-    <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($product->name) ?>">
+  <a class="pcard__media" href="<?= $url ?>" aria-label="<?= htmlspecialchars($product->name) ?>">
+    <span class="pcard__photo" style="background-image:url('<?= $imgCss ?>')"></span>
   </a>
   <h3 class="pcard__title"><a href="<?= $url ?>"><?= htmlspecialchars($product->name) ?></a></h3>
   <p class="price<?= $showCompare ? '' : ' price--plain' ?>">

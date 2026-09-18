@@ -54,6 +54,13 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">WhatsApp number</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="whatsapp_number" class="form-control" value="<?= $isEdit && !empty($user->whatsapp_number) ? htmlspecialchars($user->whatsapp_number) : '' ?>" placeholder="923004210607">
+                                <span class="help-block">Order WhatsApp alerts. Use country code without +. Falls back to phone if empty.</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">Role</label>
                             <div class="col-sm-9">
                                 <select name="roleID" class="form-control" required>
@@ -65,11 +72,20 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group" id="commission-group">
-                            <label class="col-sm-3 control-label">Commission (PKR)</label>
-                            <div class="col-sm-9">
-                                <input type="number" step="0.01" min="0" name="commission" class="form-control" value="<?= $isEdit ? htmlspecialchars($user->commission) : '0.00' ?>">
-                                <span class="help-block">Added on top of the product price for store owners.</span>
+                        <div id="commission-group">
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Commission amount</label>
+                                <div class="col-sm-9">
+                                    <input type="number" step="0.01" min="0" name="commission" class="form-control" value="<?= $isEdit ? htmlspecialchars($user->commission) : '0.00' ?>">
+                                    <span class="help-block">Fixed amount added on top of catalog base price for store owners.</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Commission %</label>
+                                <div class="col-sm-9">
+                                    <input type="number" step="0.01" min="0" max="100" name="commission_percent" class="form-control" value="<?= $isEdit && isset($user->commission_percent) ? htmlspecialchars($user->commission_percent) : '0.00' ?>">
+                                    <span class="help-block">Percent of catalog base price, added on top. Example: 5% of 100 = 5. Amount and % can be used together. Saving recalculates store listing prices.</span>
+                                </div>
                             </div>
                         </div>
                         <div class="form-group">
