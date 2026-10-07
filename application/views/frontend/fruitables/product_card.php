@@ -1,4 +1,10 @@
 <?php
+if (function_exists('storefront_listing_product')) {
+    $product = storefront_listing_product($product);
+}
+if (!$product) {
+    return;
+}
 $cardCol = isset($card_col) ? $card_col : 'col-md-6 col-lg-4 col-xl-3';
 $itemClass = isset($card_item_class) ? $card_item_class : 'fruite-item';
 $imgWrapClass = isset($card_img_class) ? $card_img_class : 'fruite-img';
@@ -30,6 +36,12 @@ $cartUrl = !empty($is_preview) ? $detailUrl : storefront_url('cart/add/' . $prod
                 <p class="text-dark fs-5 fw-bold mb-0"><?= format_money((float) $product->price) ?></p>
                 <a href="<?= $cartUrl ?>" class="btn border border-secondary rounded-pill px-3 text-primary"><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart</a>
             </div>
+            <?php
+              $this->load->view('frontend/shared/admin_card_meta', array(
+                  'listing' => $product,
+                  'store' => isset($store) ? $store : null,
+              ));
+            ?>
         </div>
     </div>
 <?php if (!$skipCol): ?>

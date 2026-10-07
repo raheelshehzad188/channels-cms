@@ -79,10 +79,23 @@
   function initCart() {
     var badges = document.querySelectorAll('[data-cart-count]');
     var count = 0;
+    if (badges[0]) {
+      count = parseInt(badges[0].getAttribute('data-cart-count') || badges[0].textContent, 10) || 0;
+    }
 
     function paint() {
-      badges.forEach(function (b) { b.textContent = String(count); });
+      badges.forEach(function (b) {
+        b.textContent = String(count);
+        b.setAttribute('data-cart-count', String(count));
+        if (count > 0) {
+          b.removeAttribute('hidden');
+        } else {
+          b.setAttribute('hidden', 'hidden');
+        }
+      });
     }
+
+    paint();
 
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-add-to-cart]');

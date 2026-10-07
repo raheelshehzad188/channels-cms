@@ -128,7 +128,9 @@ class Product_importer {
     {
         $options = is_array($extra) ? $extra : array();
         $options['cost_override'] = $costOverride;
-        $options['existing_mode'] = 'return';
+        if (empty($options['existing_mode'])) {
+            $options['existing_mode'] = 'return';
+        }
         $countryId = $this->country_id_for_url($url, $countryId);
         $userId = $this->resolve_catalog_owner_id($userId, $countryId);
         $listing = $this->import_listing_if_needed($url, $countryId, $userId, $options);
@@ -140,11 +142,15 @@ class Product_importer {
             'product_id' => (int) $result['product_id'],
             'existing' => !empty($result['existing']) || !empty($result['skipped']),
             'auto_added' => isset($result['auto_added']) ? (int) $result['auto_added'] : 0,
+            'child_ids' => isset($result['child_ids']) ? $result['child_ids'] : array(),
         );
     }
 
     protected function import_listing_if_needed($url, $countryId, $userId, $options)
     {
+        if (!empty($options['csv_name']) || !empty($options['product_name'])) {
+            return null;
+        }
         try {
             $resolved = $this->resolve_source($url, $countryId, $userId);
         } catch (Exception $e) {
@@ -238,6 +244,9 @@ class Product_importer {
         if ($existingMode === 'skip_name' && $csvName !== '') {
             $existing = $this->ci->Product_model->find_catalog_by_name($csvName, $countryId);
             if ($existing) {
+                $this->refresh_missing_details((int) $existing->id, $resolved, $options);
+                $this->refresh_missing_images((int) $existing->id, $resolved);
+                $this->assert_required_media((int) $existing->id, $options);
                 $this->ci->Product_import_model->clear_failed($resolved['url'], $userId);
                 return array(
                     'status' => 'skipped',
@@ -251,6 +260,9 @@ class Product_importer {
             $existing = $this->find_existing_product($resolved, $countryId);
             if ($existing) {
                 if ($existingMode === 'skip') {
+                    $this->refresh_missing_images((int) $existing->id, $resolved);
+                    $this->refresh_missing_details((int) $existing->id, $resolved, $options);
+                    $this->assert_required_media((int) $existing->id, $options);
                     $this->ci->Product_import_model->clear_failed($resolved['url'], $userId);
                     return array(
                         'status' => 'skipped',
@@ -261,6 +273,7 @@ class Product_importer {
                 }
                 $this->convert_product_images((int) $existing->id);
                 $this->refresh_missing_images((int) $existing->id, $resolved);
+                $this->refresh_missing_details((int) $existing->id, $resolved, $options);
                 $this->assign_csv_categories((int) $existing->id, $countryId, $options);
                 $this->apply_shipping_days((int) $existing->id, $options);
                 $this->apply_stock((int) $existing->id, $options);
@@ -275,18 +288,30 @@ class Product_importer {
                     $this->ci->Product_model->save($update, (int) $existing->id);
                 }
                 $this->apply_creatives((int) $existing->id, $options, false);
+                $this->assert_required_media((int) $existing->id, $options);
                 $this->ci->Product_import_model->clear_failed($resolved['url'], $userId);
+                $existingData = !empty($options['import_data']) && is_array($options['import_data']) ? $options['import_data'] : array();
+                $existingData = $this->hydrate_import_images($existingData, $resolved);
+                if (!empty($existingData['options_title'])) {
+                    $this->ci->Product_model->save(array(
+                        'options_title' => trim((string) $existingData['options_title']),
+                    ), (int) $existing->id);
+                }
+                $childIds = $this->create_size_children((int) $existing->id, $existingData, $options);
                 return array(
                     'status' => 'existing',
                     'existing' => true,
                     'product_id' => (int) $existing->id,
+                    'child_ids' => $childIds,
                     'auto_added' => $this->maybe_auto_add_product((int) $existing->id, $options),
                 );
             }
         }
 
         $reuse = !empty($options['reuse_source']) ? $this->find_existing_product($resolved, $countryId) : null;
-        if ($reuse) {
+        if (!empty($options['import_data']) && is_array($options['import_data'])) {
+            $data = $options['import_data'];
+        } elseif ($reuse) {
             $data = $this->data_from_existing_product($reuse, $resolved);
         } else {
             $className = $resolved['class'];
@@ -297,6 +322,16 @@ class Product_importer {
             } catch (Exception $e) {
                 $data = $this->fallback_import_data($resolved, $options, $csvName, $e);
             }
+        }
+
+        $data = $this->hydrate_import_images($data, $resolved);
+        $data = $this->apply_provided_images($data, $options);
+        $data = $this->apply_provided_details($data, $options);
+        if (!empty($options['require_images']) && !$this->import_data_has_image($data)) {
+            throw new Exception('Product images are required.');
+        }
+        if (!empty($options['require_details']) && !$this->import_data_has_details($data)) {
+            throw new Exception('Product details are required.');
         }
 
         $name = $csvName !== '' ? $csvName : trim(isset($data['name']) ? $data['name'] : '');
@@ -336,41 +371,40 @@ class Product_importer {
         $payload = array(
             'store_id' => null,
             'source_product_id' => null,
-            'supplier_id' => (int) $resolved['source']->supplier_id,
+            'supplier_id' => $this->supplier_id_from_options($options, $resolved, $country),
             'country_id' => $countryId,
             'name' => $name,
             'sku' => $this->ci->Product_model->unique_sku($sku !== '' ? $sku : strtoupper(substr(md5($resolved['canonical']), 0, 10))),
             'brand' => isset($data['brand']) ? trim((string) $data['brand']) : '',
-            'slug' => $this->ci->Product_model->unique_slug(url_title($name, '-', true)),
+            'slug' => $this->ci->Product_model->unique_slug(!empty($data['slug']) ? $data['slug'] : $name),
             'price' => $catalogPrice,
             'compare_price' => $this->converted_compare_price($data, $rate, $forceSelling),
             'cost_price' => $cost,
             'max_sale_price' => isset($options['max_sale_price']) ? (float) $options['max_sale_price'] : 0,
             'stock' => $this->stock_from_options($options, (int) (isset($data['stock']) ? $data['stock'] : 0)),
             'description' => isset($data['description']) ? $data['description'] : '',
+            'short_details' => isset($data['short_details']) ? $data['short_details'] : (isset($data['short_detail']) ? $data['short_detail'] : ''),
             'details' => isset($data['details']) ? $data['details'] : '',
             'seo_title' => $csvName !== '' ? $name : (isset($data['seo_title']) ? $data['seo_title'] : $name),
             'seo_description' => isset($data['seo_description']) ? $data['seo_description'] : '',
-            'seo_keywords' => '',
+            'seo_keywords' => isset($data['seo_keywords']) ? trim((string) $data['seo_keywords']) : '',
+            'options_title' => isset($data['options_title']) ? trim((string) $data['options_title']) : '',
             'image' => $this->local_image_path(isset($data['image']) ? $data['image'] : ''),
             'source_url' => $resolved['canonical'],
-            'status' => 0,
+            'status' => isset($options['status']) ? ((int) $options['status'] ? 1 : 0) : 0,
             'auto_add_to_stores' => !empty($options['auto_add_to_stores']) ? 1 : 0,
             'created_by' => (int) $userId,
         );
         $shipping = $this->shipping_days_from_options($options);
+        if (!$shipping) {
+            $shipping = $this->shipping_days_from_options($data);
+        }
         if ($shipping) {
             $payload = array_merge($payload, $shipping);
         }
 
         $productId = $this->ci->Product_model->save($payload, 0);
-        $this->ci->Product_model->replace_sources($productId, array(
-            array(
-                'source_url' => $resolved['url'],
-                'source_price' => $fetched > 0 ? $fetched : $cost,
-                'label' => $resolved['host'],
-            ),
-        ));
+        $this->ci->Product_model->replace_sources($productId, $this->source_rows_from_options($options, $resolved, $fetched > 0 ? $fetched : $cost));
         $this->apply_creatives($productId, $options, true);
         if (!empty($data['gallery']) && is_array($data['gallery'])) {
             foreach ($data['gallery'] as $path) {
@@ -382,6 +416,7 @@ class Product_importer {
         }
 
         $this->assign_csv_categories($productId, $countryId, $options);
+        $childIds = $this->create_size_children($productId, $data, $options);
         $this->sync_images_to_store_copies($productId);
         $this->ci->Product_import_model->clear_failed($resolved['url'], $userId);
 
@@ -389,6 +424,7 @@ class Product_importer {
             'status' => 'imported',
             'existing' => false,
             'product_id' => $productId,
+            'child_ids' => $childIds,
             'auto_added' => $this->maybe_auto_add_product($productId, $options),
         );
     }
@@ -428,6 +464,77 @@ class Product_importer {
         $this->sync_images_to_store_copies($productId);
     }
 
+    protected function apply_provided_details($data, $options)
+    {
+        if (!is_array($data)) {
+            $data = array();
+        }
+        $details = isset($options['details']) ? trim((string) $options['details']) : '';
+        $description = isset($options['description']) ? trim((string) $options['description']) : '';
+        if ($details !== '') {
+            $data['details'] = $details;
+        }
+        if ($description !== '') {
+            $data['description'] = $description;
+            if (empty($data['seo_description'])) {
+                $data['seo_description'] = function_exists('mb_substr') ? mb_substr($description, 0, 180) : substr($description, 0, 180);
+            }
+        }
+        if (empty($data['details']) && $description !== '') {
+            $data['details'] = '<p>' . htmlspecialchars($description, ENT_QUOTES, 'UTF-8') . '</p>';
+        }
+        return $data;
+    }
+
+    protected function refresh_missing_details($productId, $resolved, $options = array())
+    {
+        $product = $this->ci->Product_model->get((int) $productId);
+        if (!$product) {
+            return;
+        }
+        $force = !empty($options['force_refresh_details']);
+        $hasDetails = trim((string) $product->details) !== '';
+        $data = $this->apply_provided_details(array(), $options);
+        if (empty($data['details']) && empty($data['description'])) {
+            if ($hasDetails && !$force) {
+                return;
+            }
+            $className = isset($resolved['class']) ? $resolved['class'] : '';
+            if ($className === '') {
+                return;
+            }
+            require_once $this->ci->Product_import_model->class_file($className);
+            $importer = new $className();
+            try {
+                $data = $importer->parse($resolved['url'], false);
+            } catch (Exception $e) {
+                return;
+            }
+        }
+        $update = array();
+        if (!empty($data['details'])) {
+            $update['details'] = $data['details'];
+        }
+        if (!empty($data['description'])) {
+            $update['description'] = $data['description'];
+        }
+        if (!empty($data['seo_description'])) {
+            $update['seo_description'] = $data['seo_description'];
+        } elseif (!empty($data['description'])) {
+            $update['seo_description'] = function_exists('mb_substr')
+                ? mb_substr($data['description'], 0, 180)
+                : substr($data['description'], 0, 180);
+        }
+        if (isset($data['stock']) && (int) $data['stock'] > 0 && (int) $product->stock <= 0) {
+            $update['stock'] = (int) $data['stock'];
+        }
+        if (!$update) {
+            return;
+        }
+        $this->ci->Product_model->save($update, (int) $productId);
+        $this->ci->Product_model->sync_copy_fields((int) $productId, $update);
+    }
+
     protected function sync_images_to_store_copies($productId)
     {
         $productId = (int) $productId;
@@ -461,6 +568,9 @@ class Product_importer {
 
     protected function maybe_auto_add_product($productId, $options)
     {
+        if (!empty($options['add_to_all_stores']) && function_exists('ec_add_catalog_to_all_country_stores')) {
+            return (int) ec_add_catalog_to_all_country_stores((int) $productId, true);
+        }
         if (empty($options['auto_add_to_stores']) || !function_exists('ec_auto_add_catalog_product')) {
             return 0;
         }
@@ -571,6 +681,9 @@ class Product_importer {
         if ($name === '' || !$hasPrice) {
             throw $parseError;
         }
+        if (!empty($options['require_images']) && empty($options['image_files'])) {
+            throw $parseError;
+        }
 
         return array(
             'name' => $name,
@@ -612,6 +725,56 @@ class Product_importer {
             return strtoupper($match[1]);
         }
         return '';
+    }
+
+    protected function supplier_id_from_options($options, $resolved, $country)
+    {
+        $supplierId = !empty($resolved['source']->supplier_id) ? (int) $resolved['source']->supplier_id : 0;
+        $name = isset($options['supplier_name']) ? trim((string) $options['supplier_name']) : '';
+        if ($name === '' || !method_exists($this->ci->Product_import_model, 'ensure_supplier_named')) {
+            return $supplierId;
+        }
+        $code = '';
+        if (is_object($country) && !empty($country->code)) {
+            $code = $country->code;
+        }
+        $named = (int) $this->ci->Product_import_model->ensure_supplier_named($name, $code);
+        return $named > 0 ? $named : $supplierId;
+    }
+
+    protected function source_rows_from_options($options, $resolved, $price)
+    {
+        $rows = array(
+            array(
+                'source_url' => $resolved['url'],
+                'source_price' => (float) $price,
+                'label' => $resolved['host'],
+            ),
+        );
+        $extras = array();
+        if (!empty($options['extra_sources']) && is_array($options['extra_sources'])) {
+            $extras = $options['extra_sources'];
+        }
+        $seen = array($resolved['url'] => true);
+        foreach ($extras as $extra) {
+            if (is_string($extra) || is_numeric($extra)) {
+                $extra = array('source_url' => (string) $extra);
+            }
+            if (!is_array($extra)) {
+                continue;
+            }
+            $url = isset($extra['source_url']) ? trim((string) $extra['source_url']) : '';
+            if ($url === '' || isset($seen[$url])) {
+                continue;
+            }
+            $seen[$url] = true;
+            $rows[] = array(
+                'source_url' => $url,
+                'source_price' => isset($extra['source_price']) ? (float) $extra['source_price'] : (float) $price,
+                'label' => isset($extra['label']) ? trim((string) $extra['label']) : $resolved['host'],
+            );
+        }
+        return $rows;
     }
 
     protected function shipping_days_from_options($options)
@@ -757,6 +920,138 @@ class Product_importer {
         return $public !== '' ? $public : $path;
     }
 
+    protected function import_data_has_image($data)
+    {
+        if (!empty($data['image'])) {
+            return true;
+        }
+        if (!empty($data['gallery']) && is_array($data['gallery'])) {
+            foreach ($data['gallery'] as $path) {
+                if (trim((string) $path) !== '') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected function import_data_has_details($data)
+    {
+        $details = isset($data['details']) ? trim(strip_tags((string) $data['details'])) : '';
+        $description = isset($data['description']) ? trim(strip_tags((string) $data['description'])) : '';
+        return $details !== '' || $description !== '';
+    }
+
+    protected function assert_required_media($productId, $options)
+    {
+        $product = $this->ci->Product_model->get((int) $productId);
+        if (!$product) {
+            throw new Exception('Product was not saved.');
+        }
+        if (!empty($options['require_images']) && trim((string) $product->image) === '') {
+            throw new Exception('Product images are required.');
+        }
+        if (!empty($options['require_details'])) {
+            $details = trim(strip_tags((string) $product->details));
+            $description = trim(strip_tags((string) $product->description));
+            if ($details === '' && $description === '') {
+                throw new Exception('Product details are required.');
+            }
+        }
+    }
+
+    protected function apply_provided_images($data, $options)
+    {
+        if (!is_array($data)) {
+            $data = array();
+        }
+        $files = array();
+        if (!empty($options['image_files']) && is_array($options['image_files'])) {
+            $files = $options['image_files'];
+        }
+        if (!$files) {
+            return $data;
+        }
+        $saved = array();
+        foreach ($files as $file) {
+            $path = $this->ingest_local_image($file);
+            if ($path !== '') {
+                $saved[] = $path;
+            }
+        }
+        if (!$saved) {
+            return $data;
+        }
+        if (empty($data['image'])) {
+            $data['image'] = $saved[0];
+        }
+        $gallery = (!empty($data['gallery']) && is_array($data['gallery'])) ? $data['gallery'] : array();
+        foreach ($saved as $i => $path) {
+            if ($i === 0 && isset($data['image']) && $data['image'] === $path) {
+                continue;
+            }
+            if ($path !== '' && $path !== $data['image'] && !in_array($path, $gallery, true)) {
+                $gallery[] = $path;
+            }
+        }
+        $data['gallery'] = $gallery;
+        return $data;
+    }
+
+    protected function ingest_local_image($file)
+    {
+        $file = trim((string) $file);
+        if ($file === '' || !is_file($file) || filesize($file) < 500) {
+            return '';
+        }
+        $bin = @file_get_contents($file);
+        if ($bin === false || strlen($bin) < 500 || preg_match('/^\s*</', $bin)) {
+            return '';
+        }
+        $dir = FCPATH . 'uploads/products/';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $base = 'imp_' . md5($file . filesize($file));
+        $webpName = $base . '.webp';
+        if (is_file($dir . $webpName)) {
+            return 'uploads/products/' . $webpName;
+        }
+        $alreadyWebp = (substr($bin, 0, 4) === 'RIFF' && stripos(substr($bin, 0, 16), 'WEBP') !== false)
+            || strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'webp';
+        if ($alreadyWebp) {
+            if (@file_put_contents($dir . $webpName, $bin) !== false) {
+                return 'uploads/products/' . $webpName;
+            }
+            return '';
+        }
+        $ext = 'jpg';
+        $head = substr($bin, 0, 8);
+        if ($head === "\x89PNG\r\n\x1a\n" || strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'png') {
+            $ext = 'png';
+        } elseif (substr($bin, 0, 3) === 'GIF' || strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'gif') {
+            $ext = 'gif';
+        }
+        $tmpName = $base . '.src.' . $ext;
+        if (@file_put_contents($dir . $tmpName, $bin) === false) {
+            return '';
+        }
+        $converted = function_exists('ec_convert_image_to_webp')
+            ? ec_convert_image_to_webp($dir . $tmpName)
+            : ($dir . $tmpName);
+        $public = function_exists('ec_public_upload_path')
+            ? ec_public_upload_path($converted)
+            : ('uploads/products/' . basename($converted));
+        if ($public !== '' && substr($public, -5) === '.webp') {
+            return $public;
+        }
+        if (is_file($dir . $webpName)) {
+            @unlink($dir . $tmpName);
+            return 'uploads/products/' . $webpName;
+        }
+        return $public !== '' ? $public : ('uploads/products/' . basename($converted));
+    }
+
     protected function local_image_path($path)
     {
         $path = trim((string) $path);
@@ -768,6 +1063,288 @@ class Product_importer {
             return '';
         }
         return $path;
+    }
+
+    protected function hydrate_import_images($data, $resolved)
+    {
+        if (!is_array($data)) {
+            $data = array();
+        }
+        $urls = array();
+        if (!empty($data['image_urls']) && is_array($data['image_urls'])) {
+            $urls = $data['image_urls'];
+        }
+        $colorUrls = array();
+        foreach (array('colors', 'variants', 'children') as $groupKey) {
+            if (empty($data[$groupKey]) || !is_array($data[$groupKey])) {
+                continue;
+            }
+            foreach ($data[$groupKey] as $item) {
+                if (is_array($item) && !empty($item['image_url'])) {
+                    $colorUrls[] = trim((string) $item['image_url']);
+                }
+            }
+        }
+        $all = array_values(array_unique(array_merge($urls, $colorUrls)));
+        if (!$all) {
+            return $data;
+        }
+        $className = isset($resolved['class']) ? $resolved['class'] : '';
+        if ($className === '' || !$this->ci->Product_import_model->has_importer_class($className)) {
+            return $data;
+        }
+        require_once $this->ci->Product_import_model->class_file($className);
+        $importer = new $className();
+        $pageUrl = isset($resolved['url']) ? $resolved['url'] : '';
+        $savedMap = array();
+        foreach ($all as $url) {
+            $one = method_exists($importer, 'save_images')
+                ? $importer->save_images(array($url), 1, $pageUrl)
+                : array();
+            if (!empty($one[0])) {
+                $savedMap[$url] = $one[0];
+            }
+        }
+        if (!$savedMap) {
+            return $data;
+        }
+        $parentSaved = array();
+        foreach ($urls as $url) {
+            if (isset($savedMap[$url])) {
+                $parentSaved[] = $savedMap[$url];
+            }
+        }
+        if (!$parentSaved) {
+            $parentSaved = array_values($savedMap);
+        }
+        if (empty($data['image'])) {
+            $data['image'] = $parentSaved[0];
+        }
+        $gallery = (!empty($data['gallery']) && is_array($data['gallery'])) ? $data['gallery'] : array();
+        foreach ($parentSaved as $i => $path) {
+            if ($i === 0 && isset($data['image']) && $data['image'] === $path) {
+                continue;
+            }
+            if ($path !== '' && $path !== $data['image'] && !in_array($path, $gallery, true)) {
+                $gallery[] = $path;
+            }
+        }
+        $data['gallery'] = $gallery;
+        if (!empty($data['colors']) && is_array($data['colors'])) {
+            foreach ($data['colors'] as $i => $color) {
+                if (!is_array($color) || empty($color['image_url'])) {
+                    continue;
+                }
+                $url = trim((string) $color['image_url']);
+                if (isset($savedMap[$url])) {
+                    $data['colors'][$i]['image'] = $savedMap[$url];
+                }
+            }
+        }
+        foreach (array('variants', 'children') as $groupKey) {
+            if (empty($data[$groupKey]) || !is_array($data[$groupKey])) {
+                continue;
+            }
+            foreach ($data[$groupKey] as $i => $item) {
+                if (!is_array($item) || empty($item['image_url'])) {
+                    continue;
+                }
+                $url = trim((string) $item['image_url']);
+                if (isset($savedMap[$url])) {
+                    $data[$groupKey][$i]['image'] = $savedMap[$url];
+                }
+            }
+        }
+        return $data;
+    }
+
+    protected function create_size_children($parentId, $data, $options)
+    {
+        $parentId = (int) $parentId;
+        $variants = $this->variation_labels($data, $options);
+        if ($parentId < 1 || !$variants) {
+            return array();
+        }
+
+        $parent = $this->ci->Product_model->get($parentId);
+        if (!$parent || !empty($parent->store_id)) {
+            return array();
+        }
+        if (function_exists('ensure_product_parent_columns')) {
+            ensure_product_parent_columns();
+        }
+
+        $parentSku = isset($parent->parent_sku) ? trim((string) $parent->parent_sku) : '';
+        if ($parentSku === '') {
+            $parentSku = trim((string) $parent->sku);
+        }
+        if ($parentSku === '') {
+            $parentSku = $this->ci->Product_model->unique_sku('P' . (int) $parent->id);
+            $this->ci->Product_model->save(array('sku' => $parentSku), (int) $parent->id);
+            $parent->sku = $parentSku;
+        }
+
+        $this->ci->load->model('Ec_category_model');
+        $categoryIds = $this->ci->Ec_category_model->ids_for_product($parent->id);
+        $created = array();
+        $hasDefault = false;
+        if ($this->ci->db->field_exists('parent_sku', 'products')) {
+            $this->ci->db
+                ->group_start()
+                    ->where('store_id IS NULL', null, false)
+                    ->or_where('store_id', 0)
+                ->group_end()
+                ->where('parent_sku', $parentSku)
+                ->where('is_default', 1);
+            $hasDefault = $this->ci->db->count_all_results('products') > 0;
+        }
+
+        foreach ($variants as $variant) {
+            $size = $variant['name'];
+            $name = trim((string) $parent->name);
+            if (!preg_match('/\s[-–]\s' . preg_quote($size, '/') . '$/u', $name)) {
+                $name .= ' - ' . $size;
+            }
+            $existing = $this->find_catalog_child_by_name($parentSku, $name);
+            $variantPrice = isset($variant['price']) ? (float) $variant['price'] : 0;
+            $variantCost = isset($variant['cost_price']) ? (float) $variant['cost_price'] : $variantPrice;
+            if ($variantCost <= 0) {
+                $variantCost = $variantPrice;
+            }
+            if ($existing) {
+                if ($variantCost > 0) {
+                    $this->ci->Product_model->save(array(
+                        'price' => $variantPrice > 0 ? $variantPrice : $variantCost,
+                        'cost_price' => $variantCost,
+                        'compare_price' => isset($variant['compare_price']) ? (float) $variant['compare_price'] : (isset($existing->compare_price) ? (float) $existing->compare_price : 0),
+                    ), (int) $existing->id);
+                }
+                $created[] = (int) $existing->id;
+                $this->maybe_auto_add_product((int) $existing->id, $options);
+                continue;
+            }
+
+            $suffix = strtoupper(preg_replace('/[^A-Za-z0-9]+/', '-', $size));
+            $suffix = trim($suffix, '-');
+            if ($suffix === '') {
+                $suffix = 'CHILD';
+            }
+            $sku = $this->ci->Product_model->unique_sku($parentSku . '-' . $suffix);
+            $sortOrder = function_exists('product_next_child_sort') ? product_next_child_sort($parentSku) : count($created) + 1;
+            $image = !empty($variant['image']) ? $this->local_image_path($variant['image']) : '';
+            if ($image === '') {
+                $image = isset($parent->image) ? $parent->image : '';
+            }
+            $payload = array(
+                'name' => $name,
+                'sku' => $sku,
+                'parent_sku' => $parentSku,
+                'is_default' => $hasDefault ? 0 : 1,
+                'sort_order' => $sortOrder,
+                'slug' => $this->ci->Product_model->unique_slug($name),
+                'brand' => isset($parent->brand) ? $parent->brand : '',
+                'made_by' => isset($parent->made_by) ? $parent->made_by : '',
+                'price' => $variantPrice > 0 ? $variantPrice : (isset($parent->price) ? (float) $parent->price : 0),
+                'compare_price' => isset($variant['compare_price']) && (float) $variant['compare_price'] > 0
+                    ? (float) $variant['compare_price']
+                    : (isset($parent->compare_price) ? (float) $parent->compare_price : 0),
+                'cost_price' => $variantCost > 0 ? $variantCost : (isset($parent->cost_price) ? (float) $parent->cost_price : 0),
+                'max_sale_price' => isset($parent->max_sale_price) ? (float) $parent->max_sale_price : 0,
+                'stock' => isset($parent->stock) ? (int) $parent->stock : 0,
+                'ship_min_days' => isset($parent->ship_min_days) ? (int) $parent->ship_min_days : 0,
+                'ship_max_days' => isset($parent->ship_max_days) ? (int) $parent->ship_max_days : 0,
+                'supplier_id' => !empty($parent->supplier_id) ? (int) $parent->supplier_id : null,
+                'country_id' => !empty($parent->country_id) ? (int) $parent->country_id : null,
+                'description' => isset($parent->description) ? $parent->description : '',
+                'short_details' => isset($parent->short_details) ? $parent->short_details : '',
+                'details' => isset($parent->details) ? $parent->details : '',
+                'seo_title' => $name,
+                'seo_description' => isset($parent->seo_description) ? $parent->seo_description : '',
+                'seo_keywords' => isset($parent->seo_keywords) ? $parent->seo_keywords : '',
+                'status' => isset($parent->status) ? (int) $parent->status : 1,
+                'auto_add_to_stores' => !empty($parent->auto_add_to_stores) ? 1 : 0,
+                'image' => $image,
+                'source_url' => isset($parent->source_url) ? $parent->source_url : '',
+                'created_by' => !empty($parent->created_by) ? (int) $parent->created_by : 0,
+            );
+            $childId = $this->ci->Product_model->save($payload, 0);
+            if ($childId < 1) {
+                continue;
+            }
+            if (function_exists('product_sync_default_child')) {
+                product_sync_default_child($childId);
+            }
+            $this->ci->Ec_category_model->set_product_categories($childId, $categoryIds);
+            $this->maybe_auto_add_product($childId, $options);
+            $created[] = $childId;
+            $hasDefault = true;
+        }
+
+        return $created;
+    }
+
+    protected function variation_labels($data, $options)
+    {
+        $raw = array();
+        foreach (array('colors', 'sizes', 'variants', 'children') as $key) {
+            if (!empty($data[$key]) && is_array($data[$key])) {
+                $raw = array_merge($raw, $data[$key]);
+            }
+            if (!empty($options[$key]) && is_array($options[$key])) {
+                $raw = array_merge($raw, $options[$key]);
+            }
+        }
+        $out = array();
+        $seen = array();
+        foreach ($raw as $item) {
+            $name = '';
+            $image = '';
+            $price = 0.0;
+            $cost = 0.0;
+            $compare = 0.0;
+            if (is_array($item)) {
+                $name = trim(isset($item['name']) ? (string) $item['name'] : '');
+                $image = isset($item['image']) ? trim((string) $item['image']) : '';
+                $price = isset($item['price']) ? (float) $item['price'] : 0;
+                $cost = isset($item['cost_price']) ? (float) $item['cost_price'] : $price;
+                $compare = isset($item['compare_price']) ? (float) $item['compare_price'] : 0;
+            } else {
+                $name = trim((string) $item);
+            }
+            if ($name === '') {
+                continue;
+            }
+            $key = strtoupper($name);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = array(
+                'name' => $name,
+                'image' => $image,
+                'price' => $price,
+                'cost_price' => $cost,
+                'compare_price' => $compare,
+            );
+        }
+        return $out;
+    }
+
+    protected function find_catalog_child_by_name($parentSku, $name)
+    {
+        $parentSku = trim((string) $parentSku);
+        $name = trim((string) $name);
+        if ($parentSku === '' || $name === '' || !$this->ci->db->field_exists('parent_sku', 'products')) {
+            return null;
+        }
+        $this->ci->db
+            ->group_start()
+                ->where('store_id IS NULL', null, false)
+                ->or_where('store_id', 0)
+            ->group_end()
+            ->where('parent_sku', $parentSku)
+            ->where('name', $name);
+        return $this->ci->db->get('products')->row();
     }
 
     public function details_from_url($url)

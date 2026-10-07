@@ -130,6 +130,7 @@ Wireless earbuds,https://www.amazon.co.uk/dp/B0EXAMPLE,Electronics,Audio,19.99,3
                     $filterCategoryId = isset($category_id) ? (int) $category_id : 0;
                     $filterCreatedBy = isset($created_by) ? (int) $created_by : 0;
                     $filterQ = isset($q) ? $q : '';
+                    $filterTrending = isset($trending) ? (string) $trending : '';
                     $filterCategories = isset($categories) ? $categories : array();
                     $filterEcommerceUsers = isset($ecommerce_users) ? $ecommerce_users : array();
                     $showOwnerFilter = ec_is_admin();
@@ -194,6 +195,13 @@ Wireless earbuds,https://www.amazon.co.uk/dp/B0EXAMPLE,Electronics,Audio,19.99,3
                             </select>
                         </div>
                         <?php endif; ?>
+                        <div class="form-group" style="margin-right:8px; margin-bottom:8px;">
+                            <select name="trending" id="productFilterTrending" class="form-control">
+                                <option value="" <?= $filterTrending === '' ? 'selected' : '' ?>>All</option>
+                                <option value="1" <?= $filterTrending === '1' ? 'selected' : '' ?>>Trending</option>
+                                <option value="0" <?= $filterTrending === '0' ? 'selected' : '' ?>>Not Trending</option>
+                            </select>
+                        </div>
                         <div class="form-group" style="margin-right:8px; margin-bottom:8px;">
                             <select name="per_page" id="productPerPage" class="form-control">
                                 <?php foreach ($listPerPageOptions as $option): ?>
@@ -300,6 +308,7 @@ Wireless earbuds,https://www.amazon.co.uk/dp/B0EXAMPLE,Electronics,Audio,19.99,3
                                 <input type="hidden" name="country_id" value="<?= (int) $filterCountryId ?>">
                                 <input type="hidden" name="category_id" value="<?= (int) $filterCategoryId ?>">
                                 <input type="hidden" name="created_by" value="<?= (int) $filterCreatedBy ?>">
+                                <input type="hidden" name="trending" value="<?= htmlspecialchars($filterTrending) ?>">
                                 <input type="hidden" name="per_page" value="<?= (int) $listPerPage ?>">
                                 <label class="text-muted" style="font-weight:normal; margin-right:6px;">Go to page</label>
                                 <input type="number" name="page" class="form-control input-sm" min="1" max="<?= (int) $listTotalPages ?>" value="<?= (int) $listPage ?>" style="width:80px; display:inline-block;">
@@ -372,6 +381,11 @@ Wireless earbuds,https://www.amazon.co.uk/dp/B0EXAMPLE,Electronics,Audio,19.99,3
                     <div class="form-group">
                         <label>Base price</label>
                         <input type="number" step="0.01" min="0" name="price" id="addChildPrice" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sort</label>
+                        <input type="number" name="sort_order" id="addChildSort" class="form-control" min="0" step="1" value="0">
+                        <span class="help-block">Lower numbers appear first on the product page. Leave 0 to add at the end.</span>
                     </div>
                     <div class="form-group">
                         <label>Image</label>
@@ -500,6 +514,7 @@ Wireless earbuds,https://www.amazon.co.uk/dp/B0EXAMPLE,Electronics,Audio,19.99,3
         $('#addChildParentName').text(name);
         $('#addChildName').val(name);
         $('#addChildPrice').val(price);
+        $('#addChildSort').val('0');
         showChildPreview(image);
         $('#addChildSaveBtn').prop('disabled', false).text('Save');
         $('#addChildModal').modal('show');

@@ -53,15 +53,13 @@ class Nordic_se extends Importer_base {
             $stock = 1;
         }
 
-        $description = '';
-        $details = '';
-        if (!empty($article['description'])) {
-            $details = $article['description'];
-            $description = $this->clean_text($article['description']);
-        }
+        $details = $this->article_details_html($article, $ld, $html);
+        $description = $this->clean_text($details);
         if ($description === '' && !empty($ld['description'])) {
-            $details = $details !== '' ? $details : $ld['description'];
             $description = $this->clean_text($ld['description']);
+        }
+        if ($description === '') {
+            $description = $this->clean_text($this->first_match('/property=["\']og:description["\'][^>]*content=["\']([^"\']+)/i', $html));
         }
 
         $images = array();
@@ -84,7 +82,7 @@ class Nordic_se extends Importer_base {
 
         $saved = $this->downloadImages ? $this->download_images($images, 20) : array();
 
-        return array(
+        $out = array(
             'name' => $name,
             'sku' => $sku,
             'price' => $price,
@@ -95,8 +93,39 @@ class Nordic_se extends Importer_base {
             'image' => isset($saved[0]) ? $saved[0] : '',
             'gallery' => array_slice($saved, 1),
             'seo_title' => $name,
-            'seo_description' => mb_substr($description, 0, 180),
+            'seo_description' => function_exists('mb_substr') ? mb_substr($description, 0, 180) : substr($description, 0, 180),
         );
+        if (!empty($article['shippingTime']) && is_array($article['shippingTime'])) {
+            $min = isset($article['shippingTime']['min']) ? (int) $article['shippingTime']['min'] : 0;
+            $max = isset($article['shippingTime']['max']) ? (int) $article['shippingTime']['max'] : 0;
+            if ($min > 0 || $max > 0) {
+                $out['ship_min_days'] = $min > 0 ? $min : $max;
+                $out['ship_max_days'] = $max > 0 ? $max : $min;
+            }
+        }
+        return $out;
+    }
+
+    protected function article_details_html($article, $ld, $html)
+    {
+        $raw = '';
+        if (!empty($article['description'])) {
+            $raw = (string) $article['description'];
+        } elseif (!empty($ld['description'])) {
+            $raw = (string) $ld['description'];
+        } else {
+            $raw = $this->first_match('/property=["\']og:description["\'][^>]*content=["\']([^"\']+)/i', $html);
+        }
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+        if (!preg_match('/<[a-z][\s\S]*>/i', $raw)) {
+            $raw = htmlspecialchars($raw, ENT_QUOTES, 'UTF-8');
+            $raw = nl2br($raw, false);
+        }
+        $raw = preg_replace('/<br\s*\/?>/i', '</p><p>', $raw);
+        return $this->clean_html('<p>' . $raw . '</p>');
     }
 
     protected function next_article($html)
@@ -109,10 +138,43 @@ class Nordic_se extends Importer_base {
         if (!is_array($decoded)) {
             return array();
         }
-        $article = array();
-        if (!empty($decoded['props']['pageProps']['data']['article']) && is_array($decoded['props']['pageProps']['data']['article'])) {
-            $article = $decoded['props']['pageProps']['data']['article'];
+        $paths = array(
+            array('props', 'pageProps', 'data', 'article'),
+            array('props', 'pageProps', 'article'),
+            array('props', 'pageProps', 'data', 'product'),
+            array('props', 'pageProps', 'product'),
+        );
+        foreach ($paths as $path) {
+            $node = $decoded;
+            foreach ($path as $key) {
+                if (!is_array($node) || !isset($node[$key])) {
+                    $node = null;
+                    break;
+                }
+                $node = $node[$key];
+            }
+            if (is_array($node) && (!empty($node['description']) || !empty($node['title']))) {
+                return $node;
+            }
         }
-        return $article;
+        $found = $this->find_article_node($decoded, 0);
+        return $found ? $found : array();
+    }
+
+    protected function find_article_node($node, $depth)
+    {
+        if ($depth > 8 || !is_array($node)) {
+            return null;
+        }
+        if (!empty($node['title']) && (isset($node['price']) || !empty($node['images']) || !empty($node['description'])) && (isset($node['articleId']) || isset($node['sku']) || isset($node['mainImage']))) {
+            return $node;
+        }
+        foreach ($node as $child) {
+            $found = $this->find_article_node($child, $depth + 1);
+            if ($found) {
+                return $found;
+            }
+        }
+        return null;
     }
 }

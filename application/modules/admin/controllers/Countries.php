@@ -8,6 +8,9 @@ class Countries extends CI_Controller {
         parent::__construct();
         ec_require_admin();
         $this->load->model('Country_model');
+        if (function_exists('ec_ensure_country_symbol_schema')) {
+            ec_ensure_country_symbol_schema();
+        }
     }
 
     public function index()
@@ -59,6 +62,7 @@ class Countries extends CI_Controller {
             'iso3' => strtoupper(trim($this->input->post('iso3'))),
             'phone_code' => trim($this->input->post('phone_code')),
             'currency' => strtoupper(trim($this->input->post('currency'))),
+            'currency_symbol' => substr(trim($this->input->post('currency_symbol')), 0, 16),
             'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
         );
 

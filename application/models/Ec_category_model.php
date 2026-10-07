@@ -71,6 +71,9 @@ class Ec_category_model extends CI_Model {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         $this->migrate_columns();
+        if (function_exists('ensure_category_english_names')) {
+            ensure_category_english_names();
+        }
     }
 
     protected function migrate_columns()
@@ -214,11 +217,18 @@ class Ec_category_model extends CI_Model {
     public function get_by_slug($slug, $countryId = 0)
     {
         $this->ensure_tables();
-        $this->db->where('slug', $slug)->where('status', 1);
-        if ($countryId) {
-            $this->db->where('country_id', (int) $countryId);
+        $candidates = function_exists('ec_slug_candidates') ? ec_slug_candidates($slug) : array(trim((string) $slug));
+        foreach ($candidates as $try) {
+            $this->db->where('slug', $try)->where('status', 1);
+            if ($countryId) {
+                $this->db->where('country_id', (int) $countryId);
+            }
+            $row = $this->db->get('categories')->row();
+            if ($row) {
+                return $row;
+            }
         }
-        return $this->db->get('categories')->row();
+        return null;
     }
 
     public function save($data, $id = 0)
@@ -550,6 +560,87 @@ class Ec_category_model extends CI_Model {
             ->result();
     }
 
+    public function storefront_parents_with_products($storeId, $countryId)
+    {
+        $storeId = (int) $storeId;
+        $countryId = (int) $countryId;
+        if ($storeId < 1 || $countryId < 1) {
+            return array();
+        }
+        $all = $this->for_store($storeId, $countryId, false);
+        $parents = array();
+        foreach ($all as $cat) {
+            $parentId = isset($cat->parent_id) ? (int) $cat->parent_id : 0;
+            if ($parentId > 0) {
+                continue;
+            }
+            $parents[] = $cat;
+        }
+        if (empty($parents)) {
+            return array();
+        }
+
+        $countIds = array();
+        $parentIds = array();
+        $descendants = array();
+        foreach ($parents as $parent) {
+            $id = (int) $parent->id;
+            $parentIds[] = $id;
+            $countIds[] = $id;
+            $descendants[$id] = array();
+        }
+
+        $children = $this->db
+            ->select('id, parent_id')
+            ->where('status', 1)
+            ->where_in('parent_id', $parentIds)
+            ->get('categories')
+            ->result();
+        $childIds = array();
+        $childParent = array();
+        foreach ($children as $child) {
+            $cid = (int) $child->id;
+            $pid = (int) $child->parent_id;
+            $childIds[] = $cid;
+            $countIds[] = $cid;
+            $childParent[$cid] = $pid;
+            $descendants[$pid][] = $cid;
+        }
+        if ($childIds) {
+            $grandchildren = $this->db
+                ->select('id, parent_id')
+                ->where('status', 1)
+                ->where_in('parent_id', $childIds)
+                ->get('categories')
+                ->result();
+            foreach ($grandchildren as $row) {
+                $gid = (int) $row->id;
+                $ownParent = (int) $row->parent_id;
+                $countIds[] = $gid;
+                if (isset($childParent[$ownParent])) {
+                    $descendants[$childParent[$ownParent]][] = $gid;
+                }
+            }
+        }
+
+        $counts = $this->store_product_counts($storeId, $countIds);
+        $visible = array();
+        foreach ($parents as $parent) {
+            $id = (int) $parent->id;
+            $total = isset($counts[$id]) ? (int) $counts[$id] : 0;
+            if (!empty($descendants[$id])) {
+                foreach ($descendants[$id] as $did) {
+                    $total += isset($counts[$did]) ? (int) $counts[$did] : 0;
+                }
+            }
+            $parent->product_count = $total;
+            if ($total > 0) {
+                $visible[] = $parent;
+            }
+        }
+        return $visible;
+    }
+
     public function home_ids_for_store($storeId)
     {
         $ids = array();
@@ -777,6 +868,145 @@ class Ec_category_model extends CI_Model {
         return strtolower($name);
     }
 
+    public function parse_ai_ref($value)
+    {
+        $out = array('id' => 0, 'name' => '');
+        if (is_array($value)) {
+            foreach (array('id', 'category_id', 'subcategory_id', 'sub_category_id') as $key) {
+                if (isset($value[$key]) && is_numeric($value[$key]) && (int) $value[$key] > 0) {
+                    $out['id'] = (int) $value[$key];
+                    break;
+                }
+            }
+            foreach (array('name', 'title', 'label') as $key) {
+                if (isset($value[$key]) && is_string($value[$key]) && trim($value[$key]) !== '') {
+                    $out['name'] = trim($value[$key]);
+                    break;
+                }
+            }
+            return $out;
+        }
+        if (is_numeric($value) && (int) $value > 0) {
+            $out['id'] = (int) $value;
+            return $out;
+        }
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value === '') {
+                return $out;
+            }
+            if (preg_match('/^\d+$/', $value)) {
+                $out['id'] = (int) $value;
+            } else {
+                $out['name'] = $value;
+            }
+        }
+        return $out;
+    }
+
+    public function resolve_from_ai($countryId, $categoryRef, $subRef = null)
+    {
+        $countryId = (int) $countryId;
+        $category = $this->parse_ai_ref($categoryRef);
+        $sub = $this->parse_ai_ref($subRef);
+        $categoryId = 0;
+        $subcategoryId = 0;
+        $created = array();
+
+        if ($countryId > 0 && $category['id'] > 0) {
+            $row = $this->get($category['id']);
+            if ($row && (int) $row->country_id === $countryId && (int) $row->parent_id < 1) {
+                $categoryId = (int) $row->id;
+                if ($category['name'] === '') {
+                    $category['name'] = $row->name;
+                }
+            }
+        }
+        if ($countryId > 0 && $categoryId < 1 && $category['name'] !== '') {
+            $before = $this->find_by_name($countryId, $category['name'], 0);
+            $categoryId = $this->find_or_create($countryId, $category['name'], 0);
+            if ($categoryId > 0 && !$before) {
+                $created[] = $categoryId;
+            }
+        }
+
+        if ($countryId > 0 && $sub['id'] > 0) {
+            $row = $this->get($sub['id']);
+            $parentId = $row ? (int) $row->parent_id : 0;
+            if ($row && (int) $row->country_id === $countryId && $parentId > 0 && ($categoryId < 1 || $parentId === $categoryId)) {
+                $subcategoryId = (int) $row->id;
+                if ($categoryId < 1) {
+                    $categoryId = $parentId;
+                }
+                if ($sub['name'] === '') {
+                    $sub['name'] = $row->name;
+                }
+            }
+        }
+        if ($countryId > 0 && $subcategoryId < 1 && $sub['name'] !== '' && $categoryId > 0) {
+            $before = $this->find_by_name($countryId, $sub['name'], $categoryId);
+            $subcategoryId = $this->find_or_create($countryId, $sub['name'], $categoryId);
+            if ($subcategoryId > 0 && !$before) {
+                $created[] = $subcategoryId;
+            }
+        }
+
+        $ids = $this->ids_from_selection($countryId, $categoryId, $subcategoryId);
+        $categoryRow = $categoryId ? $this->get($categoryId) : null;
+        $subRow = $subcategoryId ? $this->get($subcategoryId) : null;
+        return array(
+            'category_id' => $categoryId,
+            'subcategory_id' => $subcategoryId,
+            'category_name' => $categoryRow ? $categoryRow->name : $category['name'],
+            'subcategory_name' => $subRow ? $subRow->name : $sub['name'],
+            'ids' => $ids,
+            'created_ids' => $created,
+        );
+    }
+
+    public function apply_ai_to_product($productId, $countryId, $categoryRef, $subRef = null, $storeId = 0)
+    {
+        $resolved = $this->resolve_from_ai($countryId, $categoryRef, $subRef);
+        $productId = (int) $productId;
+        if ($productId > 0 && !empty($resolved['ids'])) {
+            $this->set_product_categories($productId, $resolved['ids']);
+        }
+        $storeId = (int) $storeId;
+        if ($storeId > 0 && !empty($resolved['ids'])) {
+            $this->enable_for_store($storeId, $resolved['ids']);
+        }
+        return $resolved;
+    }
+
+    public function enable_for_store($storeId, $categoryIds)
+    {
+        $this->ensure_tables();
+        $storeId = (int) $storeId;
+        if ($storeId < 1) {
+            return;
+        }
+        foreach ((array) $categoryIds as $cid) {
+            $cid = (int) $cid;
+            if ($cid < 1) {
+                continue;
+            }
+            $row = $this->store_setting($storeId, $cid);
+            if ($row) {
+                if ((int) $row->enabled !== 1) {
+                    $this->db->where('id', (int) $row->id)->update('store_category_settings', array('enabled' => 1));
+                }
+                continue;
+            }
+            $this->db->insert('store_category_settings', array(
+                'store_id' => $storeId,
+                'category_id' => $cid,
+                'enabled' => 1,
+                'show_on_home' => 0,
+                'sort_order' => 0,
+            ));
+        }
+    }
+
     public function find_or_create($countryId, $name, $parentId = 0)
     {
         $name = trim((string) $name);
@@ -807,7 +1037,12 @@ class Ec_category_model extends CI_Model {
             return null;
         }
         $this->db->where('country_id', (int) $countryId);
+        $this->db->group_start();
         $this->db->where('LOWER(TRIM(name)) = ' . $this->db->escape($nameKey), null, false);
+        if ($this->db->field_exists('local_name', 'categories')) {
+            $this->db->or_where('LOWER(TRIM(local_name)) = ' . $this->db->escape($nameKey), null, false);
+        }
+        $this->db->group_end();
         if ($parentId === 0 || $parentId === null) {
             $this->db->group_start()
                 ->where('parent_id IS NULL', null, false)
@@ -819,15 +1054,17 @@ class Ec_category_model extends CI_Model {
         return $this->db->limit(1)->get('categories')->row();
     }
 
-    public function unique_slug($countryId, $name, &$usedSlugs = array())
+    public function unique_slug($countryId, $name, &$usedSlugs = array(), $ignoreId = 0)
     {
-        $slug = url_title($name, 'dash', true);
+        $slug = function_exists('ec_ascii_slug')
+            ? ec_ascii_slug($name, 'category')
+            : url_title($name, 'dash', true);
         if ($slug === '') {
             $slug = 'category';
         }
         $base = $slug;
         $n = 0;
-        while (isset($usedSlugs[$slug]) || $this->slug_exists($countryId, $slug)) {
+        while (isset($usedSlugs[$slug]) || $this->slug_exists($countryId, $slug, $ignoreId)) {
             $n++;
             $slug = $base . '-' . $n;
         }
@@ -835,16 +1072,17 @@ class Ec_category_model extends CI_Model {
         return $slug;
     }
 
-    protected function slug_exists($countryId, $slug)
+    protected function slug_exists($countryId, $slug, $ignoreId = 0)
     {
         $this->ensure_tables();
-        $row = $this->db
+        $this->db
             ->select('id')
             ->where('country_id', (int) $countryId)
-            ->where('slug', $slug)
-            ->limit(1)
-            ->get('categories')
-            ->row();
+            ->where('slug', $slug);
+        if ($ignoreId) {
+            $this->db->where('id !=', (int) $ignoreId);
+        }
+        $row = $this->db->limit(1)->get('categories')->row();
         return !empty($row);
     }
 
@@ -1041,7 +1279,7 @@ class Ec_category_model extends CI_Model {
                 continue;
             }
 
-            $slug = $slugIn !== '' ? url_title($slugIn, 'dash', true) : url_title($name, 'dash', true);
+            $slug = $slugIn !== '' ? ec_ascii_slug($slugIn, 'category') : ec_ascii_slug($name, 'category');
             if ($slug === '') {
                 $slug = 'category';
             }
@@ -1130,7 +1368,7 @@ class Ec_category_model extends CI_Model {
         if ($parentName !== '' && strlen($parentName) > 150) {
             return 'Parent name is too long (max 150 characters).';
         }
-        if ($slugIn !== '' && strlen(url_title($slugIn, 'dash', true)) > 160) {
+        if ($slugIn !== '' && strlen(ec_ascii_slug($slugIn, 'category')) > 160) {
             return 'Slug is too long (max 160 characters).';
         }
         if (strlen($icon) > 20) {

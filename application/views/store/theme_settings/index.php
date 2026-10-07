@@ -64,6 +64,9 @@ $v = function ($key, $fallback = '') use ($values) {
                   <div class="fw-medium"><?= nl2br(htmlspecialchars($slide->title)) ?></div>
                   <?php if (isset($slide->extra_text) && (int) $slide->extra_text !== 1): ?>
                     <span class="badge text-bg-light text-muted">Image only</span>
+                    <?php if (!empty($slide->image_link)): ?>
+                      <div class="text-muted small mt-1"><?= htmlspecialchars($slide->image_link) ?></div>
+                    <?php endif; ?>
                   <?php endif; ?>
                   <?php if ($slide->text !== '' && $slide->text !== null): ?>
                     <div class="text-muted small"><?= htmlspecialchars($slide->text) ?></div>
@@ -111,6 +114,14 @@ $v = function ($key, $fallback = '') use ($values) {
             <img src="<?= base_url($v('favicon')) ?>" alt="" class="mt-2" style="width:32px;height:32px;object-fit:contain">
           <?php endif; ?>
         </div>
+        <div class="col-md-6">
+          <label class="form-label">Footer site icon</label>
+          <input type="file" name="footer_icon" class="form-control" accept="image/*">
+          <div class="form-text">Shown in the storefront footer. Square PNG or WebP, 64–128 px. Leave empty to keep the current footer logo or store name.</div>
+          <?php if ($v('footer_icon') !== ''): ?>
+            <img src="<?= base_url($v('footer_icon')) ?>" alt="" class="mt-2" style="width:40px;height:40px;object-fit:contain;background:#111;border-radius:8px;padding:4px">
+          <?php endif; ?>
+        </div>
       </div>
     </div>
   </div>
@@ -132,6 +143,21 @@ $v = function ($key, $fallback = '') use ($values) {
   </div>
 
   <div class="store-card mb-3">
+    <div class="card-header">Product page</div>
+    <div class="card-body">
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="show_short_description" value="1" id="showShortDescription" <?= (string) $v('show_short_description', '1') === '1' ? 'checked' : '' ?>>
+        <label class="form-check-label" for="showShortDescription">Show short description</label>
+      </div>
+      <div class="form-check mb-0">
+        <input class="form-check-input" type="checkbox" name="show_pdp_trust_icons" value="1" id="showPdpTrustIcons" <?= (string) $v('show_pdp_trust_icons', '1') === '1' ? 'checked' : '' ?>>
+        <label class="form-check-label" for="showPdpTrustIcons">Show extra icons</label>
+      </div>
+      <div class="form-text">Short description appears under the product title. Extra icons are the delivery, returns, secure checkout and support row on the product page.</div>
+    </div>
+  </div>
+
+  <div class="store-card mb-3">
     <div class="card-header">Store copy</div>
     <div class="card-body">
       <div class="mb-3">
@@ -146,6 +172,18 @@ $v = function ($key, $fallback = '') use ($values) {
         <label class="form-label">Footer text</label>
         <input type="text" name="footer_text" class="form-control" value="<?= htmlspecialchars($v('footer_text')) ?>">
       </div>
+    </div>
+  </div>
+
+  <div class="store-card mb-3">
+    <div class="card-header">Shop page hero</div>
+    <div class="card-body">
+      <label class="form-label">Background image</label>
+      <input type="file" name="shop_hero_image" class="form-control" accept="image/*">
+      <div class="form-text">Shown on /shop as the hero background. Recommended: 1600 × 480 px (JPG, PNG, or WebP).</div>
+      <?php if ($v('shop_hero_image') !== ''): ?>
+        <img src="<?= base_url($v('shop_hero_image')) ?>" alt="" class="mt-2" style="height:80px;object-fit:cover;border-radius:8px">
+      <?php endif; ?>
     </div>
   </div>
 

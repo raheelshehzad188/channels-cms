@@ -1,8 +1,8 @@
 <?php $faqs = isset($product_faqs) ? $product_faqs : array(); ?>
 <div class="pdp-new-faqs">
-  <h2>Frequently Asked Questions</h2>
+  <h2><?= e_ui('product.faqs_title') ?></h2>
   <?php if (empty($faqs)): ?>
-    <p class="pdp-new-empty">No FAQs have been added for this product yet.</p>
+    <p class="pdp-new-empty"><?= e_ui('product.no_faqs') ?></p>
   <?php else: ?>
     <div class="pdp-new-acc" data-pdp-acc>
       <?php foreach ($faqs as $i => $faq): ?>

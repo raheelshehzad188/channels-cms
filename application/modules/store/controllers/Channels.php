@@ -126,7 +126,7 @@ class Channels extends Store_base {
         }
         $state = $this->Store_channel_model->make_state($this->store->id, 'meta');
         $this->session->set_userdata('channel_oauth_state', $state);
-        redirect($this->meta_commerce->oauth_url($state, $this->store));
+        redirect($this->meta_commerce->oauth_url($state, $this->store, 'channels'));
     }
 
     protected function meta_callback()
@@ -134,6 +134,15 @@ class Channels extends Store_base {
         $this->requireAuth();
         $this->requirePermission('apps');
         $error = $this->input->get('error_description') ?: $this->input->get('error');
+        $this->meta_commerce->oauth_trace('callback_received', array(
+            'purpose' => 'channels',
+            'ok' => !($error !== '' && $error !== null),
+            'has_code' => trim((string) $this->input->get('code')) !== '',
+            'has_error' => $error !== '' && $error !== null,
+            'error' => $error ? $this->meta_commerce->redact((string) $error) : '',
+            'redirect_uri' => $this->meta_commerce->redirect_uri($this->store),
+            'scopes' => $this->meta_commerce->oauth_scopes('channels'),
+        ), $this->store);
         if ($error) {
             $this->session->set_flashdata('error', $this->oauth_error_message($error));
             redirect('store/channels');

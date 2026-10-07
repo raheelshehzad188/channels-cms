@@ -14,8 +14,30 @@
                 <div class="ibox-title"><h5>Outgoing mail</h5></div>
                 <div class="ibox-content">
                     <?php $this->load->view('flash'); ?>
-                    <p class="text-muted">Order emails go to customer, store, ecommerce users and admin on every status change. Enable SMTP to send real emails; otherwise messages are saved under <code>application/logs/mail/</code>.</p>
                     <form method="post" action="<?= base_url('admin/smtp/save') ?>" class="form-horizontal">
+                        <div class="alert alert-info">
+                            <strong>Only the customer channel is selectable.</strong>
+                            Ecommerce, store keeper and Super Admin always get WhatsApp. They never get order emails.
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Customer notification</label>
+                            <div class="col-sm-7">
+                                <?php $channel = isset($smtp['customer_notify_channel']) ? $smtp['customer_notify_channel'] : 'mail'; ?>
+                                <label class="radio-inline">
+                                    <input type="radio" name="customer_notify_channel" value="mail" <?= $channel !== 'whatsapp' ? 'checked' : '' ?>> Mail
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" name="customer_notify_channel" value="whatsapp" <?= $channel === 'whatsapp' ? 'checked' : '' ?>> WhatsApp
+                                </label>
+                                <span class="help-block">This choice is for the customer only. Staff WhatsApp includes name, phone, address and items.</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <p class="text-muted">SMTP is used only when the customer channel is Mail. If SMTP is off, customer emails are saved under <code>application/logs/mail/</code>.</p>
+                        <div class="alert alert-warning">
+                            Hostinger outgoing mail is <code>smtp.hostinger.com</code>, port <code>465</code>, encryption <strong>SSL</strong>.
+                            Port <code>993</code> is IMAP (inbox only) and will not send mail. From email must be the mailbox, e.g. <code>info@yourdomain</code>.
+                        </div>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Enable SMTP</label>
                             <div class="col-sm-7">
@@ -26,7 +48,7 @@
                         </div>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Host</label>
-                            <div class="col-sm-7"><input type="text" name="host" class="form-control" value="<?= htmlspecialchars($smtp['host']) ?>" placeholder="smtp.gmail.com"></div>
+                            <div class="col-sm-7"><input type="text" name="host" class="form-control" value="<?= htmlspecialchars($smtp['host']) ?>" placeholder="smtp.hostinger.com"></div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Port</label>
@@ -62,7 +84,10 @@
                         </div>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Admin notify email</label>
-                            <div class="col-sm-7"><input type="email" name="admin_notify_email" class="form-control" value="<?= htmlspecialchars($smtp['admin_notify_email']) ?>"></div>
+                            <div class="col-sm-7">
+                                <input type="email" name="admin_notify_email" class="form-control" value="<?= htmlspecialchars($smtp['admin_notify_email']) ?>">
+                                <span class="help-block">Used for SMTP test emails only. Order alerts for Super Admin go by WhatsApp.</span>
+                            </div>
                         </div>
                         <div class="form-group">
                             <div class="col-sm-7 col-sm-offset-3">

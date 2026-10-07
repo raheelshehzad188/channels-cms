@@ -51,8 +51,12 @@ class Theme_settings extends Store_base {
             $this->save_setting($key, $value, $themeId);
         }
 
+        foreach (array('show_short_description', 'show_pdp_trust_icons') as $flagKey) {
+            $this->save_setting($flagKey, (int) $this->input->post($flagKey) === 1 ? '1' : '0', $themeId);
+        }
+
         $uploadError = false;
-        foreach (array('logo', 'favicon', 'banner_1_image', 'banner_2_image') as $imageKey) {
+        foreach (array('logo', 'favicon', 'footer_icon', 'banner_1_image', 'banner_2_image', 'shop_hero_image') as $imageKey) {
             $uploaded = $this->upload_theme_file($imageKey, $imageKey === 'favicon');
             if ($uploaded !== '') {
                 if (!empty($current[$imageKey])) {
@@ -101,6 +105,7 @@ class Theme_settings extends Store_base {
                 'text' => trim((string) $this->input->post('text')),
                 'btn_text' => trim((string) $this->input->post('btn_text')),
                 'btn_link' => trim((string) $this->input->post('btn_link')),
+                'image_link' => trim((string) $this->input->post('image_link')),
                 'slide_bg' => $this->normalize_color(trim((string) $this->input->post('slide_bg')), ''),
                 'light_text' => (int) $this->input->post('light_text') === 1 ? 1 : 0,
                 'disc_small' => trim((string) $this->input->post('disc_small')),
@@ -164,6 +169,119 @@ class Theme_settings extends Store_base {
             $this->session->set_flashdata('error', 'Hero slide not found.');
         }
         redirect('store/theme-settings/slider');
+    }
+
+    public function menu()
+    {
+        $this->requireThemeAccess();
+        $this->load->model('Store_header_menu_model');
+        $this->load->model('Store_page_model');
+        $this->Store_header_menu_model->ensure_tables();
+        $this->Store_header_menu_model->seed_from_nav_pages($this->store->id);
+        $editId = (int) $this->input->get('edit');
+        $item = $editId ? $this->Store_header_menu_model->get_owned($this->store->id, $editId) : null;
+        $this->template->store('theme_settings/menu', $this->viewData(array(
+            'page' => 'Theme Settings',
+            'title' => 'Header menu',
+            'tab' => 'menu',
+            'is_zenvello' => $this->isZenvello(),
+            'menu_items' => $this->Store_header_menu_model->all_for_store($this->store->id),
+            'cms_pages' => $this->Store_page_model->all($this->store->id, array()),
+            'item' => $item,
+        )));
+    }
+
+    public function menu_save()
+    {
+        $this->requireThemeAccess();
+        if (strtoupper((string) $this->input->method()) !== 'POST') {
+            redirect('store/theme-settings/menu');
+            return;
+        }
+        $this->load->model('Store_header_menu_model');
+        $this->load->model('Store_page_model');
+        $id = (int) $this->input->post('id');
+        $existing = $id ? $this->Store_header_menu_model->get_owned($this->store->id, $id) : null;
+        if ($id && !$existing) {
+            $this->session->set_flashdata('error', 'Menu item not found.');
+            redirect('store/theme-settings/menu');
+            return;
+        }
+        $type = $this->input->post('item_type') === 'page' ? 'page' : 'custom';
+        $label = trim((string) $this->input->post('label'));
+        $pageId = (int) $this->input->post('page_id');
+        $slug = $this->normalize_menu_slug((string) $this->input->post('slug'));
+        if ($type === 'page') {
+            $page = $pageId ? $this->Store_page_model->get_owned($this->store->id, $pageId) : null;
+            if (!$page) {
+                $this->session->set_flashdata('error', 'Select a page.');
+                redirect($id ? 'store/theme-settings/menu?edit=' . $id : 'store/theme-settings/menu');
+                return;
+            }
+            if ($label === '') {
+                $label = $page->title;
+            }
+            $slug = $page->slug;
+        } else {
+            $pageId = 0;
+            if ($label === '' || $slug === '') {
+                $this->session->set_flashdata('error', 'Label and custom slug are required.');
+                redirect($id ? 'store/theme-settings/menu?edit=' . $id : 'store/theme-settings/menu');
+                return;
+            }
+        }
+        $this->Store_header_menu_model->save($this->store->id, array(
+            'label' => $label,
+            'label_en' => trim((string) $this->input->post('label_en')),
+            'item_type' => $type,
+            'page_id' => $pageId,
+            'slug' => $slug,
+            'sort_order' => $existing ? (int) $existing->sort_order : 0,
+            'status' => (int) $this->input->post('status') === 1,
+        ), $existing ? (int) $existing->id : 0);
+        $this->session->set_flashdata('success', $existing ? 'Menu item updated.' : 'Menu item added.');
+        redirect('store/theme-settings/menu');
+    }
+
+    public function menu_delete($id = 0)
+    {
+        $this->requireThemeAccess();
+        $this->load->model('Store_header_menu_model');
+        if ($this->Store_header_menu_model->delete_owned($this->store->id, $id)) {
+            $this->session->set_flashdata('success', 'Menu item removed.');
+        } else {
+            $this->session->set_flashdata('error', 'Menu item not found.');
+        }
+        redirect('store/theme-settings/menu');
+    }
+
+    public function menu_sort()
+    {
+        $this->requireThemeAccess();
+        if (strtoupper((string) $this->input->method()) !== 'POST') {
+            $this->output->set_status_header(405)->set_content_type('application/json')->set_output(json_encode(array('ok' => false)));
+            return;
+        }
+        $this->load->model('Store_header_menu_model');
+        $ids = $this->input->post('ids');
+        if (!is_array($ids)) {
+            $ids = array();
+        }
+        $this->Store_header_menu_model->reorder($this->store->id, $ids);
+        $this->output->set_content_type('application/json')->set_output(json_encode(array('ok' => true)));
+    }
+
+    protected function normalize_menu_slug($slug)
+    {
+        $slug = trim((string) $slug);
+        if ($slug === '') {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $slug)) {
+            return $slug;
+        }
+        $slug = preg_replace('#^https?://[^/]+/#i', '', $slug);
+        return ltrim((string) $slug, '/');
     }
 
     protected function render_tabs($tab)
@@ -231,6 +349,7 @@ class Theme_settings extends Store_base {
         return array(
             'logo' => '',
             'favicon' => '',
+            'footer_icon' => '',
             'primary_color' => $primary,
             'secondary_color' => $secondary,
             'promo_text' => 'Free Shipping on Orders Over £50',
@@ -248,7 +367,15 @@ class Theme_settings extends Store_base {
             'banner_2_text' => 'Finds the whole family will love',
             'banner_2_btn_text' => 'Browse Gifts',
             'banner_2_btn_link' => 'shop',
+            'shop_hero_image' => '',
+            'show_short_description' => $this->swedenPdpDefault(),
+            'show_pdp_trust_icons' => $this->swedenPdpDefault(),
         );
+    }
+
+    protected function swedenPdpDefault()
+    {
+        return (function_exists('store_is_sweden') && store_is_sweden($this->store)) ? '0' : '1';
     }
 
     protected function settings_map()

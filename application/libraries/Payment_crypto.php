@@ -5,6 +5,7 @@ class Payment_crypto {
 
     protected $privateKey;
     protected $publicKey;
+    protected $lastError = '';
 
     public function __construct()
     {
@@ -12,11 +13,22 @@ class Payment_crypto {
         $pub = $dir . 'card_public.pem';
         $priv = $dir . 'card_private.pem';
         if (is_file($pub)) {
-            $this->publicKey = file_get_contents($pub);
+            $this->publicKey = (string) file_get_contents($pub);
         }
         if (is_file($priv)) {
-            $this->privateKey = file_get_contents($priv);
+            if (!is_readable($priv)) {
+                $this->lastError = 'Card private key is not readable.';
+            } else {
+                $this->privateKey = (string) file_get_contents($priv);
+            }
+        } else {
+            $this->lastError = 'Card private key file is missing.';
         }
+    }
+
+    public function last_error()
+    {
+        return $this->lastError;
     }
 
     public function public_key_pem()
@@ -40,20 +52,33 @@ class Payment_crypto {
 
     public function decrypt_payload($ciphertextB64)
     {
-        if ($this->privateKey === '' || $ciphertextB64 === '') {
+        if ($this->privateKey === '' || $this->privateKey === null) {
+            if ($this->lastError === '') {
+                $this->lastError = 'Card private key is empty.';
+            }
+            return null;
+        }
+        if ($ciphertextB64 === '') {
+            $this->lastError = 'Encrypted card payload is empty.';
             return null;
         }
         $cipher = base64_decode($ciphertextB64, true);
         if ($cipher === false) {
+            $this->lastError = 'Encrypted card payload is not valid base64.';
             return null;
         }
         $plain = '';
         $ok = openssl_private_decrypt($cipher, $plain, $this->privateKey, OPENSSL_PKCS1_OAEP_PADDING);
         if (!$ok) {
+            $this->lastError = 'Card decrypt failed: ' . (openssl_error_string() ?: 'openssl_private_decrypt');
             return null;
         }
         $data = json_decode($plain, true);
-        return is_array($data) ? $data : null;
+        if (!is_array($data)) {
+            $this->lastError = 'Decrypted card payload is not JSON.';
+            return null;
+        }
+        return $data;
     }
 
     protected function pem_to_b64($pem)

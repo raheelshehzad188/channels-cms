@@ -166,7 +166,7 @@ class Listings extends CI_Controller {
     protected function storefront_product_url($product)
     {
         $slug = isset($product->slug) ? trim((string) $product->slug) : '';
-        $path = $slug !== '' ? ('product/' . rawurlencode($slug)) : ('product/' . (int) $product->id);
+        $path = $slug !== '' ? ('product/' . (function_exists('storefront_path_slug') ? storefront_path_slug($slug, 'product') : rawurlencode($slug))) : ('product/' . (int) $product->id);
         $domain = isset($product->store_domain) ? trim((string) $product->store_domain) : '';
         $url = site_url($path);
         if ($domain !== '') {

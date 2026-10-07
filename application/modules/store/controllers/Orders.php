@@ -68,8 +68,7 @@ class Orders extends Store_base {
         $note = trim((string) $this->input->post('note')) ?: ('Store updated status to ' . $status);
         $staffId = $this->staff ? $this->staff->id : 0;
         $updated = $this->Ec_order_model->update_status($order->id, $status, $note, 'store', $staffId);
-        $this->Ec_order_model->notify_status($updated);
-        $this->session->set_flashdata('success', 'Order status updated and emails sent.');
+        $this->session->set_flashdata('success', 'Order status updated and notifications sent.');
         redirect('store/orders/view/' . $id);
     }
 }

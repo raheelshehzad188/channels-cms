@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQs | ZENVello</title>
+<meta name="description" content="Answers to the questions ZENVello customers ask most about orders, delivery, returns and payments.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/reset.css">
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/global.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/pages/simple.css">
+<link rel="stylesheet" href="css/pages/product.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+<a class="visually-hidden" href="#main">Skip to content</a>
+
+<!-- ================= TOP UTILITY BAR ================= -->
+<div class="topbar">
+  <div class="container topbar__inner">
+    <p class="topbar__promo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Free Shipping on Orders Over £50
+    </p>
+    <nav class="topbar__links" aria-label="Support">
+      <a href="track-order.html">Track Order</a>
+      <a href="help-center.html">Help</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ================= HEADER ================= -->
+<header class="site-header">
+  <div class="container header__inner">
+    <button class="header__burger" type="button" aria-label="Open menu" data-drawer-open>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="24" height="24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+
+    <a class="logo" href="index.html" aria-label="ZENVello home">
+      <span class="logo__word">ZEN<em>Vello</em></span>
+      <span class="logo__tag">SHOP SMART &nbsp;·&nbsp; LIVE BETTER</span>
+    </a>
+
+    <form class="search" role="search" action="search.html">
+      <label class="visually-hidden" for="q">Search products</label>
+      <input class="search__input" id="q" name="q" type="search" placeholder="Search for products, categories...">
+      <button class="search__btn" type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+    </form>
+
+    <div class="header__actions">
+      <a class="action" href="account.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        <span>Account</span>
+      </a>
+      <a class="action" href="wishlist.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7 3.1c0 4.9-7 9.3-7 9.3Z"/></svg>
+        <span>Wishlist</span>
+      </a>
+      <a class="action" href="cart.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h2l2.2 10.2h9.4L20 8H7"/><circle cx="10" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
+        <span>Cart</span>
+        <span class="action__badge" data-cart-count>0</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ================= MAIN NAV ================= -->
+<nav class="mainnav" aria-label="Main">
+  <div class="container mainnav__inner">
+    <button class="allcats" type="button" data-drawer-open>
+      <span class="allcats__bars" aria-hidden="true"><span></span><span></span><span></span></span>
+      All Categories
+    </button>
+    <ul class="navlist">
+      <li><a href="index.html">Home</a></li>
+      <li class="nav-has-drop">
+        <a href="halloween.html">Halloween</a>
+        <div class="nav-drop">
+          <a href="halloween.html">All Halloween</a>
+          <a href="halloween.html#costumes">Costumes</a>
+          <a href="halloween.html#decorations">Decorations</a>
+          <a href="halloween.html#lighting">Lighting</a>
+          <a href="halloween.html#masks">Masks</a>
+          <a href="halloween.html#party">Party Supplies</a>
+        </div>
+      </li>
+      <li><a href="christmas.html">Christmas</a></li>
+      <li><a href="home-living.html">Home &amp; Living</a></li>
+      <li><a href="electronics.html">Electronics</a></li>
+      <li><a href="beauty-health.html">Beauty &amp; Health</a></li>
+      <li><a href="toys-kids.html">Toys &amp; Kids</a></li>
+      <li><a href="pet-supplies.html">Pet Supplies</a></li>
+      <li><a class="nav-deals" href="deals.html"><span aria-hidden="true">&#128293;</span> Deals</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ================= MOBILE DRAWER ================= -->
+<div class="scrim" data-drawer-close></div>
+<aside class="drawer" id="drawer" aria-label="Categories">
+  <div class="drawer__head">
+    <span class="logo__word" style="font-size:20px">ZEN<em>Vello</em></span>
+    <button class="drawer__close" type="button" aria-label="Close menu" data-drawer-close>&times;</button>
+  </div>
+  <div class="drawer__body">
+    <a href="index.html">Home</a>
+    <a href="halloween.html">Halloween</a>
+    <a href="christmas.html">Christmas</a>
+    <a href="home-living.html">Home &amp; Living</a>
+    <a href="electronics.html">Electronics</a>
+    <a href="beauty-health.html">Beauty &amp; Health</a>
+    <a href="toys-kids.html">Toys &amp; Kids</a>
+    <a href="pet-supplies.html">Pet Supplies</a>
+    <a href="deals.html" style="color:var(--price-red)">&#128293; Deals</a>
+    <div class="drawer__sep"></div>
+    <a href="account.html">Account</a>
+    <a href="wishlist.html">Wishlist</a>
+    <a href="cart.html">Cart</a>
+    <a href="track-order.html">Track Order</a>
+    <a href="help-center.html">Help</a>
+    <a href="contact.html">Contact</a>
+  </div>
+</aside>
+
+<main id="main" class="page">
+
+<nav class="container breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="index.html">Home</a></li>
+    <li aria-current="page">FAQs</li>
+  </ol>
+</nav>
+
+  <div class="container">
+    <header class="pagehead">
+      <h1>Frequently Asked Questions</h1>
+      <p>The things customers ask us most. If your question isn’t here, the team is one message away.</p>
+    </header>
+  </div>
+
+  <div class="container content">
+    <div>
+      <div data-accordion>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-1">
+            <span>When will my order arrive?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-1">Standard UK delivery takes 2–4 working days and is free on orders over £50. Express orders placed before 4pm arrive the next working day.</div>
+        </div>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-2">
+            <span>Can I change or cancel an order?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-2">Yes, as long as it has not been packed. Message us with your order number as soon as possible and we will stop it if we can.</div>
+        </div>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-3">
+            <span>How long do refunds take?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-3">Once your return reaches our warehouse we refund the original payment method within five working days. Your bank may take another day or two to show it.</div>
+        </div>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-4">
+            <span>Which payment methods do you accept?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-4">Visa, Mastercard, American Express, PayPal and Apple Pay. All payments are processed over an encrypted connection and we never store full card numbers.</div>
+        </div>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-5">
+            <span>Do you deliver outside the UK?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-5">We ship to most of Europe from £8.99 and worldwide from £14.99, with duties calculated at checkout.</div>
+        </div>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-6">
+            <span>Are the Halloween products safe for children?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-6">Costumes and decorations carry an age guide on each product page. Anything with LEDs or a rechargeable battery is recommended for ages 14 and over.</div>
+        </div>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-7">
+            <span>Is there a warranty on electronics?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-7">Every electronic product comes with a 12-month warranty on top of your statutory rights. Keep your order confirmation as proof of purchase.</div>
+        </div>
+        <div class="acc__item">
+          <button class="acc__head" type="button" aria-expanded="false" aria-controls="q-8">
+            <span>How do I use a discount code?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="acc__body" id="q-8">Enter it in the promo box at checkout before paying. One code per order, and codes cannot be combined with clearance prices.</div>
+        </div>
+      </div>
+    </div>
+      <aside class="sidecard">
+        <h2>Need a hand?</h2>
+        <ul>
+          <li><a href="track-order.html">Track your order</a></li>
+          <li><a href="returns.html">Start a return</a></li>
+          <li><a href="shipping-info.html">Delivery options &amp; costs</a></li>
+          <li><a href="faqs.html">Read the FAQs</a></li>
+          <li><a href="contact.html">Message the team</a></li>
+        </ul>
+      </aside>
+  </div>
+
+
+  <!-- ================= TRUST STRIP ================= -->
+  <section class="container section section--tight" aria-label="Why shop with us">
+    <div class="trustbar">
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4h14v11H1z"/><path d="M15 8h4l4 4v3h-8z"/><circle cx="5.5" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>
+        <div><p class="trust__t">Free Shipping</p><p class="trust__s">On orders over £50</p></div>
+      </div>
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20 6v6.2c0 4.7-3.3 7.9-8 9.3-4.7-1.4-8-4.6-8-9.3V6Z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/></svg>
+        <div><p class="trust__t">Secure Payment</p><p class="trust__s">100% secure checkout</p></div>
+      </div>
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+        <div><p class="trust__t">Easy Returns</p><p class="trust__s">30-day return policy</p></div>
+      </div>
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13h2.6v6H5a1 1 0 0 1-1-1Z"/><path d="M20 13h-2.6v6H19a1 1 0 0 0 1-1Z"/><path d="M17.4 19a4 4 0 0 1-4 3h-1.2"/></svg>
+        <div><p class="trust__t">24/7 Support</p><p class="trust__s">We're here to help</p></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a class="logo" href="index.html">
+          <span class="logo__word">ZEN<em>Vello</em></span>
+          <span class="logo__tag">SHOP SMART &nbsp;·&nbsp; LIVE BETTER</span>
+        </a>
+        <p class="footer__about">Your one-stop shop for quality products at the best prices. Shop smart, live better with ZENVello.</p>
+        <div class="footer__social">
+          <a href="#" aria-label="ZENVello on Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.7l-.4 2.9h-2.3v7A10 10 0 0 0 22 12Z"/></svg></a>
+          <a href="#" aria-label="ZENVello on Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="ZENVello on TikTok"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.5 3h-2.8v11.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9a5.4 5.4 0 1 0 4.6 5.4V8.9a5.5 5.5 0 0 0 3.4 1.2V7.3a3.1 3.1 0 0 1-3.4-3.2V3Z"/></svg></a>
+          <a href="#" aria-label="ZENVello on YouTube"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4a2.5 2.5 0 0 0-1.8 1.8A26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15.1V8.9l5.2 3.1Z"/></svg></a>
+        </div>
+      </div>
+
+      <nav class="footer__col" aria-labelledby="f-shop">
+        <h3 id="f-shop">Shop</h3>
+        <ul>
+          <li><a href="all-products.html">All Products</a></li>
+          <li><a href="halloween.html">Halloween</a></li>
+          <li><a href="christmas.html">Christmas</a></li>
+          <li><a href="deals.html">Deals</a></li>
+          <li><a href="new-arrivals.html">New Arrivals</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer__col" aria-labelledby="f-service">
+        <h3 id="f-service">Customer Service</h3>
+        <ul>
+          <li><a href="track-order.html">Track Order</a></li>
+          <li><a href="returns.html">Returns &amp; Refunds</a></li>
+          <li><a href="shipping-info.html">Shipping Info</a></li>
+          <li><a href="help-center.html">Help Center</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer__col" aria-labelledby="f-about">
+        <h3 id="f-about">About</h3>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms &amp; Conditions</a></li>
+          <li><a href="faqs.html">FAQs</a></li>
+          <li><a href="blog.html">Blog</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer__col">
+        <h3>Subscribe to our newsletter</h3>
+        <p class="newsletter__lead">Get the latest deals and updates.</p>
+        <form class="newsletter__form" data-newsletter>
+          <label class="visually-hidden" for="news-email">Your email address</label>
+          <input id="news-email" type="email" name="email" placeholder="Your email address" required>
+          <button type="submit">Subscribe</button>
+        </form>
+        <div class="paycards" aria-label="Accepted payment methods">
+          <span class="pc-paypal">PayPal</span>
+          <span class="pc-visa">VISA</span>
+          <span class="pc-mc" aria-label="Mastercard"><i></i><i></i></span>
+          <span class="pc-amex">AMEX</span>
+          <span class="pc-apple"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 12.4c0-2 1.6-3 1.7-3.1-.9-1.4-2.4-1.6-2.9-1.6-1.3-.1-2.5.7-3.1.7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1.1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.6 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4-.1 0-2.3-.9-2.3-3.4ZM15 5.9c.6-.7 1-1.7.9-2.7-.9 0-2 .6-2.6 1.3-.6.6-1 1.7-.9 2.6 1 .1 2-.5 2.6-1.2Z"/></svg>Pay</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <p>© 2024 ZENVello. All rights reserved.</p>
+      <p>Designed for a smarter tomorrow.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/components.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

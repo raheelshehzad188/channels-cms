@@ -111,7 +111,7 @@ class Ec_whatsapp {
         return true;
     }
 
-    public function send_many($phones, $message, $dialCode = '')
+    public function send_many($phones, $message, $dialCode = '', $force = false)
     {
         $sent = 0;
         $unique = array();
@@ -121,7 +121,7 @@ class Ec_whatsapp {
                 continue;
             }
             $unique[$normalized] = true;
-            if ($this->send($normalized, $message)) {
+            if ($this->send($normalized, $message, '', $force)) {
                 $sent++;
             }
         }
@@ -130,56 +130,100 @@ class Ec_whatsapp {
 
     public function notify_order($order, $items = array())
     {
-        if (!$this->enabled() || !$order) {
+        if (!$order) {
             return 0;
         }
 
-        $labels = class_exists('Ec_order_model') ? Ec_order_model::statuses() : array();
         $status = isset($order->status) ? $order->status : '';
-        $statusLabel = isset($labels[$status]) ? $labels[$status] : $status;
         $storeName = !empty($order->store_name) ? $order->store_name : 'store';
         $total = format_money((float) $order->total, $order->currency);
         $itemLines = array();
         foreach ((array) $items as $item) {
-            $itemLines[] = $item->product_name . ' x' . (int) $item->qty;
+            $line = $item->product_name . ' x' . (int) $item->qty;
+            if (!empty($item->sku)) {
+                $line .= ' (SKU ' . $item->sku . ')';
+            }
+            $itemLines[] = $line;
         }
-        $itemText = $itemLines ? implode(', ', $itemLines) : 'See order details';
+        $itemText = $itemLines ? implode(', ', $itemLines) : '';
         $dial = $this->store_dial_code(isset($order->store_id) ? $order->store_id : 0);
 
-        $customerMsg = 'Your order ' . $order->order_no . ' at ' . $storeName . ' is ' . $statusLabel . '. Total: ' . $total . '. Items: ' . $itemText;
-        $staffMsg = ($status === 'pending' ? 'New order ' : 'Order ')
-            . $order->order_no . ' at ' . $storeName . ' is ' . $statusLabel . '.'
-            . ' Customer: ' . $order->customer_name
-            . ' (' . $this->normalize_phone($order->customer_phone, $dial) . ').'
-            . ' Total: ' . $total . '. Items: ' . $itemText;
+        $customerMsg = $this->customer_ui($status === 'pending' ? 'order.wa_new' : 'order.wa_status', array(
+            '{no}' => $order->order_no,
+            '{store}' => $storeName,
+            '{status}' => $this->customer_status_label($status, $order),
+            '{total}' => $total,
+            '{items}' => $itemText !== '' ? $itemText : '-',
+        ), $order);
+
+        $staffMsg = $this->staff_order_message($order, $items, $dial, $total);
 
         $sent = 0;
-        if ($this->send($order->customer_phone, $customerMsg, $dial)) {
+        $wantsWa = class_exists('Ec_order_model')
+            ? Ec_order_model::customer_wants_whatsapp($order)
+            : false;
+        if ($wantsWa && !empty($order->customer_phone) && $this->send($order->customer_phone, $customerMsg, $dial, true)) {
             $sent++;
         }
 
-        $staffPhones = $this->staff_phones($order, $items);
-        $sent += $this->send_many($staffPhones, $staffMsg, $dial);
+        $staffPhones = $this->staff_phones($order, $this->order_items_for_staff($order, $items));
+        $sent += $this->send_many($staffPhones, $staffMsg, $dial, true);
         return $sent;
     }
 
     public function notify_item($order, $item)
     {
-        if (!$this->enabled() || !$order || !$item) {
+        if (!$order || !$item) {
             return 0;
         }
 
-        $labels = class_exists('Ec_order_model') ? Ec_order_model::item_statuses() : array();
         $status = !empty($item->fulfillment_status) ? $item->fulfillment_status : 'pending';
-        $statusLabel = isset($labels[$status]) ? $labels[$status] : $status;
         $storeName = !empty($order->store_name) ? $order->store_name : 'store';
         $dial = $this->store_dial_code(isset($order->store_id) ? $order->store_id : 0);
-        $message = 'Order ' . $order->order_no . ' at ' . $storeName . ': ' . $item->product_name
-            . ' is now ' . $statusLabel . '. Qty: ' . (int) $item->qty . '.';
+        $qty = (int) $item->qty;
 
-        $phones = array($order->customer_phone);
-        $phones = array_merge($phones, $this->staff_phones($order, array($item)));
-        return $this->send_many($phones, $message, $dial);
+        $customerMsg = $this->customer_ui('order.wa_item', array(
+            '{no}' => $order->order_no,
+            '{store}' => $storeName,
+            '{product}' => $item->product_name,
+            '{status}' => $this->customer_status_label($status, $order),
+            '{qty}' => $qty,
+        ), $order);
+
+        $staffLines = array(
+            '*Order item*',
+            'Order: ' . $order->order_no,
+            'Store: ' . $storeName,
+            'Product: ' . $item->product_name,
+            'Status: ' . $this->staff_status_label($status),
+            'Qty: ' . $qty,
+        );
+        if (!empty($item->sku)) {
+            $staffLines[] = 'SKU: ' . $item->sku;
+        }
+        $staffMsg = implode("\n", $staffLines) . "\n\n" . $this->staff_customer_text($order, $dial);
+        if (!empty($item->tracking_number)) {
+            $company = trim((string) (isset($item->shipping_company) ? $item->shipping_company : ''));
+            $trackNo = trim((string) $item->tracking_number);
+            $customerMsg .= ' ' . $this->customer_ui('order.wa_tracking', array(
+                '{company}' => $company,
+                '{tracking}' => $trackNo,
+            ), $order);
+            $staffMsg .= "\nTracking: " . trim($company . ' ' . $trackNo);
+        }
+        if (!empty($item->supplier_order_no)) {
+            $staffMsg .= "\nSupplier order: " . $item->supplier_order_no;
+        }
+
+        $sent = 0;
+        $wantsWa = class_exists('Ec_order_model')
+            ? Ec_order_model::customer_wants_whatsapp($order)
+            : false;
+        if ($wantsWa && !empty($order->customer_phone)) {
+            $sent += $this->send($order->customer_phone, $customerMsg, $dial, true) ? 1 : 0;
+        }
+        $sent += $this->send_many($this->staff_phones($order, $this->order_items_for_staff($order, array($item))), $staffMsg, $dial, true);
+        return $sent;
     }
 
     public function notify_payout($payout, $event = 'requested')
@@ -218,6 +262,171 @@ class Ec_whatsapp {
         return 0;
     }
 
+    protected function order_store($order)
+    {
+        if (!empty($order->store_id) && $this->CI->db->table_exists('stores')) {
+            return $this->CI->db->where('id', (int) $order->store_id)->get('stores')->row();
+        }
+        return null;
+    }
+
+    protected function customer_ui($key, $replace, $order)
+    {
+        $store = $this->order_store($order);
+        $locale = function_exists('storefront_ui_locale') ? storefront_ui_locale($store, array()) : 'en';
+        $value = $key;
+        if (function_exists('storefront_ui_catalog')) {
+            $catalog = storefront_ui_catalog();
+            if (isset($catalog[$key]['d'])) {
+                $value = $catalog[$key]['d'];
+            }
+        }
+        if (function_exists('storefront_ui_locale_strings')) {
+            $localized = storefront_ui_locale_strings($locale);
+            if (isset($localized[$key])) {
+                $value = $localized[$key];
+            }
+        }
+        if (!empty($replace)) {
+            $value = strtr($value, $replace);
+        }
+        return $value;
+    }
+
+    protected function customer_status_label($status, $order)
+    {
+        $status = strtolower(trim((string) $status));
+        $label = $this->customer_ui('order.status_' . $status, array(), $order);
+        $key = 'order.status_' . $status;
+        return ($label === '' || $label === $key) ? $status : $label;
+    }
+
+    protected function staff_status_label($status)
+    {
+        $map = array(
+            'pending' => 'pending',
+            'confirmed' => 'confirm',
+            'processing' => 'process ho raha hai',
+            'dispatching' => 'dispatch ho raha hai',
+            'shipped' => 'ship ho gaya',
+            'delivered' => 'deliver ho gaya',
+            'completed' => 'complete',
+            'refund_requested' => 'refund request',
+            'refunded' => 'refund ho gaya',
+            'cancelled' => 'cancel',
+        );
+        $status = strtolower(trim((string) $status));
+        return isset($map[$status]) ? $map[$status] : $status;
+    }
+
+    protected function staff_order_message($order, $items, $dial, $total)
+    {
+        $status = isset($order->status) ? $order->status : '';
+        $storeName = !empty($order->store_name) ? $order->store_name : 'store';
+        $lines = array(
+            $status === 'pending' ? '*Naya order*' : '*Order update*',
+            'Order: ' . $order->order_no,
+            'Store: ' . $storeName,
+            'Status: ' . $this->staff_status_label($status),
+            '',
+        );
+        $customer = trim($this->staff_customer_text($order, $dial));
+        if ($customer !== '') {
+            $lines[] = $customer;
+            $lines[] = '';
+        }
+        $itemBlock = $this->staff_items_block($items);
+        if ($itemBlock !== '') {
+            $lines[] = $itemBlock;
+            $lines[] = '';
+        }
+        $lines[] = '*Total:* ' . $total;
+        return implode("\n", $lines);
+    }
+
+    protected function staff_items_block($items)
+    {
+        $lines = array();
+        $n = 0;
+        foreach ((array) $items as $item) {
+            $name = trim((string) (isset($item->product_name) ? $item->product_name : ''));
+            if ($name === '') {
+                continue;
+            }
+            $n++;
+            $lines[] = $n . '. ' . $name;
+            $lines[] = '   Qty: ' . (int) $item->qty;
+            if (!empty($item->sku)) {
+                $lines[] = '   SKU: ' . $item->sku;
+            }
+        }
+        if (!$lines) {
+            return '';
+        }
+        return "*Items*\n" . implode("\n", $lines);
+    }
+
+    protected function staff_customer_text($order, $dial = '')
+    {
+        $phone = $this->normalize_phone(isset($order->customer_phone) ? $order->customer_phone : '', $dial);
+        $email = trim((string) (isset($order->customer_email) ? $order->customer_email : ''));
+        $name = trim((string) (isset($order->customer_name) ? $order->customer_name : ''));
+        $addr = $this->address_block(isset($order->shipping_address) ? $order->shipping_address : '');
+        $billing = $this->address_block(isset($order->billing_address) ? $order->billing_address : '');
+        $lines = array('*Customer*');
+        if ($name !== '') {
+            $lines[] = $name;
+        }
+        if ($phone !== '') {
+            $lines[] = 'Phone: ' . $phone;
+        }
+        if ($email !== '') {
+            $lines[] = 'Email: ' . $email;
+        }
+        if ($addr !== '') {
+            $lines[] = '';
+            $lines[] = '*Address*';
+            $lines[] = $addr;
+        }
+        if ($billing !== '' && $billing !== $addr) {
+            $lines[] = '';
+            $lines[] = '*Billing*';
+            $lines[] = $billing;
+        }
+        if (count($lines) === 1) {
+            return '';
+        }
+        return implode("\n", $lines);
+    }
+
+    protected function address_block($value)
+    {
+        $value = str_replace(array("\r\n", "\r"), "\n", (string) $value);
+        $lines = array();
+        foreach (explode("\n", $value) as $line) {
+            $line = trim(preg_replace('/\s+/', ' ', $line));
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+        return implode("\n", $lines);
+    }
+
+    protected function order_items_for_staff($order, $items)
+    {
+        $orderId = 0;
+        if (is_object($order) && !empty($order->id)) {
+            $orderId = (int) $order->id;
+        }
+        if ($orderId > 0 && $this->CI->db->table_exists('store_order_items')) {
+            $loaded = $this->CI->db->where('order_id', $orderId)->get('store_order_items')->result();
+            if ($loaded) {
+                return $loaded;
+            }
+        }
+        return (array) $items;
+    }
+
     protected function staff_phones($order, $items)
     {
         $phones = array();
@@ -226,19 +435,44 @@ class Ec_whatsapp {
         if ($storePhone !== '') {
             $phones[] = $storePhone;
         }
+        if ($storeId > 0 && $this->CI->db->table_exists('staff')) {
+            $staffRows = $this->CI->db->where('store_id', $storeId)->where('status', 1)->get('staff')->result();
+            foreach ($staffRows as $staffRow) {
+                foreach (array('phone', 'whatsapp', 'mobile') as $phoneField) {
+                    if (!empty($staffRow->$phoneField)) {
+                        $phones[] = $staffRow->$phoneField;
+                        break;
+                    }
+                }
+            }
+        }
 
-        $adminPhone = $this->admin_number();
-        if ($adminPhone !== '') {
+        foreach ($this->admin_numbers() as $adminPhone) {
             $phones[] = $adminPhone;
         }
 
         $userIds = array();
+        $productIds = array();
         foreach ((array) $items as $item) {
             if (!empty($item->ecommerce_user_id)) {
                 $userIds[(int) $item->ecommerce_user_id] = true;
             }
+            if (!empty($item->product_id)) {
+                $productIds[(int) $item->product_id] = true;
+            }
+            if (!empty($item->source_product_id)) {
+                $productIds[(int) $item->source_product_id] = true;
+            }
         }
-        if ($userIds) {
+        if ($productIds && $this->CI->db->table_exists('products') && $this->CI->db->field_exists('created_by', 'products')) {
+            $products = $this->CI->db->select('created_by')->where_in('id', array_keys($productIds))->get('products')->result();
+            foreach ($products as $product) {
+                if (!empty($product->created_by)) {
+                    $userIds[(int) $product->created_by] = true;
+                }
+            }
+        }
+        if ($userIds && $this->CI->db->table_exists('users')) {
             $users = $this->CI->db->where_in('UserID', array_keys($userIds))->get('users')->result();
             foreach ($users as $user) {
                 $number = $this->user_number($user);
@@ -298,14 +532,35 @@ class Ec_whatsapp {
         return $row && !empty($row->phone_code) ? $row->phone_code : '';
     }
 
-    protected function admin_number()
+    protected function admin_numbers()
     {
+        $phones = array();
         $adminPhone = trim((string) platform_setting('admin_whatsapp_number', ''));
         if ($adminPhone !== '') {
-            return $adminPhone;
+            foreach (preg_split('/[\s,;|]+/', $adminPhone) as $part) {
+                $part = trim((string) $part);
+                if ($part === '') {
+                    continue;
+                }
+                $phones[] = $part;
+            }
         }
-        $admin = $this->CI->db->where('roleID', ROLE_ADMIN)->where('status', 1)->order_by('UserID', 'asc')->get('users')->row();
-        return $this->user_number($admin);
+        if ($this->CI->db->table_exists('users')) {
+            $admins = $this->CI->db->where('roleID', ROLE_ADMIN)->where('status', 1)->get('users')->result();
+            foreach ($admins as $admin) {
+                $number = $this->user_number($admin);
+                if ($number !== '') {
+                    $phones[] = $number;
+                }
+            }
+        }
+        return $phones;
+    }
+
+    protected function admin_number()
+    {
+        $phones = $this->admin_numbers();
+        return $phones ? $phones[0] : '';
     }
 
     protected function party_number($partyType, $partyId)
@@ -343,7 +598,12 @@ class Ec_whatsapp {
         if (!empty($user->whatsapp_number)) {
             return trim((string) $user->whatsapp_number);
         }
-        return !empty($user->phone) ? trim((string) $user->phone) : '';
+        foreach (array('phone', 'mobile', 'whatsapp') as $field) {
+            if (!empty($user->$field)) {
+                return trim((string) $user->$field);
+            }
+        }
+        return '';
     }
 
     protected function log_failure($phone, $message)

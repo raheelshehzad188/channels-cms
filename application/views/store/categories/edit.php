@@ -71,6 +71,11 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
         <label class="form-check-label" for="extra_text">Extra text</label>
         <div class="form-text">Leave unchecked to use only the hero image. Check to add kicker, title, button, and badge.</div>
       </div>
+      <div id="image-only-link" class="mb-3" <?= $heroExtraOn ? 'hidden' : '' ?>>
+        <label class="form-label">URL</label>
+        <input type="text" name="hero_btn_link" class="form-control" id="hero_image_link" value="<?= htmlspecialchars($val('hero_btn_link')) ?>" placeholder="shop, category/halloween, or https://example.com" <?= $heroExtraOn ? 'disabled' : '' ?>>
+        <div class="form-text">When someone clicks this image, they go to this link. Leave empty for no click.</div>
+      </div>
       <div id="extra-text-fields" <?= $heroExtraOn ? '' : 'hidden' ?>>
       <div class="mb-3">
         <label class="form-label">Hero kicker</label>
@@ -91,7 +96,7 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
         </div>
         <div class="col-md-6">
           <label class="form-label">Button link</label>
-          <input type="text" name="hero_btn_link" class="form-control" value="<?= htmlspecialchars($val('hero_btn_link')) ?>" placeholder="#category-products or /shop">
+          <input type="text" name="hero_btn_link" class="form-control" id="hero_btn_link" value="<?= htmlspecialchars($val('hero_btn_link')) ?>" placeholder="#category-products or /shop" <?= $heroExtraOn ? '' : 'disabled' ?>>
         </div>
       </div>
       <h6 class="mt-1 mb-3">Discount badge</h6>
@@ -150,10 +155,16 @@ $displayHero = !empty($category->display_hero) ? $category->display_hero : $cate
 (function () {
   var extra = document.getElementById('extra_text');
   var fields = document.getElementById('extra-text-fields');
+  var imageLink = document.getElementById('image-only-link');
+  var imageLinkInput = document.getElementById('hero_image_link');
+  var btnLinkInput = document.getElementById('hero_btn_link');
   var hint = document.getElementById('hero-image-hint');
   function syncExtra() {
     var on = extra && extra.checked;
     if (fields) fields.hidden = !on;
+    if (imageLink) imageLink.hidden = !!on;
+    if (imageLinkInput) imageLinkInput.disabled = !!on;
+    if (btnLinkInput) btnLinkInput.disabled = !on;
     if (hint) hint.textContent = on ? hint.getAttribute('data-with-text') : hint.getAttribute('data-just-img');
   }
   if (extra) extra.addEventListener('change', syncExtra);

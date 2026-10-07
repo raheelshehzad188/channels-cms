@@ -9,14 +9,23 @@
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table mb-0">
-            <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+            <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th>Status</th><th>Tracking</th></tr></thead>
             <tbody>
               <?php foreach ($items as $item): ?>
+              <?php $itemStatus = !empty($item->fulfillment_status) ? $item->fulfillment_status : $order->status; ?>
               <tr>
                 <td><?= htmlspecialchars($item->product_name) ?><br><small class="text-muted">SKU: <?= htmlspecialchars($item->sku ?: '-') ?></small></td>
                 <td><?= (int) $item->qty ?></td>
                 <td><?= format_money((float) $item->unit_price) ?></td>
                 <td><?= format_money((float) $item->line_total) ?></td>
+                <td><?= htmlspecialchars(isset($statuses[$itemStatus]) ? $statuses[$itemStatus] : $itemStatus) ?></td>
+                <td class="small">
+                  <?php if (!empty($item->tracking_number)): ?>
+                    <?= htmlspecialchars(trim((isset($item->shipping_company) ? $item->shipping_company . ' · ' : '') . $item->tracking_number)) ?>
+                  <?php else: ?>
+                    —
+                  <?php endif; ?>
+                </td>
               </tr>
               <?php endforeach; ?>
             </tbody>
@@ -54,6 +63,10 @@
         <div><?= htmlspecialchars($order->customer_phone ?: '-') ?></div>
         <hr>
         <div><?= nl2br(htmlspecialchars($order->shipping_address)) ?></div>
+        <?php if (!empty($order->billing_address)): ?>
+          <hr>
+          <div><strong>Billing</strong><br><?= nl2br(htmlspecialchars($order->billing_address)) ?></div>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -67,6 +80,9 @@
         }
         ?>
         <div class="d-flex justify-content-between"><span>Order subtotal</span><strong><?= format_money((float) $order->subtotal) ?></strong></div>
+        <?php if (!empty($order->shipping_amount) && ((float) $order->shipping_amount > 0 || (int) (isset($order->shipping_qty) ? $order->shipping_qty : 0) > 0)): ?>
+        <div class="d-flex justify-content-between"><span>Shipping × <?= (int) (isset($order->shipping_qty) ? $order->shipping_qty : 0) ?></span><strong><?= format_money((float) $order->shipping_amount) ?></strong></div>
+        <?php endif; ?>
         <?php if (!empty($order->vat_amount) && (float) $order->vat_amount > 0): ?>
         <div class="d-flex justify-content-between"><span>VAT (<?= number_format((float) $order->vat_percent, 2) ?>%)</span><strong><?= format_money((float) $order->vat_amount) ?></strong></div>
         <?php endif; ?>

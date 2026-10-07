@@ -19,6 +19,9 @@ class Pricing extends CI_Controller {
             'title' => 'Pricing',
             'platform_fee' => platform_setting('platform_fee', '0'),
             'vat' => platform_setting('vat', '0'),
+            'shipping_per_item' => platform_setting('shipping_per_item', '0'),
+            'shipping_discount_enabled' => platform_setting('shipping_discount_enabled', '0'),
+            'shipping_free_min' => platform_setting('shipping_free_min', '0'),
             'platform_country_id' => $platformCountryId,
             'platform_currency' => platform_currency(),
             'countries' => $countries,
@@ -32,6 +35,7 @@ class Pricing extends CI_Controller {
     {
         $this->form_validation->set_rules('platform_fee', 'Platform Fee %', 'required|numeric');
         $this->form_validation->set_rules('vat', 'VAT', 'required|numeric');
+        $this->form_validation->set_rules('shipping_per_item', 'Shipping per item', 'required|numeric');
         $this->form_validation->set_rules('platform_country_id', 'Platform Country', 'required|integer');
 
         if ($this->form_validation->run() === FALSE) {
@@ -48,11 +52,22 @@ class Pricing extends CI_Controller {
             return;
         }
 
+        $oldCountryId = platform_country_id();
+        $oldFee = (float) platform_setting('platform_fee', '0');
         $this->save_setting('platform_country_id', (string) $countryId);
         $feePercent = max(0, min(100, (float) $this->input->post('platform_fee')));
         $this->save_setting('platform_fee', number_format($feePercent, 2, '.', ''));
         $this->save_setting('vat', number_format((float) $this->input->post('vat'), 2, '.', ''));
-        $updated = ec_refresh_store_copy_costs();
+        $this->save_setting('shipping_per_item', number_format(max(0, (float) $this->input->post('shipping_per_item')), 2, '.', ''));
+        $this->save_setting('shipping_discount_enabled', $this->input->post('shipping_discount_enabled') ? '1' : '0');
+        $this->save_setting('shipping_free_min', number_format(max(0, (float) $this->input->post('shipping_free_min')), 2, '.', ''));
+        $needRecalc = $countryId !== (int) $oldCountryId || abs($feePercent - $oldFee) > 0.0001;
+        $updated = 0;
+        if ($needRecalc) {
+            $updated = function_exists('ec_recalculate_store_listing_prices')
+                ? ec_recalculate_store_listing_prices()
+                : ec_refresh_store_copy_costs();
+        }
 
         $platformCurrency = strtoupper(trim($country->currency));
         $this->save_rate($platformCurrency, 1);
@@ -68,7 +83,24 @@ class Pricing extends CI_Controller {
             }
         }
 
-        $this->session->set_flashdata('success', 'Platform pricing updated. Store product costs and selling prices were recalculated from the new platform fee' . ($updated ? ' (' . $updated . ' listed products).' : '.'));
+        if ($needRecalc) {
+            $this->session->set_flashdata('success', 'Platform pricing updated. Store product costs and selling prices were recalculated from catalog cost + fees + each store’s plus amount' . ($updated ? ' (' . $updated . ' listed products).' : '.'));
+        } else {
+            $this->session->set_flashdata('success', 'Platform pricing updated. VAT and shipping per item apply on checkout. Product listing prices were not recalculated.');
+        }
+        redirect('/admin/pricing');
+    }
+
+    public function recalculate()
+    {
+        if (strtoupper((string) $this->input->method()) !== 'POST') {
+            redirect('/admin/pricing');
+            return;
+        }
+        $updated = function_exists('ec_recalculate_store_listing_prices')
+            ? ec_recalculate_store_listing_prices()
+            : 0;
+        $this->session->set_flashdata('success', 'Store listing prices recalculated' . ($updated ? ' (' . $updated . ' products updated).' : '. Costs and selling prices already matched the formula.'));
         redirect('/admin/pricing');
     }
 

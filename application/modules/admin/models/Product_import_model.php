@@ -126,6 +126,18 @@ class Product_import_model extends CI_Model {
             'cdon.se' => array('domain' => 'cdon.se', 'class' => 'Cdon_se', 'supplier' => 'CDON SE', 'country' => 'SE'),
             'partyhallen.se' => array('domain' => 'partyhallen.se', 'class' => 'Partyhallen_se', 'supplier' => 'Partyhallen SE', 'country' => 'SE'),
             'dollarstore.se' => array('domain' => 'dollarstore.se', 'class' => 'Dollarstore_se', 'supplier' => 'Dollarstore SE', 'country' => 'SE'),
+            'husglad.se' => array('domain' => 'husglad.se', 'class' => 'Husglad_se', 'supplier' => 'Husglad SE', 'country' => 'SE'),
+            'partykungen.se' => array('domain' => 'partykungen.se', 'class' => 'Partykungen_se', 'supplier' => 'Partykungen SE', 'country' => 'SE'),
+            'ilovefancydress.com' => array('domain' => 'ilovefancydress.com', 'class' => 'Ilovefancydress_com', 'supplier' => 'I Love Fancy Dress UK', 'country' => 'GB'),
+            'novo-haven.com' => array('domain' => 'novo-haven.com', 'class' => 'Shopify_store', 'supplier' => 'Novo Haven UK', 'country' => 'GB'),
+            'aveltashop.com' => array('domain' => 'aveltashop.com', 'class' => 'Shopify_store', 'supplier' => 'Avelta Shop UK', 'country' => 'GB'),
+            'eselic.us' => array('domain' => 'eselic.us', 'class' => 'Eselic_us', 'supplier' => 'Eselic SE', 'country' => 'SE'),
+            'partyvikings.se' => array('domain' => 'partyvikings.se', 'class' => 'Jsonld_store', 'supplier' => 'PartyVikings Sweden', 'country' => 'SE'),
+            'promixsweden.se' => array('domain' => 'promixsweden.se', 'class' => 'Jsonld_store', 'supplier' => 'Promix Sweden', 'country' => 'SE'),
+            'temashop.se' => array('domain' => 'temashop.se', 'class' => 'Jsonld_store', 'supplier' => 'Temashop Sweden', 'country' => 'SE'),
+            'joom.com' => array('domain' => 'joom.com', 'class' => 'Jsonld_store', 'supplier' => 'Joom Sweden', 'country' => 'SE'),
+            'fruugo.se' => array('domain' => 'fruugo.se', 'class' => 'Jsonld_store', 'supplier' => 'Fruugo Sweden', 'country' => 'SE'),
+            'aliexpress.com' => array('domain' => 'aliexpress.com', 'class' => 'Aliexpress_com', 'supplier' => 'AliExpress SE', 'country' => 'SE'),
         );
         foreach ($map as $domain => $spec) {
             if ($host === $domain || substr($host, -strlen('.' . $domain)) === '.' . $domain) {
@@ -194,6 +206,11 @@ class Product_import_model extends CI_Model {
             'status' => 1,
         ));
         return (int) $this->db->insert_id();
+    }
+
+    public function ensure_supplier_named($name, $countryCode)
+    {
+        return $this->find_or_create_supplier($name, $countryCode);
     }
 
     public function ensure_sources_table()

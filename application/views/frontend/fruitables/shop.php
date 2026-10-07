@@ -1,5 +1,5 @@
 <?php
-$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('shop/index');
+$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('');
 $featured = !empty($products) ? array_slice($products, 0, 3) : array();
 ?>
 <div class="container-fluid page-header py-5">

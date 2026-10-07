@@ -10,7 +10,7 @@ $productCount = is_array($products) ? count($products) : 0;
 ?>
 <p class="text-muted mb-3">These are catalog products not yet in your store. Add one to copy it, then you can change title, slug, images, and price. Cost already includes ecommerce commission and <?= number_format((float) (isset($platform_fee_percent) ? $platform_fee_percent : platform_fee_percent()), 2) ?>% platform fee<?php $plus = store_price_plus_amount($store); if ($plus > 0): ?> · selling price is cost + <?= format_money($plus) ?> plus amount<?php endif; ?>.</p>
 
-<form method="get" action="<?= $storeUrl ?>/products" class="store-card store-product-filters mb-4" id="storeProductFilterForm">
+<form method="get" action="<?= $storeUrl ?>/available-products" class="store-card store-product-filters mb-4" id="storeProductFilterForm">
   <div class="card-body">
     <div class="row g-2 align-items-end">
       <div class="col-lg-4">
@@ -41,7 +41,7 @@ $productCount = is_array($products) ? count($products) : 0;
       <div class="col-md-4 col-lg-2 d-flex gap-2">
         <button type="submit" class="btn btn-store-primary flex-grow-1">Filter</button>
         <?php if ($hasFilters): ?>
-          <a href="<?= $storeUrl ?>/products" class="btn btn-outline-secondary">Reset</a>
+          <a href="<?= $storeUrl ?>/available-products" class="btn btn-outline-secondary">Reset</a>
         <?php endif; ?>
       </div>
     </div>
@@ -55,9 +55,9 @@ $productCount = is_array($products) ? count($products) : 0;
 <?php if (empty($products)): ?>
   <div class="store-card"><div class="card-body text-muted">
     <?php if ($hasFilters): ?>
-      No products match these filters. <a href="<?= $storeUrl ?>/products">Clear filters</a>
+      No products match these filters. <a href="<?= $storeUrl ?>/available-products">Clear filters</a>
     <?php else: ?>
-      No products left to add for this store. <a href="<?= $storeUrl ?>/my-products">View my products</a>
+      No products left to add for this store. <a href="<?= $storeUrl ?>/products">View my products</a>
     <?php endif; ?>
   </div></div>
 <?php else: ?>

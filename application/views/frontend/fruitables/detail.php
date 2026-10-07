@@ -1,5 +1,5 @@
 <?php
-$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('shop/index');
+$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('');
 $shopUrl = !empty($is_preview) ? $preview_back : storefront_url('shop');
 $gallery = product_gallery_urls($product, isset($product_images) ? $product_images : array());
 $image = !empty($gallery) ? $gallery[0] : $assets . 'img/single-item.jpg';
@@ -32,7 +32,13 @@ $related = !empty($products) ? $products : array();
                         <?php endif; ?>
                         <h4 class="fw-bold mb-3"><?= htmlspecialchars($product->name) ?></h4>
                         <p class="mb-3">SKU: <?= htmlspecialchars(!empty($product->sku) ? $product->sku : '-') ?></p>
-                        <h5 class="fw-bold mb-3"><?= format_money((float) (isset($cart_product) && $cart_product ? $cart_product->price : $product->price)) ?></h5>
+                        <h5 class="fw-bold mb-3"><?= format_money((float) (isset($cart_product) && $cart_product ? $cart_product->price : $product->price)) ?>
+                          <?php $this->load->view('frontend/shared/admin_price_breakdown', array(
+                              'listing' => (isset($cart_product) && $cart_product) ? $cart_product : $product,
+                              'store' => isset($store) ? $store : null,
+                              'as_main' => true,
+                          )); ?>
+                        </h5>
                         <?php $this->load->view('frontend/shared/child_options'); ?>
                         <div class="d-flex mb-4">
                             <i class="fa fa-star text-secondary"></i>
@@ -100,21 +106,26 @@ $related = !empty($products) ? $products : array();
             </div>
         </div>
         <?php if (!empty($related)): ?>
-        <h1 class="fw-bold mb-0">Related products</h1>
+        <h1 class="fw-bold mb-0"><?= e_ui('product.trending') ?></h1>
         <div class="vesitable">
             <div class="owl-carousel vegetable-carousel justify-content-center">
-                <?php foreach ($related as $item): ?>
-                    <?php if ((int) $item->id === (int) $product->id) continue; ?>
-                    <?php $this->load->view('frontend/fruitables/product_card', array(
+                <?php
+                $shown = 0;
+                foreach ($related as $item):
+                    if ((int) $item->id === (int) $product->id) continue;
+                    if ($shown >= 4) break;
+                    $shown++;
+                    $this->load->view('frontend/fruitables/product_card', array(
                         'product' => $item,
                         'card_skip_col' => true,
                         'card_item_class' => 'vesitable-item border border-primary',
                         'card_img_class' => 'vesitable-img',
-                        'card_badge' => !empty($item->supplier_name) ? $item->supplier_name : 'Fresh',
+                        'card_badge' => 'Trending',
                         'card_badge_class' => 'bg-primary',
                         'card_badge_pos' => 'top: 10px; right: 10px;',
-                    )); ?>
-                <?php endforeach; ?>
+                    ));
+                endforeach;
+                ?>
             </div>
         </div>
         <?php endif; ?>

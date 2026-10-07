@@ -1,13 +1,13 @@
 <?php
 $step = isset($checkout_step) ? $checkout_step : 'cart';
-$order = array('cart' => 'Cart', 'checkout' => 'Shipping', 'payment' => 'Payment');
+$order = array('cart' => store_ui('cart.step'), 'checkout' => store_ui('checkout.step_shipping'), 'payment' => store_ui('checkout.step_payment'));
 $keys = array_keys($order);
 $currentIndex = array_search($step, $keys, true);
 if ($currentIndex === false) {
     $currentIndex = 0;
 }
 ?>
-<ol class="ec-steps" aria-label="Checkout progress">
+<ol class="ec-steps" aria-label="<?= e_ui('checkout.progress') ?>">
   <?php foreach ($order as $key => $label): ?>
     <?php
       $i = array_search($key, $keys, true);

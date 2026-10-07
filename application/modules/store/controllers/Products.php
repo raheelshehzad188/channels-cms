@@ -13,12 +13,27 @@ class Products extends Store_base {
 
     public function index()
     {
-        $this->requireAuth();
+        $this->requirePermission('products');
+        $this->load->model('Ec_category_model');
+        $filters = $this->available_filters();
+        ec_refresh_store_copy_costs((int) $this->store->id);
+        $this->template->store('products/mine', $this->viewData(array(
+            'page' => 'My Products',
+            'title' => 'My Products',
+            'products' => $this->Store_product_model->mine($this->store->id, $filters),
+            'filters' => $filters,
+            'category_tree' => $filters['category_tree'],
+            'has_filters' => ($filters['q'] !== '' || $filters['category_id'] > 0 || $filters['subcategory_id'] > 0 || $filters['trending'] !== ''),
+        )));
+    }
+
+    public function available()
+    {
+        $this->requirePermission('products');
         $this->load->model('Ec_category_model');
         $filters = $this->available_filters();
         $products = $this->Store_product_model->available_for_store($this->store, $filters);
         $copied = $this->Store_product_model->copied_source_ids($this->store->id);
-        ec_refresh_store_copy_costs((int) $this->store->id);
         foreach ($products as $product) {
             $product->base_price = product_base_price($product);
             $product->wholesale_price = product_wholesale_price($product, $this->store->id);
@@ -43,6 +58,10 @@ class Products extends Store_base {
         $q = trim((string) $this->input->get('q'));
         $categoryId = (int) $this->input->get('category_id');
         $subcategoryId = (int) $this->input->get('subcategory_id');
+        $trending = trim((string) $this->input->get('trending'));
+        if ($trending !== '1' && $trending !== '0') {
+            $trending = '';
+        }
         $countryId = (int) (isset($this->store->country_id) ? $this->store->country_id : 0);
         $tree = $this->Ec_category_model->tree_for_country($countryId);
 
@@ -74,23 +93,21 @@ class Products extends Store_base {
             'q' => $q,
             'category_id' => $categoryId,
             'subcategory_id' => $subcategoryId,
+            'trending' => $trending,
             'category_tree' => $tree,
         );
     }
 
     public function mine()
     {
-        $this->requireAuth();
-        $this->template->store('products/mine', $this->viewData(array(
-            'page' => 'My Products',
-            'title' => 'My Products',
-            'products' => $this->Store_product_model->mine($this->store->id),
-        )));
+        $this->requirePermission('products');
+        $qs = isset($_SERVER['QUERY_STRING']) ? trim((string) $_SERVER['QUERY_STRING']) : '';
+        redirect('store/products' . ($qs !== '' ? '?' . $qs : ''));
     }
 
     public function add($id = 0)
     {
-        $this->requireAuth();
+        $this->requirePermission('products');
         $existing = $this->Store_product_model->find_copy($this->store->id, $id);
         if ($existing) {
             redirect('store/products/form/' . $existing->id);
@@ -99,8 +116,7 @@ class Products extends Store_base {
 
         $source = $this->Store_product_model->catalog_item_for_store($this->store, $id);
         if (!$source) {
-            $this->session->set_flashdata('error', 'This product is not available for your store.');
-            redirect('store/products');
+            redirect('store/available-products');
             return;
         }
 
@@ -111,12 +127,12 @@ class Products extends Store_base {
 
     public function form($id = 0)
     {
-        $this->requireAuth();
+        $this->requirePermission('products');
         $this->load->model('Ec_category_model');
         $product = $id ? $this->Store_product_model->get_owned($this->store->id, $id) : null;
         if ($id && !$product) {
             $this->session->set_flashdata('error', 'Product not found in your store.');
-            redirect('store/my-products');
+            redirect('store/products');
             return;
         }
         if ($product) {
@@ -136,20 +152,24 @@ class Products extends Store_base {
 
     public function save($id = 0)
     {
-        $this->requireAuth();
+        $this->requirePermission('products');
         $this->load->model('Ec_category_model');
         $existing = $id ? $this->Store_product_model->get_owned($this->store->id, $id) : null;
         if ($id && !$existing) {
             $this->session->set_flashdata('error', 'Product not found in your store.');
-            redirect('store/my-products');
+            redirect('store/products');
             return;
         }
 
-        // Existing store products: images + SEO + selling price + categories.
+        // Store copy: edits stay on this store only. Catalog SKU stays locked.
         if ($existing) {
             $costPrice = (float) $existing->cost_price;
             $maxSale = (float) $existing->max_sale_price;
             $price = (float) $this->input->post('price');
+            $name = trim((string) $this->input->post('name'));
+            if ($name === '') {
+                $name = trim((string) $existing->name);
+            }
 
             if ($costPrice > 0 && $price < $costPrice) {
                 $this->session->set_flashdata('error', 'Selling price cannot be less than your cost price (' . number_format($costPrice, 2) . ').');
@@ -157,16 +177,31 @@ class Products extends Store_base {
                 return;
             }
 
-            $slug = url_title(trim($this->input->post('slug')) ?: $existing->name, 'dash', true);
+            $slug = $this->Store_product_model->unique_slug(trim($this->input->post('slug')) ?: $name, $this->store->id, $id);
             $payload = array(
+                'name' => $name,
+                'brand' => trim((string) $this->input->post('brand')),
+                'made_by' => trim((string) $this->input->post('made_by')),
+                'description' => trim((string) $this->input->post('description')),
+                'details' => ec_sanitize_product_html($this->input->post('details')),
+                'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
+                'is_trending' => $this->input->post('is_trending') ? 1 : 0,
+                'trending_order' => max(0, (int) $this->input->post('trending_order')),
                 'price' => $price,
                 'slug' => $this->Store_product_model->unique_slug($slug, $this->store->id, $id),
-                'made_by' => trim((string) $this->input->post('made_by')),
                 'seo_title' => trim((string) $this->input->post('seo_title')),
                 'seo_description' => trim((string) $this->input->post('seo_description')),
                 'seo_keywords' => trim((string) $this->input->post('seo_keywords')),
+                'name_en' => trim((string) $this->input->post('name_en')),
+                'short_details_en' => ec_sanitize_product_html($this->input->post('short_details_en')),
+                'details_en' => ec_sanitize_product_html($this->input->post('details_en')),
+                'seo_title_en' => trim((string) $this->input->post('seo_title_en')),
+                'seo_description_en' => trim((string) $this->input->post('seo_description_en')),
+                'seo_keywords_en' => trim((string) $this->input->post('seo_keywords_en')),
                 'ship_min_days' => max(0, (int) $this->input->post('ship_min_days')),
                 'ship_max_days' => max(0, (int) $this->input->post('ship_max_days')),
+                'sort_order' => max(0, (int) $this->input->post('sort_order')),
+                'options_title' => trim((string) ($this->input->post('options_title') ?: $this->input->post('variation_type'))),
             );
             $image = $this->upload_image('image');
             if ($image) {
@@ -194,7 +229,7 @@ class Products extends Store_base {
             return;
         }
 
-        $slug = url_title(trim($this->input->post('slug')) ?: $name, 'dash', true);
+        $slug = $this->Store_product_model->unique_slug(trim($this->input->post('slug')) ?: $name, $this->store->id, 0);
         $payload = array(
             'store_id' => (int) $this->store->id,
             'country_id' => $this->store->country_id,
@@ -202,6 +237,8 @@ class Products extends Store_base {
             'sku' => trim((string) $this->input->post('sku')),
             'parent_sku' => trim((string) $this->input->post('parent_sku')),
             'is_default' => ($this->input->post('parent_sku') && $this->input->post('is_default')) ? 1 : 0,
+            'sort_order' => max(0, (int) $this->input->post('sort_order')),
+            'options_title' => trim((string) ($this->input->post('options_title') ?: $this->input->post('variation_type'))),
             'brand' => trim((string) $this->input->post('brand')),
             'made_by' => trim((string) $this->input->post('made_by')),
             'slug' => $this->Store_product_model->unique_slug($slug, $this->store->id, 0),
@@ -213,7 +250,15 @@ class Products extends Store_base {
             'seo_title' => trim((string) $this->input->post('seo_title')),
             'seo_description' => trim((string) $this->input->post('seo_description')),
             'seo_keywords' => trim((string) $this->input->post('seo_keywords')),
+            'name_en' => trim((string) $this->input->post('name_en')),
+            'short_details_en' => ec_sanitize_product_html($this->input->post('short_details_en')),
+            'details_en' => ec_sanitize_product_html($this->input->post('details_en')),
+            'seo_title_en' => trim((string) $this->input->post('seo_title_en')),
+            'seo_description_en' => trim((string) $this->input->post('seo_description_en')),
+            'seo_keywords_en' => trim((string) $this->input->post('seo_keywords_en')),
             'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
+            'is_trending' => $this->input->post('is_trending') ? 1 : 0,
+            'trending_order' => max(0, (int) $this->input->post('trending_order')),
             'max_sale_price' => 0,
             'cost_price' => 0,
             'ship_min_days' => max(0, (int) $this->input->post('ship_min_days')),
@@ -238,26 +283,26 @@ class Products extends Store_base {
 
     public function delete($id = 0)
     {
-        $this->requireAuth();
+        $this->requirePermission('products');
         $product = $this->Store_product_model->get_owned($this->store->id, $id);
         if (!$product) {
             $this->session->set_flashdata('error', 'Product not found.');
-            redirect('store/my-products');
+            redirect('store/products');
             return;
         }
         $this->channel_delete_product($id);
         $this->Store_product_model->delete_owned($this->store->id, $id);
         $this->session->set_flashdata('success', 'Product deleted.');
-        redirect('store/my-products');
+        redirect('store/products');
     }
 
     public function delete_image($id = 0)
     {
-        $this->requireAuth();
+        $this->requirePermission('products');
         $productId = $this->Store_product_model->delete_image($this->store->id, $id);
         if (!$productId) {
             $this->session->set_flashdata('error', 'Image not found.');
-            redirect('store/my-products');
+            redirect('store/products');
             return;
         }
         $this->session->set_flashdata('success', 'Image deleted.');

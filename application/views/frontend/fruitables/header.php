@@ -7,7 +7,7 @@ $address = theme_setting($settings, 'address', '123 Street, New York');
 $email = theme_setting($settings, 'email', 'email@example.com');
 $storeName = isset($store->name) ? $store->name : 'Fruitables';
 $page = isset($current_page) ? $current_page : '';
-$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('shop/index');
+$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('');
 $shopUrl = !empty($is_preview) ? $preview_back : storefront_url('shop');
 $contactUrl = !empty($is_preview) ? $preview_back : storefront_url('contact');
 $cartUrl = !empty($is_preview) ? $preview_back : storefront_url('cart');
@@ -15,7 +15,7 @@ $accountUrl = !empty($is_preview) ? $preview_back : storefront_url(storefront_cu
 $cartCount = isset($cart_count) ? (int) $cart_count : storefront_cart_count(isset($store->id) ? $store->id : 0);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars(function_exists('storefront_html_lang') ? storefront_html_lang() : 'en') ?>">
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
@@ -41,6 +41,7 @@ $cartCount = isset($cart_count) ? (int) $cart_count : storefront_cart_count(isse
     </style>
 </head>
 <body data-theme-page="<?= htmlspecialchars($page) ?>">
+    <?php $this->load->view('frontend/shared/admin_bar'); ?>
     <div id="spinner" class="show w-100 vh-100 bg-white position-fixed translate-middle top-50 start-50 d-flex align-items-center justify-content-center">
         <div class="spinner-grow text-primary" role="status"></div>
     </div>
@@ -56,6 +57,7 @@ $cartCount = isset($cart_count) ? (int) $cart_count : storefront_cart_count(isse
                     <a href="<?= $contactUrl ?>" class="text-white"><small class="text-white mx-2">Privacy Policy</small>/</a>
                     <a href="<?= $contactUrl ?>" class="text-white"><small class="text-white mx-2">Terms of Use</small>/</a>
                     <a href="<?= $shopUrl ?>" class="text-white"><small class="text-white ms-2">Sales and Refunds</small></a>
+                    <?= function_exists('storefront_language_switcher_html') ? storefront_language_switcher_html() : '' ?>
                 </div>
             </div>
         </div>
@@ -79,6 +81,11 @@ $cartCount = isset($cart_count) ? (int) $cart_count : storefront_cart_count(isse
                             <a href="<?= $homeUrl ?>" class="nav-item nav-link <?= $page === 'home' ? 'active' : '' ?>">Home</a>
                             <a href="<?= $shopUrl ?>" class="nav-item nav-link <?= $page === 'shop' ? 'active' : '' ?>">Shop</a>
                             <a href="<?= $contactUrl ?>" class="nav-item nav-link <?= $page === 'contact' ? 'active' : '' ?>">Contact</a>
+                            <?php if (!empty($header_menu)): ?>
+                                <?php foreach ($header_menu as $menuItem): ?>
+                                    <a href="<?= htmlspecialchars($menuItem->url) ?>" class="nav-item nav-link <?= !empty($menuItem->active) ? 'active' : '' ?>"><?= htmlspecialchars($menuItem->label) ?></a>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                     <div class="d-flex m-3 me-0">

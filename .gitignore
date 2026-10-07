@@ -4,3 +4,20 @@ application/cache/product_csv_imports/*.json
 application/config/payment_keys/*.pem
 uploads/products/*
 !uploads/products/.gitkeep
+
+# Local dumps / secrets (never push)
+db/*.sql
+db/*.sql.gz
+config.php
+settings.php
+tmp_*.php
+error_log
+Fruitables/
+META_INTEGRATION_TEST_RESULT.md
+application/config/*.bak*
+application/views/frontend/zenvello_orig_backup/
+tmp_*.php
+db/*.sql
+*.sql.gz
+accounting.sql
+error_log

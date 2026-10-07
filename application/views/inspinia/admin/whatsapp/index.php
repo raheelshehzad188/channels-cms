@@ -19,13 +19,13 @@
                 <div class="ibox-title"><h5>WhatsApp notifications</h5></div>
                 <div class="ibox-content">
                     <?php $this->load->view('flash'); ?>
-                    <p class="text-muted">When enabled, a WhatsApp is sent to the customer, store, ecommerce user and admin as soon as an order is placed (and on later status updates). Numbers are collected at checkout and in each party’s settings.</p>
+                    <p class="text-muted">Ecommerce, the store keeper and Super Admin always get WhatsApp on new orders and every status update. The customer only gets WhatsApp if <a href="<?= base_url('admin/smtp') ?>">SMTP → Customer notification</a> is set to WhatsApp.</p>
                     <form method="post" action="<?= base_url('admin/whatsapp/save') ?>" class="form-horizontal">
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Enable WhatsApp</label>
                             <div class="col-sm-7">
                                 <label class="checkbox-inline">
-                                    <input type="checkbox" name="enabled" value="1" <?= $whatsapp['enabled'] === '1' ? 'checked' : '' ?>> Send order notifications
+                                    <input type="checkbox" name="enabled" value="1" <?= $whatsapp['enabled'] === '1' ? 'checked' : '' ?>> Payout WhatsApp alerts (order staff alerts are always sent)
                                 </label>
                             </div>
                         </div>
@@ -56,8 +56,8 @@
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Admin notify number</label>
                             <div class="col-sm-7">
-                                <input type="text" name="admin_whatsapp_number" class="form-control" value="<?= htmlspecialchars($whatsapp['admin_whatsapp_number']) ?>" placeholder="923004210607">
-                                <span class="help-block">WhatsApp number that receives every new order. Use country code without +.</span>
+                                <input type="text" name="admin_whatsapp_number" class="form-control" value="<?= htmlspecialchars($whatsapp['admin_whatsapp_number']) ?>" placeholder="923160733002,923004210607">
+                                <span class="help-block">WhatsApp number(s) that receive every new order. Use country code without +. Multiple numbers: comma-separated.</span>
                             </div>
                         </div>
                         <div class="form-group">

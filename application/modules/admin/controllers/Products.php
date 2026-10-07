@@ -13,6 +13,9 @@ class Products extends CI_Controller {
 
     public function index()
     {
+        if (ec_is_admin()) {
+            $this->Product_model->purge_orphan_store_copies();
+        }
         $this->load->model('Theme_model');
         $this->load->model('Country_model');
         $this->load->model('Ec_category_model');
@@ -22,6 +25,10 @@ class Products extends CI_Controller {
         $categoryId = (int) $this->input->get('category_id');
         $createdBy = (int) $this->input->get('created_by');
         $q = trim((string) $this->input->get('q'));
+        $trending = trim((string) $this->input->get('trending'));
+        if ($trending !== '1' && $trending !== '0') {
+            $trending = '';
+        }
         $ecommerceUsers = ec_is_admin() ? $this->User_model->ecommerce_users() : array();
         if (ec_is_admin() && $createdBy) {
             $validOwner = false;
@@ -61,6 +68,7 @@ class Products extends CI_Controller {
             'country_id' => $countryId,
             'category_id' => $categoryId,
             'q' => $q,
+            'trending' => $trending,
         );
         $perPageOptions = array(10, 25, 50, 100);
         $requestedPerPage = $this->input->get('per_page');
@@ -96,6 +104,7 @@ class Products extends CI_Controller {
             'country_id' => $countryId,
             'category_id' => $categoryId,
             'created_by' => $createdBy,
+            'trending' => $trending,
             'per_page' => $perPage,
         );
         $pageUrl = function ($pageNum) use ($listQuery) {
@@ -145,6 +154,7 @@ class Products extends CI_Controller {
             'category_id' => $categoryId,
             'created_by' => $createdBy,
             'q' => $q,
+            'trending' => $trending,
             'list_page' => $page,
             'per_page' => $perPage,
             'per_page_options' => $perPageOptions,
@@ -606,6 +616,152 @@ class Products extends CI_Controller {
             ->set_output(json_encode(array('ok' => false, 'error' => $lastError)));
     }
 
+    public function write_ai($id = 0)
+    {
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(120);
+        }
+        $id = (int) $id;
+        $product = $id ? $this->Product_model->get($id) : null;
+        if ($id && !$product) {
+            $this->output
+                ->set_status_header(404)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('ok' => false, 'error' => 'Product not found.')));
+            return;
+        }
+        if ($product && !$this->_can_manage($product)) {
+            $this->output
+                ->set_status_header(403)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('ok' => false, 'error' => 'You cannot edit this product.')));
+            return;
+        }
+        if (!$product) {
+            $product = (object) array(
+                'id' => 0,
+                'name' => '',
+                'short_details' => '',
+                'details' => '',
+                'brand' => '',
+                'sku' => '',
+                'country_id' => 0,
+                'store_id' => 0,
+            );
+        }
+
+        $postedTitle = trim((string) $this->input->post('name'));
+        $postedShort = (string) $this->input->post('short_details');
+        $postedLong = (string) $this->input->post('details');
+        $postedBrand = trim((string) $this->input->post('brand'));
+        $postedCountry = (int) $this->input->post('country_id');
+        if ($postedTitle !== '') {
+            $product->name = $postedTitle;
+        }
+        if ($this->input->post('short_details') !== null) {
+            $product->short_details = $postedShort;
+        }
+        if ($this->input->post('details') !== null) {
+            $product->details = $postedLong;
+        }
+        if ($postedBrand !== '') {
+            $product->brand = $postedBrand;
+        }
+        if ($postedCountry > 0) {
+            $product->country_id = $postedCountry;
+        }
+        if (trim((string) $product->name) === '') {
+            $this->output
+                ->set_status_header(400)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('ok' => false, 'error' => 'Enter a product title first.')));
+            return;
+        }
+
+        $this->load->library('Gemini_content');
+        if (!$this->gemini_content->has_api_key()) {
+            $this->output
+                ->set_status_header(400)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array('ok' => false, 'error' => 'AI agent API key is not configured. Add it under Admin > AI Settings.')));
+            return;
+        }
+
+        $this->load->model('Country_model');
+        $this->load->model('Store_model');
+        $country = !empty($product->country_id) ? $this->Country_model->get($product->country_id) : null;
+        $store = null;
+        if (!empty($product->store_id)) {
+            $store = $this->Store_model->get($product->store_id);
+            if ($store && $country && !empty($country->code)) {
+                $store->country_code = $country->code;
+            }
+        }
+        $language = $this->gemini_content->language_for($country, $store);
+        $currency = $country && !empty($country->currency) ? $country->currency : '';
+        $symbol = '';
+        if ($country && !empty($country->currency_symbol)) {
+            $symbol = $country->currency_symbol;
+        } elseif ($currency && function_exists('currency_symbol')) {
+            $symbol = currency_symbol($currency);
+        }
+        $content = $this->gemini_content->rewrite($product, array(
+            'language' => $language,
+            'country_id' => $country ? (int) $country->id : (int) $product->country_id,
+            'country_name' => $country ? $country->name : '',
+            'country_code' => $country ? $country->code : '',
+            'currency' => $currency,
+            'currency_symbol' => $symbol,
+            'form_title' => $product->name,
+            'form_short' => $product->short_details,
+            'form_long' => $product->details,
+            'quantity' => $this->gemini_content->extract_quantity($product->name),
+        ));
+        if (!$content) {
+            $this->output
+                ->set_status_header(400)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array(
+                    'ok' => false,
+                    'error' => $this->gemini_content->last_error() ?: 'AI generation failed.',
+                )));
+            return;
+        }
+
+        $this->load->model('Ai_content_model');
+        $cats = $this->Ai_content_model->apply_ai_categories(
+            $product,
+            $content,
+            $country ? (int) $country->id : (int) $product->country_id,
+            !empty($product->store_id) ? (int) $product->store_id : 0
+        );
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode(array(
+                'ok' => true,
+                'title' => $content['title'],
+                'name' => isset($content['name']) ? $content['name'] : $content['title'],
+                'short_details' => isset($content['short_details']) ? $content['short_details'] : $content['short_detail'],
+                'details' => isset($content['details']) ? $content['details'] : $content['long_detail'],
+                'seo_title' => $content['seo_title'],
+                'seo_description' => $content['seo_description'],
+                'seo_keywords' => $content['seo_keywords'],
+                'slug' => isset($content['slug']) ? $content['slug'] : $content['seo_slug'],
+                'language' => $language,
+                'name_en' => isset($content['name_en']) ? $content['name_en'] : (isset($content['title_en']) ? $content['title_en'] : ''),
+                'short_details_en' => isset($content['short_details_en']) ? $content['short_details_en'] : (isset($content['short_detail_en']) ? $content['short_detail_en'] : ''),
+                'details_en' => isset($content['details_en']) ? $content['details_en'] : (isset($content['long_detail_en']) ? $content['long_detail_en'] : ''),
+                'seo_title_en' => isset($content['seo_title_en']) ? $content['seo_title_en'] : '',
+                'seo_description_en' => isset($content['seo_description_en']) ? $content['seo_description_en'] : '',
+                'seo_keywords_en' => isset($content['seo_keywords_en']) ? $content['seo_keywords_en'] : '',
+                'category_id' => isset($cats['category_id']) ? (int) $cats['category_id'] : 0,
+                'subcategory_id' => isset($cats['subcategory_id']) ? (int) $cats['subcategory_id'] : 0,
+                'category_name' => isset($cats['category_name']) ? $cats['category_name'] : '',
+                'subcategory_name' => isset($cats['subcategory_name']) ? $cats['subcategory_name'] : '',
+            )));
+    }
+
     public function unknown()
     {
         if (!ec_is_admin()) {
@@ -673,6 +829,10 @@ class Products extends CI_Controller {
             'ship_min_days' => (int) $row->ship_min_days,
             'ship_max_days' => (int) $row->ship_max_days,
             'product_name' => isset($row->product_name) ? trim((string) $row->product_name) : '',
+            'auto_add_to_stores' => 1,
+            'require_images' => 1,
+            'require_details' => 1,
+            'force_refresh_details' => 1,
         );
         if (isset($row->stock) && $row->stock !== '') {
             $extra['stock'] = max(0, (int) $row->stock);
@@ -917,27 +1077,46 @@ class Products extends CI_Controller {
             'sku' => trim($this->input->post('sku')),
             'parent_sku' => trim((string) $this->input->post('parent_sku')),
             'is_default' => ($this->input->post('parent_sku') && $this->input->post('is_default')) ? 1 : 0,
+            'sort_order' => max(0, (int) $this->input->post('sort_order')),
+            'options_title' => trim((string) ($this->input->post('options_title') ?: $this->input->post('variation_type'))),
             'brand' => trim((string) $this->input->post('brand')),
             'made_by' => trim((string) $this->input->post('made_by')),
-            'slug' => $this->_slug($this->input->post('slug'), $this->input->post('name')),
+            'slug' => $this->Product_model->unique_slug($this->_slug($this->input->post('slug'), $this->input->post('name')), (int) $id),
             'stock' => (int) $this->input->post('stock'),
             'supplier_id' => $this->input->post('supplier_id') ? (int) $this->input->post('supplier_id') : null,
             'country_id' => $this->input->post('country_id') ? (int) $this->input->post('country_id') : null,
             'ship_min_days' => max(0, (int) $this->input->post('ship_min_days')),
             'ship_max_days' => max(0, (int) $this->input->post('ship_max_days')),
             'description' => trim($this->input->post('description')),
+            'short_details' => ec_sanitize_product_html($this->input->post('short_details')),
             'details' => ec_sanitize_product_html($this->input->post('details')),
             'seo_title' => trim($this->input->post('seo_title')),
             'seo_description' => trim($this->input->post('seo_description')),
             'seo_keywords' => trim($this->input->post('seo_keywords')),
+            'name_en' => trim((string) $this->input->post('name_en')),
+            'short_details_en' => ec_sanitize_product_html($this->input->post('short_details_en')),
+            'details_en' => ec_sanitize_product_html($this->input->post('details_en')),
+            'seo_title_en' => trim((string) $this->input->post('seo_title_en')),
+            'seo_description_en' => trim((string) $this->input->post('seo_description_en')),
+            'seo_keywords_en' => trim((string) $this->input->post('seo_keywords_en')),
             'status' => (int) $this->input->post('status') === 1 ? 1 : 0,
             'auto_add_to_stores' => $this->input->post('auto_add_to_stores') ? 1 : 0,
+            'is_trending' => $this->input->post('is_trending') ? 1 : 0,
+            'trending_order' => max(0, (int) $this->input->post('trending_order')),
         );
         $payload['max_sale_price'] = (float) $this->input->post('max_sale_price');
+        $payload['extra_amount'] = (float) $this->input->post('extra_amount');
         if (!$priceLocked) {
             $payload['price'] = (float) $this->input->post('price');
             $payload['compare_price'] = (float) $this->input->post('compare_price');
             $payload['cost_price'] = (float) $this->input->post('cost_price');
+        }
+        if (function_exists('offer_sanitize_admin_payload')) {
+            ensure_product_offer_columns();
+            $offerPayload = offer_sanitize_admin_payload($this->input->post());
+            foreach ($offerPayload as $ok => $ov) {
+                $payload[$ok] = $ov;
+            }
         }
 
         if (ec_is_ecommerce()) {
@@ -964,20 +1143,34 @@ class Products extends CI_Controller {
         $this->_save_creatives($productId);
         $this->_save_categories($productId, (int) $payload['country_id']);
         if (empty($payload['store_id']) && (empty($existing) || empty($existing->store_id))) {
-            if (method_exists($this->Product_model, 'sync_copy_fields')) {
-                $this->Product_model->sync_copy_fields($productId, array(
-                    'max_sale_price' => $payload['max_sale_price'],
-                    'brand' => isset($payload['brand']) ? $payload['brand'] : '',
-                    'made_by' => isset($payload['made_by']) ? $payload['made_by'] : '',
-                ));
-            } elseif (method_exists($this->Product_model, 'sync_max_sale_price')) {
-                $this->Product_model->sync_max_sale_price($productId, $payload['max_sale_price']);
+            $refreshed = 0;
+            if ($id && function_exists('ec_sync_catalog_family_to_stores')) {
+                $refreshed = (int) ec_sync_catalog_family_to_stores($productId);
             }
             $added = 0;
             if (!empty($payload['auto_add_to_stores']) && function_exists('ec_auto_add_catalog_product')) {
                 $added = (int) ec_auto_add_catalog_product($productId, true);
             }
-            $this->session->set_flashdata('success', ($id ? 'Product updated successfully.' : 'Product added successfully.') . $this->auto_add_flash($added, !empty($payload['auto_add_to_stores'])));
+            if (!$id && function_exists('ec_sync_catalog_family_to_stores')) {
+                $added += (int) ec_sync_catalog_family_to_stores($productId);
+            }
+            // Push offer settings to store copies (after any recreate).
+            if (function_exists('offer_sync_fields')) {
+                $offerSync = array();
+                foreach (offer_sync_fields() as $field) {
+                    if (array_key_exists($field, $payload)) {
+                        $offerSync[$field] = $payload[$field];
+                    }
+                }
+                if ($offerSync) {
+                    $this->Product_model->sync_copy_fields($productId, $offerSync);
+                }
+            }
+            $msg = ($id ? 'Product updated successfully.' : 'Product added successfully.') . $this->auto_add_flash($added, !empty($payload['auto_add_to_stores']));
+            if ($refreshed > 0) {
+                $msg .= ' Store copies were deleted and created again.';
+            }
+            $this->session->set_flashdata('success', $msg);
             redirect('/admin/products/form/' . $productId);
             return;
         }
@@ -1053,11 +1246,22 @@ class Products extends CI_Controller {
             $hasDefault = $this->db->count_all_results('products') > 0;
         }
 
+        $postedSort = $this->input->post('sort_order');
+        if ($postedSort === null || $postedSort === '') {
+            $sortOrder = function_exists('product_next_child_sort') ? product_next_child_sort($parentSku) : 0;
+        } else {
+            $sortOrder = max(0, (int) $postedSort);
+            if ($sortOrder < 1 && function_exists('product_next_child_sort')) {
+                $sortOrder = product_next_child_sort($parentSku);
+            }
+        }
+
         $payload = array(
             'name' => $name,
             'sku' => $sku,
             'parent_sku' => $parentSku,
             'is_default' => $hasDefault ? 0 : 1,
+            'sort_order' => $sortOrder,
             'slug' => $slug,
             'brand' => isset($parent->brand) ? $parent->brand : '',
             'made_by' => isset($parent->made_by) ? $parent->made_by : '',
@@ -1065,12 +1269,14 @@ class Products extends CI_Controller {
             'compare_price' => isset($parent->compare_price) ? (float) $parent->compare_price : 0,
             'cost_price' => isset($parent->cost_price) ? (float) $parent->cost_price : 0,
             'max_sale_price' => isset($parent->max_sale_price) ? (float) $parent->max_sale_price : 0,
+            'extra_amount' => 0,
             'stock' => isset($parent->stock) ? (int) $parent->stock : 0,
             'ship_min_days' => isset($parent->ship_min_days) ? (int) $parent->ship_min_days : 0,
             'ship_max_days' => isset($parent->ship_max_days) ? (int) $parent->ship_max_days : 0,
             'supplier_id' => !empty($parent->supplier_id) ? (int) $parent->supplier_id : null,
             'country_id' => !empty($parent->country_id) ? (int) $parent->country_id : null,
             'description' => isset($parent->description) ? $parent->description : '',
+            'short_details' => isset($parent->short_details) ? $parent->short_details : '',
             'details' => isset($parent->details) ? $parent->details : '',
             'seo_title' => $name,
             'seo_description' => isset($parent->seo_description) ? $parent->seo_description : '',
@@ -1096,6 +1302,9 @@ class Products extends CI_Controller {
         $added = 0;
         if (!empty($payload['auto_add_to_stores']) && function_exists('ec_auto_add_catalog_product')) {
             $added = (int) ec_auto_add_catalog_product($childId, true);
+        }
+        if (function_exists('ec_sync_catalog_family_to_stores')) {
+            $added += (int) ec_sync_catalog_family_to_stores($childId);
         }
 
         $this->output->set_content_type('application/json')->set_output(json_encode(array(
@@ -1151,8 +1360,14 @@ class Products extends CI_Controller {
             }
         }
 
+        $copyIds = $this->Product_model->store_copy_ids($id);
         $this->Product_model->delete($id);
-        $this->session->set_flashdata('success', 'Product deleted successfully.');
+        $copyCount = count($copyIds);
+        if ($copyCount > 0) {
+            $this->session->set_flashdata('success', 'Product deleted from admin and from ' . $copyCount . ' store listing' . ($copyCount === 1 ? '' : 's') . '.');
+        } else {
+            $this->session->set_flashdata('success', 'Product deleted successfully.');
+        }
         redirect('/admin/products');
     }
 
@@ -1368,7 +1583,7 @@ class Products extends CI_Controller {
         if ($slug === '') {
             $slug = $name;
         }
-        return url_title($slug, '-', true);
+        return function_exists('ec_ascii_slug') ? ec_ascii_slug($slug, 'product') : url_title($slug, '-', true);
     }
 
     private function _upload_named($field)

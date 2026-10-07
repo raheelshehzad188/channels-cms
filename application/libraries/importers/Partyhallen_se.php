@@ -106,6 +106,8 @@ class Partyhallen_se extends Importer_base {
             'gallery' => array_slice($saved, 1),
             'seo_title' => $name,
             'seo_description' => function_exists('mb_substr') ? mb_substr($description, 0, 180) : substr($description, 0, 180),
+            'ship_min_days' => 1,
+            'ship_max_days' => 2,
         );
     }
 

@@ -32,6 +32,15 @@ abstract class Importer_base {
         return $data;
     }
 
+    public function save_images($urls, $limit = 20, $pageUrl = '')
+    {
+        if ($pageUrl !== '') {
+            $this->pageUrl = $pageUrl;
+        }
+        $this->downloadImages = true;
+        return $this->download_images($urls, $limit);
+    }
+
     protected function fetch($url)
     {
         $ch = curl_init($url);

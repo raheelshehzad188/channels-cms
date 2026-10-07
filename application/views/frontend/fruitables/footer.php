@@ -4,7 +4,7 @@ $footerText = theme_setting($settings, 'footer_text', $storeName . ', All right 
 $address = theme_setting($settings, 'address', '1429 Netus Rd, NY 48247');
 $email = theme_setting($settings, 'email', 'example@gmail.com');
 $phone = theme_setting($settings, 'phone', '+0123 4567 8910');
-$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('shop/index');
+$homeUrl = !empty($is_preview) ? $preview_back : storefront_url('');
 $shopUrl = !empty($is_preview) ? $preview_back : storefront_url('shop');
 $contactUrl = !empty($is_preview) ? $preview_back : storefront_url('contact');
 $payload = array(
@@ -53,6 +53,10 @@ if (!empty($product)) {
                 <div class="row g-4">
                     <div class="col-lg-3">
                         <a href="<?= $homeUrl ?>">
+                            <?php $footerIcon = theme_setting($settings, 'footer_icon'); ?>
+                            <?php if ($footerIcon): ?>
+                            <img src="<?= storefront_asset_url($footerIcon) ?>" alt="" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px">
+                            <?php endif; ?>
                             <h1 class="text-primary mb-0"><?= htmlspecialchars($storeName) ?></h1>
                             <p class="text-secondary mb-0">Fresh products</p>
                         </a>
@@ -86,6 +90,11 @@ if (!empty($product)) {
                         <h4 class="text-light mb-3">Shop Info</h4>
                         <a class="btn-link" href="<?= $homeUrl ?>">Home</a>
                         <a class="btn-link" href="<?= $contactUrl ?>">Contact Us</a>
+                        <?php if (!empty($store_pages_footer)): ?>
+                            <?php foreach ($store_pages_footer as $cmsPage): ?>
+                                <a class="btn-link" href="<?= page_url($cmsPage) ?>"><?= htmlspecialchars($cmsPage->title) ?></a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                         <a class="btn-link" href="<?= $shopUrl ?>">Shop</a>
                     </div>
                 </div>

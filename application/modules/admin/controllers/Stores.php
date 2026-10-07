@@ -186,6 +186,42 @@ class Stores extends CI_Controller {
         redirect('/admin/stores');
     }
 
+    public function login_as($id = 0)
+    {
+        $store = $this->Store_model->get($id);
+        if (!$store || (int) $store->status !== 1) {
+            $this->session->set_flashdata('error', 'Store not found or not active.');
+            redirect('/admin/stores');
+            return;
+        }
+
+        $token = bin2hex(function_exists('random_bytes') ? random_bytes(24) : openssl_random_pseudo_bytes(24));
+        $this->db->query(
+            'INSERT INTO store_sessions (store_id, staff_id, session_token, ip_address, user_agent, expires_at)
+             VALUES (?, NULL, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))',
+            array(
+                (int) $store->id,
+                'impersonate:' . $token,
+                (string) $this->input->ip_address(),
+                substr((string) $this->input->user_agent(), 0, 500),
+            )
+        );
+
+        $host = strtolower(trim((string) $store->domain));
+        $host = preg_replace('/^https?:\/\//', '', $host);
+        $host = rtrim($host, '/');
+        $scheme = 'https';
+        if (preg_match('/localhost|\.test$/', $host)) {
+            $scheme = 'http';
+        }
+        if ($host === '') {
+            $this->session->set_flashdata('error', 'Store domain is missing.');
+            redirect('/admin/stores');
+            return;
+        }
+        redirect($scheme . '://' . $host . '/store/impersonate/' . $token);
+    }
+
     public function delete($id = 0)
     {
         $store = $this->Store_model->get($id);

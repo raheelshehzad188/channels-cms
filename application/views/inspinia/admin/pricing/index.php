@@ -14,7 +14,7 @@
                 <div class="ibox-title"><h5>Platform Pricing</h5></div>
                 <div class="ibox-content">
                     <?php $this->load->view('flash'); ?>
-                    <p class="text-muted">Storefronts show and charge PayPal in each store’s country currency. Super Admin earnings are converted into the platform country currency selected here. Platform fee is a percent of catalog base price and is added to every store’s product cost. Changing it also raises or lowers selling prices on products already listed in stores, while keeping each store’s extra markup.</p>
+                    <p class="text-muted">Storefronts show and charge PayPal in each store’s country currency. Super Admin earnings are converted into the platform country currency selected here. Platform fee is a percent of catalog base price and is added to every store’s product cost. Saving this, or Recalculate, resets listed selling prices from: store cost (catalog cost + ecommerce commission + this fee) + store plus amount. Each listed product is priced on its own catalog numbers.</p>
                     <form method="post" action="<?= base_url('admin/pricing/save') ?>" class="form-horizontal">
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Platform country</label>
@@ -37,14 +37,39 @@
                                     <input type="number" step="0.01" min="0" max="100" name="platform_fee" class="form-control" required value="<?= htmlspecialchars($platform_fee) ?>">
                                     <span class="input-group-addon">%</span>
                                 </div>
-                                <span class="help-block">Percent of catalog base price, added to store cost: base + ecommerce commission + this fee. Saving this updates cost and selling price on every store-listed product (keeps each store’s extra markup).</span>
+                                <span class="help-block">Percent of catalog base price, added to store cost: base + ecommerce commission + this fee. Saving this recalculates cost and selling price on every store-listed product from the current plus amount.</span>
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">VAT (%)</label>
                             <div class="col-sm-6">
                                 <input type="number" step="0.01" min="0" name="vat" class="form-control" required value="<?= htmlspecialchars($vat) ?>">
-                                <span class="help-block">Added once on the checkout order subtotal. Not added per product. Use 0 to disable<?= ((float)$vat > 0) ? ' (currently ' . htmlspecialchars($vat) . '%)' : '' ?>.</span>
+                                <span class="help-block">Added once on checkout when greater than 0. Use 0 to hide VAT (0 kr). Not added per product<?= ((float)$vat > 0) ? ' (currently ' . htmlspecialchars($vat) . '%)' : '' ?>.</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Shipping per item</label>
+                            <div class="col-sm-6">
+                                <input type="number" step="0.01" min="0" name="shipping_per_item" class="form-control" required value="<?= htmlspecialchars($shipping_per_item) ?>">
+                                <span class="help-block">Charged on checkout in each store’s currency as this amount × cart quantity. Example: 2 of product A + 1 of product B = 3 × this fee. Use 0 to hide shipping. Does not change product listing prices.</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Shipping discount</label>
+                            <div class="col-sm-6">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="shipping_discount_enabled" value="1" id="shippingDiscountOn" <?= in_array(strtolower(trim((string) $shipping_discount_enabled)), array('1', 'true', 'on', 'yes'), true) ? 'checked' : '' ?>>
+                                        Free shipping when the cart reaches a minimum purchase amount
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" id="shippingFreeMinWrap">
+                            <label class="col-sm-3 control-label">Min purchase amount</label>
+                            <div class="col-sm-6">
+                                <input type="number" step="0.01" min="0" name="shipping_free_min" class="form-control" value="<?= htmlspecialchars($shipping_free_min) ?>">
+                                <span class="help-block">If the product subtotal is this amount or more, shipping is free. Example: 500 → cart of 500+ gets free shipping.</span>
                             </div>
                         </div>
 
@@ -71,8 +96,25 @@
                             </div>
                         </div>
                     </form>
+                    <div class="hr-line-dashed"></div>
+                    <form method="post" action="<?= base_url('admin/pricing/recalculate') ?>" onsubmit="return confirm('Recalculate every store listing from catalog cost + commission + platform fee + that store’s plus amount? Each product is priced independently.');">
+                        <p class="text-muted">Use this after catalog costs or a store plus amount change. Selling price becomes store cost + plus for every listed product, including packs.</p>
+                        <button type="submit" class="btn btn-warning">Recalculate store prices</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script>
+(function () {
+  var box = document.getElementById('shippingDiscountOn');
+  var wrap = document.getElementById('shippingFreeMinWrap');
+  if (!box || !wrap) return;
+  function sync() {
+    wrap.style.display = box.checked ? '' : 'none';
+  }
+  box.addEventListener('change', sync);
+  sync();
+})();
+</script>

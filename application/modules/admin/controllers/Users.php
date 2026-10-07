@@ -97,8 +97,10 @@ class Users extends CI_Controller {
             product_owner_commission_reset_cache();
         }
         $repriced = 0;
-        if ($id && $roleID === ROLE_ECOMMERCE && function_exists('ec_refresh_store_copy_costs')) {
-            $repriced = ec_refresh_store_copy_costs(0, (int) $id);
+        if ($id && $roleID === ROLE_ECOMMERCE) {
+            $repriced = function_exists('ec_recalculate_store_listing_prices')
+                ? ec_recalculate_store_listing_prices(0, (int) $id)
+                : (function_exists('ec_refresh_store_copy_costs') ? ec_refresh_store_copy_costs(0, (int) $id) : 0);
         }
         $message = $id ? 'User updated successfully.' : 'User added successfully.';
         if ($id && $roleID === ROLE_ECOMMERCE) {

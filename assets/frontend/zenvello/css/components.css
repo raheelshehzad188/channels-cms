@@ -7,8 +7,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 11px 20px;
+  gap: var(--sp-2);
+  padding: 12px 22px;
   border-radius: var(--r-sm);
   font-size: var(--fs-14);
   font-weight: 600;
@@ -40,7 +40,7 @@
 }
 .btn--outline:hover { border-color: var(--text-faint); background: var(--surface-alt); }
 
-.btn--lg { padding: 13px 26px; font-size: var(--fs-15); }
+.btn--lg { padding: 14px 28px; font-size: var(--fs-15); }
 .btn--sm { padding: 8px 14px; font-size: var(--fs-13); }
 .btn--block { width: 100%; }
 
@@ -48,9 +48,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: var(--sp-2);
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
   font-size: var(--fs-13);
   font-weight: 600;
   border-radius: var(--r-sm);
@@ -65,10 +65,10 @@
 /* ---------- Badges ---------- */
 .badge {
   position: absolute;
-  top: 9px;
-  left: 9px;
+  top: 10px;
+  left: 10px;
   z-index: 2;
-  padding: 3px 8px;
+  padding: 4px 9px;
   border-radius: var(--r-xs);
   font-size: var(--fs-11);
   font-weight: 700;
@@ -80,13 +80,26 @@
 
 .badge--new { background: var(--badge-new); }
 .badge--best { background: var(--badge-best); }
+.badge--offer { background: #de5922; max-width: 72%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge--ship {
+  top: auto;
+  bottom: 10px;
+  left: 10px;
+  right: auto;
+  background: #166534;
+  max-width: 85%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.68rem;
+}
 .badge--static { position: static; display: inline-block; }
 
 /* ---------- Wishlist heart ---------- */
 .wish {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
   z-index: 2;
   width: 28px;
   height: 28px;
@@ -119,7 +132,7 @@
 .rating-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-2);
   font-size: var(--fs-12);
   color: var(--text-muted);
 }
@@ -128,7 +141,7 @@
 .price {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--sp-2);
   flex-wrap: wrap;
 }
 
@@ -154,7 +167,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  padding: 0 12px 12px;
+  padding: 0 var(--card-pad) var(--card-pad);
   transition: box-shadow var(--t-base), border-color var(--t-base), transform var(--t-base);
 }
 
@@ -169,14 +182,14 @@
   aspect-ratio: 1 / 1;
   background: var(--surface-soft);
   display: block;
-  margin: 0 -12px 12px;
+  margin: 0 calc(var(--card-pad) * -1) var(--sp-3);
   overflow: hidden;
   border-radius: var(--r-md) var(--r-md) 0 0;
 }
 
 .pcard__photo {
   position: absolute;
-  inset: 12px;
+  inset: 14px;
   display: block;
   background-color: transparent;
   background-size: contain;
@@ -190,9 +203,9 @@
 .pcard__title {
   font-size: var(--fs-13);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--text-primary);
-  margin-bottom: 5px;
+  margin-bottom: var(--sp-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -201,36 +214,36 @@
 
 .pcard__title a:hover { color: var(--info-blue); }
 
-.pcard .price { margin-bottom: 3px; }
-.pcard .rating-row { margin-bottom: 10px; }
+.pcard .price { margin-bottom: var(--sp-1); }
+.pcard .rating-row { margin-bottom: var(--sp-3); }
 .pcard .btn--cart { margin-top: auto; }
 
 /* compact variant used in carousels on the product page */
-.pcard--mini { padding: 0 9px 9px; }
-.pcard--mini .pcard__media { margin: 0 -9px 8px; }
-.pcard--mini .pcard__title { font-size: var(--fs-12); margin-bottom: 5px; }
+.pcard--mini { padding: 0 12px 12px; }
+.pcard--mini .pcard__media { margin: 0 -12px 10px; }
+.pcard--mini .pcard__title { font-size: var(--fs-12); margin-bottom: var(--sp-2); }
 .pcard--mini .price__now { font-size: var(--fs-13); }
-.pcard--mini .btn--cart { padding: 6px 8px; font-size: var(--fs-11); }
+.pcard--mini .btn--cart { padding: 7px 8px; font-size: var(--fs-11); }
 .pcard--mini .btn--cart svg { width: 12px; height: 12px; }
-.pcard--mini .rating-row { margin-bottom: 8px; }
+.pcard--mini .rating-row { margin-bottom: var(--sp-2); }
 
 /* ---------- Grids ---------- */
 .grid-6 {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 13px;
+  gap: var(--sp-4);
 }
 
 .grid-4 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 13px;
+  gap: var(--sp-4);
 }
 
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--sp-4);
 }
 
 /* ---------- Category circles ---------- */
@@ -418,11 +431,9 @@
 .check:hover { color: var(--text-primary); }
 .check__count { color: var(--text-faint); }
 
-/* ---------- Section spacing ----------
-   Rhythm taken from the reference: 21px above a first section,
-   44px between two stacked product sections. */
-.section { padding-block: 21px 0; }
-.section + .section { padding-top: 44px; }
+/* ---------- Section spacing ---------- */
+.section { padding-block: var(--section-y) 0; }
+.section + .section { padding-top: var(--section-y); }
 .section--tight.section,
-.section + .section--tight { padding-top: 31px; }
-.section--flush-top.section { padding-top: 21px; }
+.section + .section--tight { padding-top: calc(var(--section-y) * 0.65); }
+.section--flush-top.section { padding-top: var(--sp-5); }

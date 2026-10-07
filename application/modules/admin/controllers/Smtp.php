@@ -23,6 +23,7 @@ class Smtp extends CI_Controller {
                 'from_email' => platform_setting('smtp_from_email', 'noreply@ecommerce.local'),
                 'from_name' => platform_setting('smtp_from_name', 'Ecommerce Platform'),
                 'admin_notify_email' => platform_setting('admin_notify_email', ''),
+                'customer_notify_channel' => platform_setting('customer_notify_channel', 'mail'),
             ),
         );
         $this->template->admin('smtp/index', $data);
@@ -39,6 +40,7 @@ class Smtp extends CI_Controller {
             'smtp_from_email' => trim((string) $this->input->post('from_email')),
             'smtp_from_name' => trim((string) $this->input->post('from_name')),
             'admin_notify_email' => trim((string) $this->input->post('admin_notify_email')),
+            'customer_notify_channel' => $this->input->post('customer_notify_channel') === 'whatsapp' ? 'whatsapp' : 'mail',
         );
         $pass = (string) $this->input->post('pass');
         if ($pass !== '') {
@@ -57,9 +59,19 @@ class Smtp extends CI_Controller {
         if ($to === '') {
             $to = platform_setting('admin_notify_email', '');
         }
+        if ((string) platform_setting('smtp_enabled', '0') !== '1') {
+            $this->session->set_flashdata('error', 'Enable SMTP and save before sending a test. Right now mail is only written to logs/mail.');
+            redirect('/admin/smtp');
+            return;
+        }
         $this->load->library('ec_mail');
         $ok = $this->ec_mail->send($to, 'SMTP test from Ecommerce Platform', '<p>This is a test email from your SMTP settings.</p><p>If you received this, SMTP is working.</p>');
-        $this->session->set_flashdata($ok ? 'success' : 'error', $ok ? 'Test email sent to ' . $to : 'Failed to send test email. Check SMTP settings.');
+        if ($ok) {
+            $this->session->set_flashdata('success', 'Test email sent to ' . $to);
+        } else {
+            $detail = trim((string) $this->ec_mail->lastError);
+            $this->session->set_flashdata('error', 'Failed to send test email. ' . ($detail !== '' ? $detail : 'Check SMTP host, port, SSL/TLS, and that From matches the mailbox.'));
+        }
         redirect('/admin/smtp');
     }
 

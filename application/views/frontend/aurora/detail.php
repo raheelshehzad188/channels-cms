@@ -16,7 +16,13 @@
         <?php if (!empty($product->brand) && !empty($product->sku)): ?>
             <p class="muted">SKU: <?= htmlspecialchars($product->sku) ?></p>
         <?php endif; ?>
-        <p class="price large"><?= format_money((float) (isset($cart_product) && $cart_product ? $cart_product->price : $product->price)) ?></p>
+        <p class="price large"><?= format_money((float) (isset($cart_product) && $cart_product ? $cart_product->price : $product->price)) ?>
+          <?php $this->load->view('frontend/shared/admin_price_breakdown', array(
+              'listing' => (isset($cart_product) && $cart_product) ? $cart_product : $product,
+              'store' => isset($store) ? $store : null,
+              'as_main' => true,
+          )); ?>
+        </p>
         <?php $this->load->view('frontend/shared/child_options'); ?>
         <p><?= nl2br(htmlspecialchars($product->description ?: 'A carefully selected item from our collection.')) ?></p>
         <?php $this->load->view('frontend/shared/product_details', array('product' => $product)); ?>

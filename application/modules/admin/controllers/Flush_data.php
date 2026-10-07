@@ -121,10 +121,14 @@ class Flush_data extends CI_Controller {
             ),
             'orders' => array(
                 'label' => 'Orders',
-                'hint' => 'store_orders, order items, status logs',
+                'hint' => 'store_orders, items, status logs, meta purchase logs, payouts',
                 'tables' => array(
                     'store_order_items',
                     'order_status_logs',
+                    'store_meta_event_logs',
+                    'accounting_payouts',
+                    'payouts',
+                    'store_payouts',
                     'store_orders',
                 ),
             ),

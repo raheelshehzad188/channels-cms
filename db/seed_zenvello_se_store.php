@@ -95,6 +95,7 @@ if ($store) {
         price_plus_amount={$plus}
         " . (col_exists($mysqli, 'stores', 'currency') ? ", currency='{$currency}'" : '') . "
         " . (col_exists($mysqli, 'stores', 'country') ? ", country='Sweden'" : '') . "
+        " . (col_exists($mysqli, 'stores', 'language') ? ", language='sv'" : '') . "
         WHERE id={$storeId}");
     echo "Updated store id={$storeId}\n";
 } else {
@@ -119,6 +120,10 @@ if ($store) {
         $cols[] = 'country';
         $vals[] = "'Sweden'";
     }
+    if (col_exists($mysqli, 'stores', 'language')) {
+        $cols[] = 'language';
+        $vals[] = "'sv'";
+    }
     $mysqli->query("INSERT INTO stores (`" . implode('`,`', $cols) . "`) VALUES (" . implode(',', $vals) . ")");
     if ($mysqli->error) {
         fwrite(STDERR, $mysqli->error . "\n");
@@ -129,12 +134,20 @@ if ($store) {
 }
 
 $settingOverrides = array(
-    'footer_text' => 'ZENVello. All rights reserved.',
-    'footer_about' => 'Shop trending products for everyday life, delivered across Sweden.',
-    'promo_text' => 'Free Shipping on Orders Over 500 kr',
-    'hero_title' => "Shop the latest\nfor less",
-    'hero_subtitle' => 'Discover smart, stylish and affordable products with ZENVello.',
-    'address' => 'Sweden',
+    'footer_text' => 'ZENVello Sweden. Alla rättigheter förbehållna.',
+    'footer_about' => 'Handla smart, lev bättre med ZENVello Sweden.',
+    'promo_text' => 'Fri frakt på ordrar över 500 kr',
+    'hero_title' => "Gör ditt hem\ntill ditt",
+    'hero_subtitle' => 'Upptäck smarta, snygga och prisvärda produkter för en bättre vardag.',
+    'banner_1_kicker' => 'Utforska',
+    'banner_1_title' => 'Toppval',
+    'banner_1_text' => 'Utvalda favoriter och mer',
+    'banner_1_btn_text' => 'Handla nu',
+    'banner_2_kicker' => 'Gör det extra',
+    'banner_2_title' => 'Presenttips',
+    'banner_2_text' => 'Fynd som hela familjen gillar',
+    'banner_2_btn_text' => 'Se presenter',
+    'address' => 'Sverige',
     'email' => 'hello@zenvello.se',
     'phone' => '+46 8 000 00 00',
 );

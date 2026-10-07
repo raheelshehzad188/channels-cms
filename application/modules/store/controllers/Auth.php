@@ -68,6 +68,59 @@ class Auth extends Store_base {
         )));
     }
 
+    public function impersonate($token = '')
+    {
+        $token = preg_replace('/[^a-f0-9]/', '', strtolower((string) $token));
+        if ($token === '') {
+            $this->session->set_flashdata('error', 'Invalid store admin link.');
+            redirect('store/login');
+            return;
+        }
+
+        $row = $this->db
+            ->where('session_token', 'impersonate:' . $token)
+            ->where('expires_at >= NOW()', null, false)
+            ->get('store_sessions')
+            ->row();
+        if (!$row) {
+            $this->session->set_flashdata('error', 'Store admin link expired. Open it again from Super Admin.');
+            redirect('store/login');
+            return;
+        }
+
+        $store = $this->db->where('id', (int) $row->store_id)->where('status', 1)->get('stores')->row();
+        $this->db->where('id', (int) $row->id)->delete('store_sessions');
+        if (!$store) {
+            $this->session->set_flashdata('error', 'Store not found.');
+            redirect('store/login');
+            return;
+        }
+
+        $sessionToken = bin2hex(function_exists('random_bytes') ? random_bytes(32) : openssl_random_pseudo_bytes(32));
+        $this->Store_auth_model->createSession(
+            $store->id,
+            0,
+            $sessionToken,
+            date('Y-m-d H:i:s', strtotime('+7 days'))
+        );
+
+        $email = !empty($store->email) ? $store->email : '';
+        $_SESSION['store_login'] = array(
+            'store_id' => (int) $store->id,
+            'staff' => array(
+                'id' => 0,
+                'name' => !empty($store->owner_name) ? $store->owner_name : $store->name,
+                'email' => $email,
+                'role' => 'owner',
+                'permissions' => '["*"]',
+            ),
+            'token' => $sessionToken,
+            'impersonated' => true,
+        );
+        $this->tenant->set_store($store);
+        redirect('store/dashboard');
+    }
+
     public function logout()
     {
         if (isset($_SESSION['store_login']['token'])) {

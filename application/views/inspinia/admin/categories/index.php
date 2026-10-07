@@ -10,6 +10,7 @@
         <button type="button" class="btn btn-success" data-toggle="modal" data-target="#importCategoriesModal">
             <i class="fa fa-upload"></i> Import Categories
         </button>
+        <a href="<?= base_url('admin/categories/json') ?>" class="btn btn-white">Copy JSON for AI</a>
         <a href="<?= base_url('admin/categories/form' . ($country_id ? '?country_id=' . (int) $country_id : '')) ?>" class="btn btn-primary">Add Category</a>
     </div>
 </div>

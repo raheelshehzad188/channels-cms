@@ -26,8 +26,10 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                     <ul class="nav nav-tabs">
                         <li class="active"><a data-toggle="tab" href="#tab-general">General</a></li>
                         <li><a data-toggle="tab" href="#tab-details">Details</a></li>
+                        <li><a data-toggle="tab" href="#tab-english">English</a></li>
                         <li><a data-toggle="tab" href="#tab-images">Images</a></li>
                         <li><a data-toggle="tab" href="#tab-pricing">Pricing</a></li>
+                        <li><a data-toggle="tab" href="#tab-offer">Offer</a></li>
                         <li><a data-toggle="tab" href="#tab-source">Source</a></li>
                         <li><a data-toggle="tab" href="#tab-creatives">Creatives</a></li>
                         <li><a data-toggle="tab" href="#tab-variation">Variation</a></li>
@@ -39,7 +41,17 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                             <div class="panel-body">
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">Name</label>
-                                    <div class="col-sm-9"><input type="text" name="name" class="form-control" required value="<?= htmlspecialchars($val('name')) ?>"></div>
+                                    <div class="col-sm-9">
+                                        <div class="input-group">
+                                            <input type="text" name="name" class="form-control" required value="<?= htmlspecialchars($val('name')) ?>">
+                                            <span class="input-group-btn">
+                                                <button type="button" class="btn btn-primary writeAiBtn" title="Rewrite title, descriptions and SEO with AI">
+                                                    <i class="fa fa-magic"></i> Write with AI
+                                                </button>
+                                            </span>
+                                        </div>
+                                        <span class="help-block writeAiStatus"></span>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">Brand</label>
@@ -60,6 +72,13 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                         <span class="help-block">If this is a sub-product, enter the parent product SKU. Sub-products appear as option boxes on the parent page.</span>
                                     </div>
                                 </div>
+                                <div class="form-group js-parent-field">
+                                    <label class="col-sm-2 control-label">Variation type</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="options_title" id="optionsTitle" class="form-control" maxlength="150" placeholder="Select color, Select size" value="<?= htmlspecialchars($val('options_title')) ?>">
+                                        <span class="help-block">Parent products only. This text is shown above the option boxes on the product page. Admin can write anything, e.g. Select color or Select size.</span>
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">Default child</label>
                                     <div class="col-sm-9">
@@ -69,6 +88,13 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                                 Use as the default option when the parent product opens
                                             </label>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Sort</label>
+                                    <div class="col-sm-3">
+                                        <input type="number" name="sort_order" class="form-control" min="0" step="1" value="<?= htmlspecialchars((string) (int) $val('sort_order', 0)) ?>">
+                                        <span class="help-block">Lower numbers appear first on the storefront. Child products are ordered by this value.</span>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -171,6 +197,25 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                     </div>
                                 </div>
                                 <div class="form-group">
+                                    <label class="col-sm-2 control-label">Trending Picks</label>
+                                    <div class="col-sm-9">
+                                        <div class="checkbox" style="padding-top:5px;">
+                                            <label>
+                                                <input type="checkbox" name="is_trending" value="1" <?= $isEdit && !empty($product->is_trending) ? 'checked' : '' ?>>
+                                                Show in Trending Picks
+                                            </label>
+                                        </div>
+                                        <span class="help-block">Enable this product to display in the Trending Picks section on product detail pages.</span>
+                                        <div class="row" style="margin-top:10px;">
+                                            <div class="col-sm-4">
+                                                <label class="control-label" style="padding-top:0;">Trending Order</label>
+                                                <input type="number" name="trending_order" class="form-control" min="0" step="1" value="<?= htmlspecialchars((string) (int) $val('trending_order', 0)) ?>">
+                                                <span class="help-block">Lower number = higher priority. Max 4 products shown per page.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <label class="col-sm-2 control-label">Recommended stores</label>
                                     <div class="col-sm-9">
                                         <div class="checkbox" style="padding-top:5px;">
@@ -187,16 +232,57 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
 
                         <div id="tab-details" class="tab-pane">
                             <div class="panel-body">
-                                <p class="text-muted">Full product details from the imported source page. Edit with the editor below.</p>
-                                <textarea name="details" id="productDetails" class="form-control" rows="14"><?= htmlspecialchars((string) $val('details')) ?></textarea>
-                                <?php if ($isEdit): ?>
+                                <p class="text-muted">Short detail shows on the product page above Add to cart. Full details show in the Description tab.</p>
+                                <div class="form-group">
+                                    <label>Short detail</label>
+                                    <textarea name="short_details" id="productShortDetails" class="form-control" rows="6"><?= htmlspecialchars((string) $val('short_details')) ?></textarea>
+                                </div>
+                                <div class="form-group" style="margin-top:18px;">
+                                    <label>Full details</label>
+                                    <textarea name="details" id="productDetails" class="form-control" rows="14"><?= htmlspecialchars((string) $val('details')) ?></textarea>
+                                </div>
                                 <p style="margin-top:12px;">
+                                    <button type="button" class="btn btn-primary btn-sm writeAiBtn">
+                                        <i class="fa fa-magic"></i> Write with AI
+                                    </button>
+                                    <?php if ($isEdit): ?>
                                     <button type="button" class="btn btn-white btn-sm" id="fetchDetailsBtn">
                                         <i class="fa fa-download"></i> Load details from source link
                                     </button>
+                                    <?php endif; ?>
+                                    <span class="text-muted writeAiStatus" style="margin-left:8px;"></span>
                                     <span class="text-muted" id="fetchDetailsStatus" style="margin-left:8px;"></span>
                                 </p>
-                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div id="tab-english" class="tab-pane">
+                            <div class="panel-body">
+                                <p class="text-muted">English copy for the storefront language switcher. Write with AI fills this in the same request as the country language.</p>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Name (English)</label>
+                                    <div class="col-sm-9"><input type="text" name="name_en" class="form-control" value="<?= htmlspecialchars($val('name_en')) ?>"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Short detail (English)</label>
+                                    <div class="col-sm-9"><textarea name="short_details_en" id="productShortDetailsEn" class="form-control" rows="6"><?= htmlspecialchars((string) $val('short_details_en')) ?></textarea></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Full details (English)</label>
+                                    <div class="col-sm-9"><textarea name="details_en" id="productDetailsEn" class="form-control" rows="14"><?= htmlspecialchars((string) $val('details_en')) ?></textarea></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Meta title (English)</label>
+                                    <div class="col-sm-9"><input type="text" name="seo_title_en" class="form-control" value="<?= htmlspecialchars($val('seo_title_en')) ?>"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Meta description (English)</label>
+                                    <div class="col-sm-9"><textarea name="seo_description_en" class="form-control" rows="3"><?= htmlspecialchars($val('seo_description_en')) ?></textarea></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Meta keywords (English)</label>
+                                    <div class="col-sm-9"><input type="text" name="seo_keywords_en" class="form-control" value="<?= htmlspecialchars($val('seo_keywords_en')) ?>"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -273,8 +359,128 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
                                     </div>
                                 </div>
                                 <div class="form-group">
+                                    <label class="col-sm-2 control-label">Extra amount</label>
+                                    <div class="col-sm-9">
+                                        <input type="number" step="0.01" name="extra_amount" class="form-control" value="<?= htmlspecialchars($val('extra_amount', '0.00')) ?>">
+                                        <span class="help-block">Plus or minus. Added after base price, ecommerce plus, platform fee and store plus when store listing prices are built. Example: 5.00 or -3.50.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <label class="col-sm-2 control-label">Stock</label>
                                     <div class="col-sm-9"><input type="number" name="stock" class="form-control" required value="<?= (int) $val('stock', 0) ?>"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-offer" class="tab-pane">
+                            <div class="panel-body">
+                                <p class="text-muted">Product offers adjust the selling price on the storefront and in cart/checkout (server-side). Dates auto-activate/deactivate the offer. Precedence: product offer &gt; campaign offer &gt; display-only compare discount. Coupons do not stack with active offers.</p>
+                                <?php
+                                $offerEnabled = (int) $val('offer_enabled', 0) === 1;
+                                $offerType = (string) $val('offer_type', 'percent');
+                                $offerStarts = $val('offer_starts_at', '');
+                                $offerEnds = $val('offer_ends_at', '');
+                                if ($offerStarts && $offerStarts !== '0000-00-00 00:00:00') {
+                                    $offerStarts = date('Y-m-d\TH:i', strtotime($offerStarts));
+                                } else {
+                                    $offerStarts = '';
+                                }
+                                if ($offerEnds && $offerEnds !== '0000-00-00 00:00:00') {
+                                    $offerEnds = date('Y-m-d\TH:i', strtotime($offerEnds));
+                                } else {
+                                    $offerEnds = '';
+                                }
+                                ?>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Enable Offer</label>
+                                    <div class="col-sm-9">
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" name="offer_enabled" value="1" <?= $offerEnabled ? 'checked' : '' ?>> Enable Offer
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Offer Type</label>
+                                    <div class="col-sm-9">
+                                        <select name="offer_type" class="form-control" id="offerTypeSelect">
+                                            <option value="percent" <?= $offerType === 'percent' ? 'selected' : '' ?>>Percentage Discount</option>
+                                            <option value="fixed" <?= $offerType === 'fixed' ? 'selected' : '' ?>>Fixed Amount Discount</option>
+                                            <option value="buy_x_get_y" <?= $offerType === 'buy_x_get_y' ? 'selected' : '' ?>>Buy X Get Y</option>
+                                            <option value="bundle" <?= $offerType === 'bundle' ? 'selected' : '' ?>>Bundle Offer</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group offer-field offer-field-value">
+                                    <label class="col-sm-2 control-label">Discount Value</label>
+                                    <div class="col-sm-9">
+                                        <input type="number" step="0.01" min="0" name="offer_value" class="form-control" value="<?= htmlspecialchars($val('offer_value', '0')) ?>">
+                                        <span class="help-block">Percent (e.g. 20) or fixed SEK amount (e.g. 40). Final price never goes to zero.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group offer-field offer-field-bxgy" style="display:none;">
+                                    <label class="col-sm-2 control-label">Buy X Get Y</label>
+                                    <div class="col-sm-4">
+                                        <input type="number" min="1" name="offer_buy_qty" class="form-control" placeholder="Buy qty" value="<?= (int) $val('offer_buy_qty', 2) ?>">
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <input type="number" min="1" name="offer_get_qty" class="form-control" placeholder="Get free qty" value="<?= (int) $val('offer_get_qty', 1) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group offer-field offer-field-bundle" style="display:none;">
+                                    <label class="col-sm-2 control-label">Bundle</label>
+                                    <div class="col-sm-4">
+                                        <input type="number" min="2" name="offer_bundle_qty" class="form-control" placeholder="Qty" value="<?= (int) $val('offer_bundle_qty', 2) ?>">
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <input type="number" step="0.01" min="0.01" name="offer_bundle_price" class="form-control" placeholder="Bundle price (Kr)" value="<?= htmlspecialchars($val('offer_bundle_price', '0')) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group offer-field offer-field-bundle" style="display:none;">
+                                    <label class="col-sm-2 control-label">2nd Bundle (optional)</label>
+                                    <div class="col-sm-4">
+                                        <input type="number" min="0" name="offer_bundle2_qty" class="form-control" placeholder="Qty e.g. 3" value="<?= (int) $val('offer_bundle2_qty', 0) ?>">
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <input type="number" step="0.01" min="0" name="offer_bundle2_price" class="form-control" placeholder="Bundle price (Kr)" value="<?= htmlspecialchars($val('offer_bundle2_price', '0')) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Offer Label</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="offer_label" class="form-control" maxlength="120" placeholder="20% OFF / HALLOWEEN DEAL / BUY 2 GET 1" value="<?= htmlspecialchars($val('offer_label', '')) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Start Date</label>
+                                    <div class="col-sm-9">
+                                        <input type="datetime-local" name="offer_starts_at" class="form-control" value="<?= htmlspecialchars($offerStarts) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">End Date</label>
+                                    <div class="col-sm-9">
+                                        <input type="datetime-local" name="offer_ends_at" class="form-control" value="<?= htmlspecialchars($offerEnds) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Priority</label>
+                                    <div class="col-sm-9">
+                                        <input type="number" name="offer_priority" class="form-control" value="<?= (int) $val('offer_priority', 0) ?>">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Display</label>
+                                    <div class="col-sm-9">
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" name="offer_show_badge" value="1" <?= (int) $val('offer_show_badge', 1) === 1 ? 'checked' : '' ?>> Show Offer Badge
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" name="offer_show_countdown" value="1" <?= (int) $val('offer_show_countdown', 0) === 1 ? 'checked' : '' ?>> Offer Countdown
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" name="offer_free_shipping" value="1" <?= (int) $val('offer_free_shipping', 0) === 1 ? 'checked' : '' ?>> Free Shipping (this product)
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -339,6 +545,11 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
 
                         <div id="tab-variation" class="tab-pane">
                             <div class="panel-body">
+                                <div class="form-group js-parent-field" style="margin-bottom:20px;">
+                                    <label>Variation type</label>
+                                    <input type="text" class="form-control" id="variationTypeMirror" maxlength="150" placeholder="Select color, Select size" value="<?= htmlspecialchars($val('options_title')) ?>">
+                                    <span class="help-block">Shown on the product page as the heading above child options. Example: Select color, Select size.</span>
+                                </div>
                                 <h4>1. Attributes</h4>
                                 <p class="text-muted">Add attributes first, for example Size = S, M, L and Color = Red, Blue.</p>
                                 <table class="table table-bordered" id="attribute-table">
@@ -420,15 +631,15 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
 
                         <div id="tab-shipping" class="tab-pane">
                             <div class="panel-body">
-                                <p class="text-muted">Customers see a delivery date range calculated from today plus these days.</p>
+                                <p class="text-muted">Estimated Delivery (working days). Customers see a Swedish/English delivery range calculated from today plus these days. AliExpress products without a scraped ETA default to 7–15.</p>
                                 <div class="form-group">
-                                    <label class="col-sm-2 control-label">Minimum days</label>
+                                    <label class="col-sm-2 control-label">Est. delivery min</label>
                                     <div class="col-sm-4">
                                         <input type="number" min="0" step="1" name="ship_min_days" id="shipMinDays" class="form-control" value="<?= (int) $val('ship_min_days', 0) ?>">
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-sm-2 control-label">Maximum days</label>
+                                    <label class="col-sm-2 control-label">Est. delivery max</label>
                                     <div class="col-sm-4">
                                         <input type="number" min="0" step="1" name="ship_max_days" id="shipMaxDays" class="form-control" value="<?= (int) $val('ship_max_days', 0) ?>">
                                     </div>
@@ -444,6 +655,12 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
 
                         <div id="tab-seo" class="tab-pane">
                             <div class="panel-body">
+                                <p style="margin-bottom:16px;">
+                                    <button type="button" class="btn btn-primary btn-sm writeAiBtn">
+                                        <i class="fa fa-magic"></i> Write with AI
+                                    </button>
+                                    <span class="text-muted writeAiStatus" style="margin-left:8px;"></span>
+                                </p>
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">URL Slug</label>
                                     <div class="col-sm-9"><input type="text" name="slug" class="form-control" value="<?= htmlspecialchars($val('slug')) ?>" placeholder="wireless-headphones"></div>
@@ -489,6 +706,18 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
     var categoryTree = <?= json_encode(isset($category_tree) ? $category_tree : array()) ?>;
     var savedCategoryId = <?= (int) (isset($selected_category_id) ? $selected_category_id : 0) ?>;
     var savedSubcategoryId = <?= (int) (isset($selected_subcategory_id) ? $selected_subcategory_id : 0) ?>;
+
+    function syncParentFields() {
+        var isChild = $.trim($('input[name="parent_sku"]').val() || '') !== '';
+        $('.js-parent-field').toggle(!isChild);
+    }
+    $('input[name="parent_sku"]').on('input change', syncParentFields);
+    syncParentFields();
+
+    $('#optionsTitle, #variationTypeMirror').on('input', function () {
+        var value = $(this).val();
+        $('#optionsTitle, #variationTypeMirror').not(this).val(value);
+    });
 
     function fillCategorySelect($el, placeholder, items, selectedId) {
         $el.empty().append($('<option/>').val('').text(placeholder));
@@ -580,6 +809,23 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
     $('#productSubcategory').on('change', function () {
         syncSubcategoryName();
     });
+    function applyAiCategories(res) {
+        var countryId = $('#productCountry').val();
+        var categoryId = parseInt(res.category_id, 10) || 0;
+        var subcategoryId = parseInt(res.subcategory_id, 10) || 0;
+        if (res.category_name) {
+            $('#productCategoryName').val(res.category_name);
+        }
+        if (res.subcategory_name) {
+            $('#productSubcategoryName').val(res.subcategory_name);
+        }
+        if (!countryId || (!categoryId && !res.category_name)) {
+            return;
+        }
+        savedCategoryId = categoryId;
+        savedSubcategoryId = subcategoryId;
+        loadProductCategories(countryId, categoryId, subcategoryId, true);
+    }
     if (!$('#productCategory option').filter(function () { return this.value !== ''; }).length && $('#productCountry').val()) {
         loadProductCategories($('#productCountry').val(), savedCategoryId, savedSubcategoryId, true);
     }
@@ -788,31 +1034,57 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
     shipPreview();
 
     var detailsReady = false;
-    function setDetailsHtml(html) {
-        if ($('#productDetails').next('.note-editor').length) {
-            $('#productDetails').summernote('code', html || '');
+    var shortDetailsReady = false;
+    var detailsEnReady = false;
+    var shortDetailsEnReady = false;
+    function editorCode($el, html) {
+        if ($el.next('.note-editor').length) {
+            $el.summernote('code', html || '');
         } else {
-            $('#productDetails').val(html || '');
+            $el.val(html || '');
         }
     }
-    function initDetailsEditor() {
-        if (detailsReady || !$('#productDetails').length || typeof $.fn.summernote !== 'function') {
+    function setDetailsHtml(html) {
+        editorCode($('#productDetails'), html);
+    }
+    function initEditor($el, height, withMedia) {
+        if (!$el.length || typeof $.fn.summernote !== 'function' || $el.next('.note-editor').length) {
             return;
         }
-        $('#productDetails').summernote({
-            height: 340,
+        $el.summernote({
+            height: height,
             toolbar: [
                 ['style', ['style']],
                 ['font', ['bold', 'italic', 'underline', 'clear']],
                 ['para', ['ul', 'ol', 'paragraph']],
-                ['insert', ['link', 'picture', 'table', 'hr']],
+                ['insert', withMedia ? ['link', 'picture', 'table', 'hr'] : ['link', 'hr']],
                 ['view', ['codeview', 'fullscreen']]
             ]
         });
-        detailsReady = true;
     }
-    $(document).on('shown.bs.tab', 'a[href="#tab-details"]', function () {
+    function initDetailsEditor() {
+        if (!detailsReady) {
+            initEditor($('#productDetails'), 340, true);
+            detailsReady = true;
+        }
+        if (!shortDetailsReady) {
+            initEditor($('#productShortDetails'), 180, false);
+            shortDetailsReady = true;
+        }
+        if (!detailsEnReady) {
+            initEditor($('#productDetailsEn'), 340, true);
+            detailsEnReady = true;
+        }
+        if (!shortDetailsEnReady) {
+            initEditor($('#productShortDetailsEn'), 180, false);
+            shortDetailsEnReady = true;
+        }
+    }
+    $(document).on('shown.bs.tab', 'a[href="#tab-details"], a[href="#tab-english"]', function () {
         initDetailsEditor();
+        if ($(this).attr('href') !== '#tab-details') {
+            return;
+        }
         var html = $('#productDetails').next('.note-editor').length
             ? $('#productDetails').summernote('code')
             : ($('#productDetails').val() || '');
@@ -845,6 +1117,75 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
             $btn.prop('disabled', false);
         });
     });
+
+    function editorHtml($el) {
+        if ($el.next('.note-editor').length) {
+            return $el.summernote('code') || '';
+        }
+        return $el.val() || '';
+    }
+    function setEditorHtml($el, html) {
+        if ($el.next('.note-editor').length) {
+            $el.summernote('code', html);
+            return;
+        }
+        $el.val(html);
+    }
+    $('.writeAiBtn').on('click', function () {
+        var $btns = $('.writeAiBtn');
+        var $status = $('.writeAiStatus');
+        $btns.prop('disabled', true);
+        $status.text('Generating AI content…');
+        initDetailsEditor();
+        $.post(<?= json_encode(base_url('admin/products/write-ai/' . ($isEdit ? (int) $product->id : 0))) ?>, {
+            name: $('input[name="name"]').val(),
+            brand: $('input[name="brand"]').val(),
+            country_id: $('#productCountry').val(),
+            short_details: editorHtml($('#productShortDetails')),
+            details: editorHtml($('#productDetails'))
+        }, function (res) {
+            if (!res || !res.ok) {
+                $status.text((res && res.error) ? res.error : 'AI generation failed.');
+                return;
+            }
+            $('input[name="name"]').val(res.name || res.title || '');
+            initDetailsEditor();
+            setEditorHtml($('#productShortDetails'), res.short_details || '');
+            setEditorHtml($('#productDetails'), res.details || '');
+            $('input[name="slug"]').val(res.slug || '');
+            $('input[name="seo_title"]').val(res.seo_title || '');
+            $('textarea[name="seo_description"]').val(res.seo_description || '');
+            $('input[name="seo_keywords"]').val(res.seo_keywords || '');
+            $('input[name="name_en"]').val(res.name_en || '');
+            setEditorHtml($('#productShortDetailsEn'), res.short_details_en || '');
+            setEditorHtml($('#productDetailsEn'), res.details_en || '');
+            $('input[name="seo_title_en"]').val(res.seo_title_en || '');
+            $('textarea[name="seo_description_en"]').val(res.seo_description_en || '');
+            $('input[name="seo_keywords_en"]').val(res.seo_keywords_en || '');
+            applyAiCategories(res);
+            var catNote = '';
+            if (res.category_name) {
+                catNote = ' Category: ' + res.category_name + (res.subcategory_name ? ' / ' + res.subcategory_name : '') + '.';
+            }
+            $status.text('AI content loaded. Review the fields, then save the product to keep them.' + catNote);
+        }, 'json').fail(function (xhr) {
+            var msg = 'AI generation failed.';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                msg = xhr.responseJSON.error;
+            }
+            $status.text(msg);
+        }).always(function () {
+            $btns.prop('disabled', false);
+        });
+    });
+    function syncOfferTypeFields() {
+        var t = $('#offerTypeSelect').val() || 'percent';
+        $('.offer-field-value').toggle(t === 'percent' || t === 'fixed');
+        $('.offer-field-bxgy').toggle(t === 'buy_x_get_y');
+        $('.offer-field-bundle').toggle(t === 'bundle');
+    }
+    $('#offerTypeSelect').on('change', syncOfferTypeFields);
+    syncOfferTypeFields();
 })(jQuery);
 </script>
 

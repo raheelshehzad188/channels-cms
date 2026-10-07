@@ -32,8 +32,17 @@ class Store_product_model extends CI_Model {
         if (function_exists('ensure_product_parent_columns')) {
             ensure_product_parent_columns();
         }
+        if (function_exists('ensure_product_trending_columns')) {
+            ensure_product_trending_columns();
+        }
         if (function_exists('ensure_user_commission_schema')) {
             ensure_user_commission_schema();
+        }
+        if (function_exists('ensure_product_extra_amount_column')) {
+            ensure_product_extra_amount_column();
+        }
+        if (function_exists('ensure_product_i18n_columns')) {
+            ensure_product_i18n_columns();
         }
     }
 
@@ -50,7 +59,11 @@ class Store_product_model extends CI_Model {
         if ($withCategories) {
             $this->db->group_by('products.id');
         }
-        $this->db->order_by('products.id', 'desc');
+        if (function_exists('storefront_order_by_sort')) {
+            storefront_order_by_sort('products', 'desc');
+        } else {
+            $this->db->order_by('products.id', 'desc');
+        }
         if (!empty($filters['limit'])) {
             $this->db->limit((int) $filters['limit'], isset($filters['offset']) ? (int) $filters['offset'] : 0);
         }
@@ -74,6 +87,10 @@ class Store_product_model extends CI_Model {
         $filters['q'] = isset($filters['q']) ? trim((string) $filters['q']) : '';
         $filters['category_id'] = isset($filters['category_id']) ? (int) $filters['category_id'] : 0;
         $filters['subcategory_id'] = isset($filters['subcategory_id']) ? (int) $filters['subcategory_id'] : 0;
+        $filters['trending'] = isset($filters['trending']) ? trim((string) $filters['trending']) : '';
+        if ($filters['trending'] !== '1' && $filters['trending'] !== '0') {
+            $filters['trending'] = '';
+        }
         $filters['auto_add_to_stores'] = !empty($filters['auto_add_to_stores']) ? 1 : 0;
         if ($filters['subcategory_id'] > 0) {
             $filters['category_ids'] = array($filters['subcategory_id']);
@@ -201,13 +218,42 @@ class Store_product_model extends CI_Model {
         return null;
     }
 
-    public function mine($storeId)
+    public function mine($storeId, $filters = array())
     {
-        $this->db->where('store_id', (int) $storeId);
-        $this->where_parents_only('');
+        $filters = $this->normalize_available_filters($filters);
+        $q = isset($filters['q']) ? $filters['q'] : '';
+        $categoryIds = !empty($filters['category_ids']) && is_array($filters['category_ids']) ? $filters['category_ids'] : array();
+        $hasCategories = $this->db->table_exists('product_categories');
+        $trending = isset($filters['trending']) ? $filters['trending'] : '';
+
+        $this->db->from('products');
+        $this->db->where('products.store_id', (int) $storeId);
+        if ($q !== '') {
+            $this->db->group_start()
+                ->like('products.name', $q)
+                ->or_like('products.sku', $q)
+                ->or_like('products.description', $q);
+            if ($this->db->field_exists('brand', 'products')) {
+                $this->db->or_like('products.brand', $q);
+            }
+            $this->db->group_end();
+        }
+        if (!empty($categoryIds) && $hasCategories) {
+            $this->db->join('product_categories pc_filter', 'pc_filter.product_id = products.id', 'inner');
+            $this->db->where_in('pc_filter.category_id', $categoryIds);
+            $this->db->group_by('products.id');
+        }
+        if (($trending === '1' || $trending === '0') && $this->db->field_exists('is_trending', 'products')) {
+            $this->db->where('products.is_trending', (int) $trending);
+        }
+        $this->where_parents_only('products');
+        if (function_exists('storefront_order_by_sort')) {
+            storefront_order_by_sort('products', 'desc');
+        } else {
+            $this->db->order_by('products.id', 'desc');
+        }
         return $this->db
-            ->order_by('id', 'desc')
-            ->get('products')
+            ->get()
             ->result();
     }
 
@@ -331,6 +377,9 @@ class Store_product_model extends CI_Model {
 
     public function unique_slug($slug, $storeId, $ignoreId = 0)
     {
+        $slug = function_exists('ec_ascii_slug')
+            ? ec_ascii_slug($slug, 'product')
+            : trim((string) $slug);
         $base = $slug !== '' ? $slug : 'product';
         $try = $base;
         $i = 2;
@@ -404,20 +453,16 @@ class Store_product_model extends CI_Model {
         }
         $existing = $this->find_copy($store->id, $source->id);
         if ($existing) {
-            $this->sync_copy_categories($source->id, $existing->id);
-            $this->sync_copy_pricing($store, $source, $existing);
+            $this->refresh_copy_from_catalog($store, $source, $existing);
             return (int) $existing->id;
         }
 
         $this->load->model('Ec_category_model');
         $wholesale = product_wholesale_price($source, $store->id);
         $plus = store_price_plus_amount($store);
-        $price = round($wholesale + $plus, 2);
-        if ($price < $wholesale) {
-            $price = $wholesale;
-        }
+        $price = $this->listing_price_from_source($store, $source, $wholesale, $plus);
 
-        $slug = $this->unique_slug(url_title($source->slug ?: $source->name, 'dash', true), $store->id);
+        $slug = $this->unique_slug($source->slug ?: $source->name, $store->id);
         $sku = trim((string) $source->sku);
         if ($sku !== '') {
             $sku .= '-S' . (int) $store->id;
@@ -436,6 +481,8 @@ class Store_product_model extends CI_Model {
             'sku' => $sku,
             'parent_sku' => $parentSku,
             'is_default' => !empty($source->is_default) ? 1 : 0,
+            'sort_order' => isset($source->sort_order) ? (int) $source->sort_order : 0,
+            'options_title' => isset($source->options_title) ? trim((string) $source->options_title) : '',
             'brand' => isset($source->brand) ? $source->brand : '',
             'made_by' => isset($source->made_by) ? $source->made_by : '',
             'slug' => $slug,
@@ -443,16 +490,26 @@ class Store_product_model extends CI_Model {
             'max_sale_price' => $source->max_sale_price,
             'compare_price' => $source->compare_price,
             'cost_price' => $wholesale,
+            'extra_amount' => function_exists('product_extra_amount') ? product_extra_amount($source) : 0,
             'stock' => $source->stock,
             'description' => $source->description,
+            'short_details' => isset($source->short_details) ? $source->short_details : '',
             'details' => isset($source->details) ? $source->details : '',
             'seo_title' => isset($source->seo_title) ? $source->seo_title : '',
             'seo_description' => isset($source->seo_description) ? $source->seo_description : '',
             'seo_keywords' => isset($source->seo_keywords) ? $source->seo_keywords : '',
+            'name_en' => isset($source->name_en) ? $source->name_en : '',
+            'short_details_en' => isset($source->short_details_en) ? $source->short_details_en : '',
+            'details_en' => isset($source->details_en) ? $source->details_en : '',
+            'seo_title_en' => isset($source->seo_title_en) ? $source->seo_title_en : '',
+            'seo_description_en' => isset($source->seo_description_en) ? $source->seo_description_en : '',
+            'seo_keywords_en' => isset($source->seo_keywords_en) ? $source->seo_keywords_en : '',
             'image' => isset($source->image) ? $source->image : '',
             'ship_min_days' => isset($source->ship_min_days) ? (int) $source->ship_min_days : 0,
             'ship_max_days' => isset($source->ship_max_days) ? (int) $source->ship_max_days : 0,
             'status' => 1,
+            'is_trending' => !empty($source->is_trending) ? 1 : 0,
+            'trending_order' => isset($source->trending_order) ? max(0, (int) $source->trending_order) : 0,
             'created_by' => $source->created_by,
         ));
 
@@ -468,6 +525,155 @@ class Store_product_model extends CI_Model {
         return $copyId;
     }
 
+    public function store_parent_sku($source, $storeId)
+    {
+        $parentSku = isset($source->parent_sku) ? trim((string) $source->parent_sku) : '';
+        if ($parentSku === '') {
+            return '';
+        }
+        return $parentSku . '-S' . (int) $storeId;
+    }
+
+    public function catalog_family_ids($productId)
+    {
+        $source = $this->catalog_source($productId);
+        if (!$source) {
+            return array();
+        }
+        $ids = array((int) $source->id => (int) $source->id);
+        $parentSku = isset($source->parent_sku) ? trim((string) $source->parent_sku) : '';
+        $sku = isset($source->sku) ? trim((string) $source->sku) : '';
+        $groupSku = $parentSku !== '' ? $parentSku : $sku;
+        if ($groupSku === '') {
+            return array_values($ids);
+        }
+        $this->db->select('id')->from('products');
+        $this->db->group_start()
+            ->where('store_id IS NULL', null, false)
+            ->or_where('store_id', 0)
+        ->group_end();
+        $this->db->group_start()
+            ->where('sku', $groupSku)
+            ->or_where('parent_sku', $groupSku)
+        ->group_end();
+        foreach ($this->db->get()->result() as $row) {
+            $ids[(int) $row->id] = (int) $row->id;
+        }
+        return array_values($ids);
+    }
+
+    public function stores_with_catalog_ids($catalogIds)
+    {
+        $storeIds = array();
+        if (!$catalogIds) {
+            return $storeIds;
+        }
+        $rows = $this->db->select('store_id')
+            ->from('products')
+            ->where('store_id >', 0)
+            ->where_in('source_product_id', $catalogIds)
+            ->group_by('store_id')
+            ->get()
+            ->result();
+        foreach ($rows as $row) {
+            $storeIds[(int) $row->store_id] = (int) $row->store_id;
+        }
+        return array_values($storeIds);
+    }
+
+    public function refresh_copy_from_catalog($store, $source, $existing)
+    {
+        if (!$store || !$source || !$existing) {
+            return false;
+        }
+        $payload = array(
+            'source_product_id' => (int) $source->id,
+            'name' => $source->name,
+            'parent_sku' => $this->store_parent_sku($source, $store->id),
+            'is_default' => !empty($source->is_default) ? 1 : 0,
+            'sort_order' => isset($source->sort_order) ? (int) $source->sort_order : 0,
+            'options_title' => isset($source->options_title) ? trim((string) $source->options_title) : '',
+            'brand' => isset($source->brand) ? $source->brand : '',
+            'made_by' => isset($source->made_by) ? $source->made_by : '',
+            'stock' => isset($source->stock) ? (int) $source->stock : 0,
+            'description' => isset($source->description) ? $source->description : '',
+            'short_details' => isset($source->short_details) ? $source->short_details : '',
+            'details' => isset($source->details) ? $source->details : '',
+            'name_en' => isset($source->name_en) ? $source->name_en : '',
+            'short_details_en' => isset($source->short_details_en) ? $source->short_details_en : '',
+            'details_en' => isset($source->details_en) ? $source->details_en : '',
+            'seo_title_en' => isset($source->seo_title_en) ? $source->seo_title_en : '',
+            'seo_description_en' => isset($source->seo_description_en) ? $source->seo_description_en : '',
+            'seo_keywords_en' => isset($source->seo_keywords_en) ? $source->seo_keywords_en : '',
+            'max_sale_price' => isset($source->max_sale_price) ? $source->max_sale_price : 0,
+            'compare_price' => isset($source->compare_price) ? $source->compare_price : 0,
+            'ship_min_days' => isset($source->ship_min_days) ? (int) $source->ship_min_days : 0,
+            'ship_max_days' => isset($source->ship_max_days) ? (int) $source->ship_max_days : 0,
+            'supplier_id' => $source->supplier_id,
+            'country_id' => $source->country_id ?: $store->country_id,
+        );
+        if (!empty($source->image)) {
+            $payload['image'] = $source->image;
+        }
+        $this->save($payload, (int) $existing->id);
+        $this->sync_copy_categories($source->id, $existing->id);
+        $this->sync_copy_pricing($store, $source, $this->find_copy($store->id, $source->id) ?: $existing);
+        $have = array();
+        foreach ($this->images($existing->id) as $row) {
+            if (!empty($row->image)) {
+                $have[$row->image] = true;
+            }
+        }
+        foreach ($this->images($source->id) as $image) {
+            if (!empty($image->image) && empty($have[$image->image])) {
+                $this->add_image($existing->id, $image->image);
+            }
+        }
+        $this->load->model('Store_channel_model');
+        $this->Store_channel_model->queue_sync_product($store, (int) $existing->id);
+        return true;
+    }
+
+    public function sync_family_to_stores($productId)
+    {
+        $CI =& get_instance();
+        if (!isset($CI->Product_model)) {
+            $CI->load->model('admin/Product_model');
+        }
+        if (isset($CI->Product_model) && method_exists($CI->Product_model, 'recreate_store_copies')) {
+            return (int) $CI->Product_model->recreate_store_copies($productId);
+        }
+        $source = $this->catalog_source($productId);
+        if (!$source) {
+            return 0;
+        }
+        $familyIds = $this->catalog_family_ids($productId);
+        $storeIds = $this->stores_with_catalog_ids($familyIds);
+        foreach ($this->auto_add_stores_for_product($source) as $store) {
+            $storeIds[] = (int) $store->id;
+        }
+        $storeIds = array_values(array_unique(array_filter($storeIds)));
+        $added = 0;
+        foreach ($storeIds as $storeId) {
+            $store = $this->db->where('id', (int) $storeId)->where('status', 1)->get('stores')->row();
+            if (!$store) {
+                continue;
+            }
+            foreach ($familyIds as $catalogId) {
+                $member = $this->catalog_source($catalogId);
+                if (!$member) {
+                    continue;
+                }
+                $before = $this->find_copy($store->id, $member->id);
+                $copyId = $this->copy_from_catalog($store, $member);
+                if ($copyId && !$before) {
+                    $added++;
+                }
+            }
+        }
+        return $added;
+    }
+
     public function sync_copy_pricing($store, $source, $existing)
     {
         if (!$store || !$source || !$existing) {
@@ -475,14 +681,41 @@ class Store_product_model extends CI_Model {
         }
         $wholesale = product_wholesale_price($source, $store->id);
         $plus = store_price_plus_amount($store);
-        $payload = function_exists('ec_store_copy_price_payload')
-            ? ec_store_copy_price_payload($existing, $wholesale, $plus)
-            : null;
-        if (!$payload) {
+        $price = $this->listing_price_from_source($store, $source, $wholesale, $plus);
+        $payload = array(
+            'cost_price' => round($wholesale, 2),
+            'price' => round($price, 2),
+            'extra_amount' => function_exists('product_extra_amount') ? product_extra_amount($source) : 0,
+        );
+        $sameCost = abs((float) $existing->cost_price - (float) $payload['cost_price']) < 0.001;
+        $samePrice = abs((float) $existing->price - (float) $payload['price']) < 0.001;
+        $sameExtra = !isset($existing->extra_amount) || abs((float) $existing->extra_amount - (float) $payload['extra_amount']) < 0.001;
+        if ($sameCost && $samePrice && $sameExtra) {
             return false;
         }
         $this->db->where('id', (int) $existing->id)->update('products', $payload);
         return true;
+    }
+
+    public function listing_price_from_source($store, $source, $wholesale = null, $plus = null)
+    {
+        if (function_exists('product_listed_price_from_source')) {
+            return product_listed_price_from_source($store, $source, $wholesale, $plus);
+        }
+        $wholesale = $wholesale === null ? product_wholesale_price($source, $store->id) : (float) $wholesale;
+        $plus = $plus === null ? store_price_plus_amount($store) : (float) $plus;
+        $catalogSell = isset($source->price) ? (float) $source->price : 0.0;
+        $catalogBase = function_exists('product_base_price') ? product_base_price($source) : $catalogSell;
+        $price = round($wholesale + $plus + ($catalogSell - $catalogBase), 2);
+        if ($price < $wholesale) {
+            $price = $wholesale;
+        }
+        return $price > 0 ? $price : round($wholesale + $plus, 2);
+    }
+
+    public function restore_inherited_child_prices($storeId = 0)
+    {
+        return 0;
     }
 
     public function sync_copy_categories($sourceId, $copyId)
@@ -500,6 +733,37 @@ class Store_product_model extends CI_Model {
         }
         $added = 0;
         foreach ($this->auto_add_stores_for_product($source) as $store) {
+            $before = $this->find_copy($store->id, $source->id);
+            $copyId = $this->copy_from_catalog($store, $source);
+            if ($copyId && !$before) {
+                $added++;
+            }
+        }
+        return $added;
+    }
+
+    public function country_stores_for_product($source)
+    {
+        ensure_store_pricing_columns();
+        if (!$source) {
+            return array();
+        }
+        $countryId = (int) (isset($source->country_id) ? $source->country_id : 0);
+        $this->db->from('stores')->where('status', 1);
+        if ($countryId > 0) {
+            $this->db->where('country_id', $countryId);
+        }
+        return $this->db->get()->result();
+    }
+
+    public function add_catalog_to_all_country_stores($productId)
+    {
+        $source = $this->catalog_source($productId);
+        if (!$source) {
+            return 0;
+        }
+        $added = 0;
+        foreach ($this->country_stores_for_product($source) as $store) {
             $before = $this->find_copy($store->id, $source->id);
             $copyId = $this->copy_from_catalog($store, $source);
             if ($copyId && !$before) {

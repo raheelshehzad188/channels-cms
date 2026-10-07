@@ -18,6 +18,21 @@ $isAuth = (strpos($this->router->fetch_class(), 'auth') !== false || $this->rout
       btn.innerHTML = next === 'dark' ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon"></i>';
     });
   }
+  document.querySelectorAll('.store-nav-group').forEach(function (el) {
+    var key = 'storeNav:' + (el.getAttribute('data-nav-group') || '');
+    var hasActive = !!el.querySelector('.nav-link.active');
+    if (hasActive) {
+      el.open = true;
+    } else {
+      var stored = null;
+      try { stored = localStorage.getItem(key); } catch (e) {}
+      if (stored === '1') el.open = true;
+      if (stored === '0') el.open = false;
+    }
+    el.addEventListener('toggle', function () {
+      try { localStorage.setItem(key, el.open ? '1' : '0'); } catch (e) {}
+    });
+  });
 })();
 </script>
 </body>

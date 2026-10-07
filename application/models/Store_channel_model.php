@@ -542,7 +542,7 @@ class Store_channel_model extends CI_Model {
     {
         $path = 'product/';
         $slug = is_object($product) && !empty($product->slug) ? trim((string) $product->slug) : '';
-        $path .= $slug !== '' ? rawurlencode($slug) : (is_object($product) ? (int) $product->id : (int) $product);
+        $path .= $slug !== '' ? (function_exists('storefront_path_slug') ? storefront_path_slug($slug, 'product') : rawurlencode($slug)) : (is_object($product) ? (int) $product->id : (int) $product);
         return $this->store_public_base($store) . '/' . $path;
     }
 

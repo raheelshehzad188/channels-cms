@@ -9,9 +9,29 @@ function s($settings, $key, $default = '') {
   <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
     <div>
       <div class="fw-medium">Theme settings</div>
-      <p class="text-muted small mb-0">Logo, favicon, colors, homepage banners, and the Zenvello hero slider.</p>
+      <p class="text-muted small mb-0">Logo, favicon, footer site icon, colors, homepage banners, and the Zenvello hero slider.</p>
     </div>
     <a href="<?= $storeUrl ?>/theme-settings" class="btn btn-store-primary">Open theme settings</a>
+  </div>
+</div>
+
+<div class="store-card mb-3">
+  <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+    <div>
+      <div class="fw-medium">Meta Integration</div>
+      <p class="text-muted small mb-0">This store’s Pixel ID, Conversions API token, and event log. Other stores keep their own Meta settings.</p>
+    </div>
+    <a href="<?= $storeUrl ?>/settings/meta" class="btn btn-outline-secondary">Open Meta Integration</a>
+  </div>
+</div>
+
+<div class="store-card mb-3">
+  <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+    <div>
+      <div class="fw-medium">Storefront texts</div>
+      <p class="text-muted small mb-0">Change every customer-facing label (Home, Cart, Add to Cart, checkout, and more). Sweden stores start in Swedish.</p>
+    </div>
+    <a href="<?= $storeUrl ?>/settings/texts" class="btn btn-outline-secondary">Edit storefront texts</a>
   </div>
 </div>
 
@@ -29,8 +49,88 @@ function s($settings, $key, $default = '') {
           <div class="mb-0">
             <label class="form-label">Plus amount (<?= htmlspecialchars(store_currency($store)); ?>)</label>
             <input type="number" step="0.01" min="0" name="price_plus_amount" class="form-control" value="<?= htmlspecialchars(isset($store->price_plus_amount) ? $store->price_plus_amount : '0'); ?>">
-            <div class="form-text">Added to your cost price when a product is auto-added. Example: cost 10 + plus 4 = selling price 14.</div>
+            <div class="form-text">Added to each product’s store cost. Example: cost 10 + plus 4 = selling price 14. Packs are priced on their own catalog cost, not the parent. Saving a new plus amount recalculates listed prices.</div>
+            <button type="submit" name="recalculate_prices" value="1" class="btn btn-outline-secondary mt-3" onclick="return confirm('Recalculate this store’s listed prices from cost + plus amount? Each product is priced independently.');">Recalculate prices</button>
           </div>
+        </div>
+      </div>
+
+      <?php
+        $discOn = !empty($settings['discount_enabled']);
+        $discPercent = isset($settings['discount_percent']) ? (float) $settings['discount_percent'] : 10;
+        $discScope = isset($settings['discount_scope']) ? $settings['discount_scope'] : 'store';
+        $discCatId = isset($settings['discount_category_id']) ? (int) $settings['discount_category_id'] : 0;
+        $discTree = isset($category_tree) ? $category_tree : array();
+        $discParentId = 0;
+        if ($discScope === 'subcategory' && $discCatId) {
+            foreach ($discTree as $parent) {
+                foreach ($parent['children'] as $child) {
+                    if ((int) $child['id'] === $discCatId) {
+                        $discParentId = (int) $parent['id'];
+                        break 2;
+                    }
+                }
+            }
+        } elseif ($discScope === 'category') {
+            $discParentId = $discCatId;
+        }
+      ?>
+      <div class="store-card mb-3">
+        <div class="card-header">Display discount</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label d-block">Status</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="discount_enabled" id="discountOn" value="1" <?= $discOn ? 'checked' : ''; ?>>
+              <label class="form-check-label" for="discountOn">On</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="discount_enabled" id="discountOff" value="0" <?= $discOn ? '' : 'checked'; ?>>
+              <label class="form-check-label" for="discountOff">Off</label>
+            </div>
+            <p class="form-text mb-0 mt-2">Off hides sale badges and the extra regular price. Selling price never changes.</p>
+          </div>
+          <div id="discountFields">
+            <p class="form-text mb-3">Regular price is shown as your selling price plus this percent, with a strikethrough. Customers still pay the current selling price.</p>
+            <div class="mb-3">
+              <label class="form-label">Discount percent</label>
+              <div class="input-group" style="max-width:180px">
+                <input type="number" min="0" max="90" step="1" name="discount_percent" id="discountPercent" class="form-control" value="<?= htmlspecialchars($discPercent > 0 ? (string) $discPercent : '10') ?>">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label d-block">Apply to</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="discount_scope" id="discScopeStore" value="store" <?= $discScope === 'store' ? 'checked' : ''; ?>>
+                <label class="form-check-label" for="discScopeStore">Whole store</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="discount_scope" id="discScopeCat" value="category" <?= $discScope === 'category' ? 'checked' : ''; ?>>
+                <label class="form-check-label" for="discScopeCat">One category (includes its subcategories)</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="discount_scope" id="discScopeSub" value="subcategory" <?= $discScope === 'subcategory' ? 'checked' : ''; ?>>
+                <label class="form-check-label" for="discScopeSub">One subcategory only</label>
+              </div>
+            </div>
+            <div class="mb-3" id="discountCategoryWrap">
+              <label class="form-label">Category</label>
+              <select class="form-select" id="discountParentId">
+                <option value="0">Select category</option>
+                <?php foreach ($discTree as $parent): ?>
+                  <option value="<?= (int) $parent['id'] ?>" <?= (int) $parent['id'] === $discParentId ? 'selected' : ''; ?>><?= htmlspecialchars($parent['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="mb-0" id="discountSubcategoryWrap">
+              <label class="form-label">Subcategory</label>
+              <select class="form-select" id="discountSubId">
+                <option value="0">Select subcategory</option>
+              </select>
+            </div>
+          </div>
+          <input type="hidden" name="discount_category_id" id="discountCategoryId" value="<?= (int) $discCatId ?>">
         </div>
       </div>
 
@@ -123,10 +223,9 @@ function s($settings, $key, $default = '') {
       </div>
 
       <div class="store-card">
-        <div class="card-header">Shipping <span class="badge text-bg-secondary">Placeholder</span></div>
+        <div class="card-header">Shipping</div>
         <div class="card-body">
-          <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="shipping_enabled" value="1" id="ship1" <?= s($settings, 'shipping_enabled') ? 'checked' : ''; ?>><label class="form-check-label" for="ship1">Enable flat rate shipping</label></div>
-          <div class="mb-0"><label class="form-label">Flat Rate</label><input type="number" step="0.01" name="shipping_flat_rate" class="form-control" value="<?= s($settings, 'shipping_flat_rate', '0'); ?>"></div>
+          <p class="text-muted mb-0">Checkout shipping is set by Super Admin on <strong>Pricing → Shipping per item</strong>. It is charged as that fee × cart quantity.</p>
         </div>
       </div>
     </div>
@@ -136,3 +235,70 @@ function s($settings, $key, $default = '') {
     <button type="submit" class="btn btn-store-primary">Save Settings</button>
   </div>
 </form>
+<script>
+(function () {
+  var tree = <?= json_encode($discTree) ?>;
+  var parentSel = document.getElementById('discountParentId');
+  var subSel = document.getElementById('discountSubId');
+  var hidden = document.getElementById('discountCategoryId');
+  var wrapCat = document.getElementById('discountCategoryWrap');
+  var wrapSub = document.getElementById('discountSubcategoryWrap');
+  var wrapFields = document.getElementById('discountFields');
+  var selectedSub = <?= (int) $discCatId ?>;
+  function discountOn() {
+    var el = document.querySelector('input[name="discount_enabled"]:checked');
+    return el ? el.value === '1' : false;
+  }
+  function syncEnabled() {
+    if (wrapFields) wrapFields.style.display = discountOn() ? '' : 'none';
+  }
+  function scope() {
+    var el = document.querySelector('input[name="discount_scope"]:checked');
+    return el ? el.value : 'store';
+  }
+  function childrenOf(parentId) {
+    parentId = parseInt(parentId, 10) || 0;
+    for (var i = 0; i < tree.length; i++) {
+      if (parseInt(tree[i].id, 10) === parentId) return tree[i].children || [];
+    }
+    return [];
+  }
+  function fillSubs(parentId, pick) {
+    if (!subSel) return;
+    var kids = childrenOf(parentId);
+    subSel.innerHTML = '<option value="0">Select subcategory</option>';
+    for (var i = 0; i < kids.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = String(kids[i].id);
+      opt.textContent = kids[i].name;
+      if (pick && parseInt(kids[i].id, 10) === parseInt(pick, 10)) opt.selected = true;
+      subSel.appendChild(opt);
+    }
+  }
+  function syncHidden() {
+    var s = scope();
+    if (s === 'store') hidden.value = '0';
+    else if (s === 'category') hidden.value = parentSel ? parentSel.value : '0';
+    else hidden.value = subSel ? subSel.value : '0';
+  }
+  function syncWraps() {
+    var s = scope();
+    if (wrapCat) wrapCat.style.display = s === 'store' ? 'none' : '';
+    if (wrapSub) wrapSub.style.display = s === 'subcategory' ? '' : 'none';
+    if (s === 'subcategory') fillSubs(parentSel ? parentSel.value : 0, selectedSub);
+    syncHidden();
+  }
+  document.querySelectorAll('input[name="discount_scope"]').forEach(function (r) {
+    r.addEventListener('change', function () { selectedSub = 0; syncWraps(); });
+  });
+  if (parentSel) parentSel.addEventListener('change', function () { selectedSub = 0; fillSubs(parentSel.value, 0); syncHidden(); });
+  if (subSel) subSel.addEventListener('change', syncHidden);
+  var form = parentSel ? parentSel.closest('form') : null;
+  if (form) form.addEventListener('submit', syncHidden);
+  document.querySelectorAll('input[name="discount_enabled"]').forEach(function (r) {
+    r.addEventListener('change', syncEnabled);
+  });
+  syncWraps();
+  syncEnabled();
+})();
+</script>

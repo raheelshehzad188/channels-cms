@@ -1,6 +1,6 @@
 <?php
 $isEdit = !empty($product);
-$lockCore = $isEdit;
+$lockSku = $isEdit && !empty($product->source_product_id);
 $costPrice = $isEdit ? (float) $product->cost_price : 0;
 $maxSale = $isEdit ? (float) $product->max_sale_price : 0;
 $productCategoryIds = isset($product_category_ids) ? $product_category_ids : array();
@@ -14,18 +14,18 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
 <div class="store-card" style="max-width:920px">
   <div class="card-header d-flex justify-content-between align-items-center">
     <span><?= $isEdit ? 'Edit Product' : 'Add Product' ?></span>
-    <?php if ($lockCore): ?>
-      <span class="badge text-bg-light border text-muted">Images, SEO, price &amp; categories editable</span>
+    <?php if ($lockSku): ?>
+      <span class="badge text-bg-light border text-muted">Edits apply to this store only. SKU stays from catalog.</span>
     <?php endif; ?>
   </div>
   <div class="card-body">
     <form method="post" enctype="multipart/form-data" action="<?= $storeUrl ?>/products/save<?= $isEdit ? '/' . (int) $product->id : '' ?>" id="storeProductForm">
       <ul class="nav nav-tabs mb-3" role="tablist">
         <li class="nav-item" role="presentation">
-          <button class="nav-link<?= $lockCore ? '' : ' active' ?>" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">General <?= $lockCore ? '<span class="badge text-bg-secondary ms-1">Locked</span>' : '' ?></button>
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">General</button>
         </li>
         <li class="nav-item" role="presentation">
-          <button class="nav-link<?= $lockCore ? ' active' : '' ?>" data-bs-toggle="tab" data-bs-target="#tab-images" type="button">Images</button>
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-images" type="button">Images</button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-pricing" type="button">Pricing</button>
@@ -37,28 +37,36 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
           <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-shipping" type="button">Shipping Info</button>
         </li>
         <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-english" type="button">English</button>
+        </li>
+        <li class="nav-item" role="presentation">
           <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-seo" type="button">SEO</button>
         </li>
       </ul>
 
       <div class="tab-content">
-        <div class="tab-pane fade<?= $lockCore ? '' : ' show active' ?>" id="tab-general">
+        <div class="tab-pane fade show active" id="tab-general">
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label">Title</label>
-              <input type="text" name="name" id="productName" class="form-control" <?= $lockCore ? 'disabled' : 'required' ?> value="<?= htmlspecialchars($val('name')) ?>">
+              <input type="text" name="name" id="productName" class="form-control" required value="<?= htmlspecialchars($val('name')) ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">SKU</label>
-              <input type="text" name="sku" class="form-control" <?= $lockCore ? 'disabled' : '' ?> value="<?= htmlspecialchars($val('sku')) ?>">
+              <input type="text" name="sku" class="form-control" <?= $lockSku ? 'disabled' : '' ?> value="<?= htmlspecialchars($val('sku')) ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">Parent SKU</label>
-              <input type="text" name="parent_sku" class="form-control" maxlength="100" <?= $lockCore ? 'disabled' : '' ?> placeholder="Empty for parent product" value="<?= htmlspecialchars($val('parent_sku')) ?>">
+              <input type="text" name="parent_sku" class="form-control" maxlength="100" <?= $lockSku ? 'disabled' : '' ?> placeholder="Empty for parent product" value="<?= htmlspecialchars($val('parent_sku')) ?>">
+            </div>
+            <div class="col-12 js-parent-field">
+              <label class="form-label">Variation type</label>
+              <input type="text" name="options_title" class="form-control" maxlength="150" placeholder="Select color, Select size" value="<?= htmlspecialchars($val('options_title')) ?>">
+              <div class="form-text">Parent products only. Shown above the option boxes on the product page. Write Select color, Select size, or any heading you want.</div>
             </div>
             <div class="col-md-6">
               <label class="form-label">Brand</label>
-              <input type="text" name="brand" class="form-control" maxlength="150" <?= $lockCore ? 'disabled' : '' ?> value="<?= htmlspecialchars($val('brand')) ?>">
+              <input type="text" name="brand" class="form-control" maxlength="150" value="<?= htmlspecialchars($val('brand')) ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">Made by</label>
@@ -66,34 +74,49 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
             </div>
             <div class="col-md-6">
               <label class="form-label">Status</label>
-              <select name="status" class="form-select" <?= $lockCore ? 'disabled' : '' ?>>
+              <select name="status" class="form-select">
                 <option value="1" <?= (int) $val('status', 1) === 1 ? 'selected' : '' ?>>Active</option>
                 <option value="0" <?= (int) $val('status', 1) === 0 ? 'selected' : '' ?>>Inactive</option>
               </select>
             </div>
             <div class="col-md-6">
+              <label class="form-label d-block">Trending Picks</label>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" name="is_trending" value="1" id="isTrending" <?= $isEdit && !empty($product->is_trending) ? 'checked' : '' ?>>
+                <label class="form-check-label" for="isTrending">Show in Trending Picks</label>
+              </div>
+              <div class="form-text">Display this product in the Trending Picks section on product pages.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Trending Order</label>
+              <input type="number" name="trending_order" class="form-control" min="0" step="1" value="<?= htmlspecialchars((string) (int) $val('trending_order', 0)) ?>">
+              <div class="form-text">Lower number = higher priority. Max 4 products shown.</div>
+            </div>
+            <div class="col-md-6">
               <label class="form-label d-block">Default child</label>
               <div class="form-check mt-2">
-                <input class="form-check-input" type="checkbox" name="is_default" value="1" id="isDefaultChild" <?= $lockCore ? 'disabled' : '' ?> <?= $isEdit && !empty($product->is_default) ? 'checked' : '' ?>>
+                <input class="form-check-input" type="checkbox" name="is_default" value="1" id="isDefaultChild" <?= $lockSku ? 'disabled' : '' ?> <?= $isEdit && !empty($product->is_default) ? 'checked' : '' ?>>
                 <label class="form-check-label" for="isDefaultChild">Selected by default when the parent product opens</label>
               </div>
             </div>
+            <div class="col-md-6">
+              <label class="form-label">Sort</label>
+              <input type="number" name="sort_order" class="form-control" min="0" step="1" value="<?= htmlspecialchars((string) (int) $val('sort_order', 0)) ?>">
+              <div class="form-text">Lower numbers appear first on the product page.</div>
+            </div>
             <div class="col-12">
               <label class="form-label">Description</label>
-              <textarea name="description" class="form-control" rows="5" <?= $lockCore ? 'disabled' : '' ?>><?= htmlspecialchars($val('description')) ?></textarea>
+              <textarea name="description" class="form-control" rows="5"><?= htmlspecialchars($val('description')) ?></textarea>
             </div>
             <div class="col-12">
               <label class="form-label">Details</label>
-              <?php if ($lockCore): ?>
-                <div class="border rounded p-3 bg-light product-html"><?= ec_product_details_html($product) ?: '<span class="text-muted">No details.</span>' ?></div>
-              <?php else: ?>
-                <textarea name="details" class="form-control" rows="8"><?= htmlspecialchars($val('details')) ?></textarea>
-              <?php endif; ?>
+              <textarea name="details" class="form-control" rows="10"><?= htmlspecialchars($val('details')) ?></textarea>
+              <span class="help-block text-muted">Shown on your storefront product page. HTML is allowed.</span>
             </div>
           </div>
         </div>
 
-        <div class="tab-pane fade<?= $lockCore ? ' show active' : '' ?>" id="tab-images">
+        <div class="tab-pane fade" id="tab-images">
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Main image</label>
@@ -156,18 +179,48 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
         </div>
 
         <div class="tab-pane fade" id="tab-shipping">
-          <p class="text-muted small">Customers see a delivery date range calculated from today plus these days.</p>
+          <p class="text-muted small">Estimated Delivery (working days). Customers see a delivery range from today plus these days. AliExpress without a scraped ETA defaults to 7–15.</p>
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label">Minimum days</label>
+              <label class="form-label">Est. delivery min</label>
               <input type="number" min="0" step="1" name="ship_min_days" id="shipMinDays" class="form-control" value="<?= (int) $val('ship_min_days', 0) ?>">
             </div>
             <div class="col-md-4">
-              <label class="form-label">Maximum days</label>
+              <label class="form-label">Est. delivery max</label>
               <input type="number" min="0" step="1" name="ship_max_days" id="shipMaxDays" class="form-control" value="<?= (int) $val('ship_max_days', 0) ?>">
             </div>
             <div class="col-12">
               <div class="alert alert-light border mb-0" id="shipPreview">Set shipping days to preview delivery dates.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-english">
+          <p class="text-muted small">English copy shown when a shopper switches the storefront to English. Bulk AI rewrite fills these in the same request as the country language.</p>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Title (English)</label>
+              <input type="text" name="name_en" class="form-control" value="<?= htmlspecialchars($val('name_en')) ?>">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Short detail (English)</label>
+              <textarea name="short_details_en" class="form-control" rows="5"><?= htmlspecialchars((string) $val('short_details_en')) ?></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Details (English)</label>
+              <textarea name="details_en" class="form-control" rows="10"><?= htmlspecialchars((string) $val('details_en')) ?></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Meta title (English)</label>
+              <input type="text" name="seo_title_en" class="form-control" value="<?= htmlspecialchars($val('seo_title_en')) ?>">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Meta description (English)</label>
+              <textarea name="seo_description_en" class="form-control" rows="3"><?= htmlspecialchars($val('seo_description_en')) ?></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Meta keywords (English)</label>
+              <input type="text" name="seo_keywords_en" class="form-control" value="<?= htmlspecialchars($val('seo_keywords_en')) ?>">
             </div>
           </div>
         </div>
@@ -196,7 +249,7 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
 
       <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-store-primary"><?= $isEdit ? 'Update' : 'Create' ?> Product</button>
-        <a href="<?= $storeUrl ?>/my-products" class="btn btn-outline-secondary">Cancel</a>
+        <a href="<?= $storeUrl ?>/products" class="btn btn-outline-secondary">Cancel</a>
       </div>
     </form>
   </div>
@@ -245,5 +298,16 @@ $val = function ($key, $default = '') use ($product, $isEdit) {
   minEl.addEventListener('input', preview);
   maxEl.addEventListener('input', preview);
   preview();
+})();
+(function () {
+  var parentSku = document.querySelector('input[name="parent_sku"]');
+  var fields = document.querySelectorAll('.js-parent-field');
+  if (!parentSku || !fields.length) return;
+  function sync() {
+    var isChild = (parentSku.value || '').trim() !== '';
+    fields.forEach(function (el) { el.style.display = isChild ? 'none' : ''; });
+  }
+  parentSku.addEventListener('input', sync);
+  sync();
 })();
 </script>

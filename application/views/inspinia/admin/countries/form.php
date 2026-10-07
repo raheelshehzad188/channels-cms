@@ -48,6 +48,13 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">Currency Symbol</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="currency_symbol" class="form-control" maxlength="16" value="<?= $isEdit ? htmlspecialchars(isset($country->currency_symbol) ? $country->currency_symbol : '') : '' ?>" placeholder="kr, £, Rs">
+                                <span class="help-block">Shown on storefront prices. Example: SEK → kr, GBP → £, PKR → Rs.</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">Status</label>
                             <div class="col-sm-9">
                                 <select name="status" class="form-control">

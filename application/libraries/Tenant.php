@@ -63,12 +63,12 @@ class Tenant {
 
     protected function findByHost($host)
     {
-        if ($host === '') {
+        if ($host === '' || !$this->CI->db->table_exists('stores')) {
             return null;
         }
 
         return $this->CI->db
-            ->select('stores.*, countries.currency as country_currency, countries.name as country_name')
+            ->select('stores.*, countries.currency as country_currency, countries.name as country_name, countries.code as country_code')
             ->from('stores')
             ->join('countries', 'countries.id = stores.country_id', 'left')
             ->where('stores.status', 1)

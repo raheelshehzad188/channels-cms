@@ -29,6 +29,7 @@ class Store_hero_model extends CI_Model {
             disc_bg VARCHAR(32) NOT NULL DEFAULT '',
             disc_on TINYINT(1) NOT NULL DEFAULT 1,
             extra_text TINYINT(1) NOT NULL DEFAULT 1,
+            image_link VARCHAR(500) NOT NULL DEFAULT '',
             sort_order INT(11) NOT NULL DEFAULT 0,
             status TINYINT(1) NOT NULL DEFAULT 1,
             starts_on DATE NULL,
@@ -51,6 +52,9 @@ class Store_hero_model extends CI_Model {
             }
             if (!$this->db->field_exists('extra_text', 'store_hero_slides')) {
                 $this->db->query('ALTER TABLE store_hero_slides ADD COLUMN extra_text TINYINT(1) NOT NULL DEFAULT 1 AFTER disc_on');
+            }
+            if (!$this->db->field_exists('image_link', 'store_hero_slides')) {
+                $this->db->query("ALTER TABLE store_hero_slides ADD COLUMN image_link VARCHAR(500) NOT NULL DEFAULT '' AFTER extra_text");
             }
         }
     }

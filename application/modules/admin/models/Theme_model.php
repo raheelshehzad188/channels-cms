@@ -22,6 +22,7 @@ class Theme_model extends CI_Model {
     public function fields($themeId)
     {
         $this->ensure_favicon_field($themeId);
+        $this->ensure_footer_icon_field($themeId);
         return $this->db
             ->where('theme_id', (int) $themeId)
             ->order_by('sort_order', 'asc')
@@ -93,6 +94,7 @@ class Theme_model extends CI_Model {
         $defaults = array(
             array('logo', 'Header Logo', 'image', 0, '', 1),
             array('favicon', 'Favicon', 'image', 0, '', 2),
+            array('footer_icon', 'Footer site icon', 'image', 0, '', 2),
             array('primary_color', 'Primary Color', 'color', 1, $slug === 'fruitables' ? '#81C408' : ($slug === 'zenvello' ? '#ffd814' : '#c9a227'), 3),
             array('secondary_color', 'Secondary Color', 'color', 1, $slug === 'fruitables' ? '#FFB524' : ($slug === 'zenvello' ? '#111111' : '#333333'), 4),
             array('footer_text', 'Footer Text', 'text', 1, ($slug === 'zenvello' ? 'ZENVello' : ucfirst($slug)) . '. All rights reserved.', 5),
@@ -143,6 +145,30 @@ class Theme_model extends CI_Model {
             'theme_id' => $themeId,
             'field_key' => 'favicon',
             'field_label' => 'Favicon',
+            'field_type' => 'image',
+            'is_required' => 0,
+            'default_value' => '',
+            'sort_order' => 2,
+        ));
+    }
+
+    protected function ensure_footer_icon_field($themeId)
+    {
+        $themeId = (int) $themeId;
+        if ($themeId < 1 || !$this->db->table_exists('theme_setting_fields')) {
+            return;
+        }
+        $exists = $this->db
+            ->where('theme_id', $themeId)
+            ->where('field_key', 'footer_icon')
+            ->count_all_results('theme_setting_fields');
+        if ($exists) {
+            return;
+        }
+        $this->db->insert('theme_setting_fields', array(
+            'theme_id' => $themeId,
+            'field_key' => 'footer_icon',
+            'field_label' => 'Footer site icon',
             'field_type' => 'image',
             'is_required' => 0,
             'default_value' => '',

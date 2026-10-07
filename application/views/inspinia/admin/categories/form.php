@@ -43,14 +43,14 @@
                     <label class="col-sm-3 control-label">Name</label>
                     <div class="col-sm-6">
                         <input type="text" name="name" class="form-control" required value="<?= htmlspecialchars($val('name')) ?>">
-                        <span class="help-block">English name. Admin always shows this.</span>
+                        <span class="help-block">English name. Shown on the storefront when the shopper switches to English. Admin always shows this.</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-3 control-label">Local name</label>
                     <div class="col-sm-6">
                         <input type="text" name="local_name" class="form-control" value="<?= htmlspecialchars($val('local_name')) ?>" placeholder="e.g. Halloween dekorationer">
-                        <span class="help-block">Storefront name in the country’s language. Leave blank to use the English name.</span>
+                        <span class="help-block">Storefront name in the country’s native language. Leave blank to use the English name.</span>
                     </div>
                 </div>
                 <div class="form-group">

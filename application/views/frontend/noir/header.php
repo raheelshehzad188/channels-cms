@@ -4,7 +4,7 @@ $headerBg = theme_setting($settings, 'header_bg', '#0d0d12');
 $logo = theme_setting($settings, 'logo');
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars(function_exists('storefront_html_lang') ? storefront_html_lang() : 'en') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,9 +18,10 @@ $logo = theme_setting($settings, 'logo');
     </style>
 </head>
 <body class="noir">
+<?php $this->load->view('frontend/shared/admin_bar'); ?>
 <header class="site-header">
     <div class="container header-inner">
-        <a class="logo" href="<?= storefront_url('shop/index') ?>">
+        <a class="logo" href="<?= storefront_url('') ?>">
             <?php if ($logo): ?>
                 <img src="<?= base_url($logo) ?>" alt="<?= htmlspecialchars($store->name) ?>">
             <?php else: ?>
@@ -31,10 +32,16 @@ $logo = theme_setting($settings, 'logo');
             <?php if (!empty($is_preview)): ?>
                 <a href="<?= $preview_back ?>">Back to products</a>
             <?php else: ?>
-                <a href="<?= storefront_url('shop/index') ?>">Home</a>
+                <a href="<?= storefront_url('') ?>">Home</a>
                 <a href="<?= storefront_url('shop') ?>">Shop</a>
                 <a href="<?= storefront_url('cart') ?>">Cart</a>
                 <a href="<?= storefront_url(storefront_customer() ? 'account' : 'account/login') ?>">Account</a>
+                <?= function_exists('storefront_language_switcher_html') ? storefront_language_switcher_html() : '' ?>
+                <?php if (!empty($header_menu)): ?>
+                    <?php foreach ($header_menu as $menuItem): ?>
+                        <a href="<?= htmlspecialchars($menuItem->url) ?>"><?= htmlspecialchars($menuItem->label) ?></a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             <?php endif; ?>
         </nav>
     </div>

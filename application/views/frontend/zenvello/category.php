@@ -5,27 +5,39 @@ if (!empty($category_hero)) {
 }
 $heroTitle = !empty($category->display_hero_title)
     ? $category->display_hero_title
-    : theme_setting($settings, 'hero_title', "Make Your Home\nFeel Like You");
+    : theme_setting($settings, 'hero_title', store_ui('home.title_smart'));
 $heroText = !empty($category->display_hero_text)
     ? $category->display_hero_text
-    : theme_setting($settings, 'hero_subtitle', 'Discover smart, stylish and affordable products for a better everyday life.');
-$heroKicker = !empty($category->display_hero_kicker) ? $category->display_hero_kicker : 'Modern Living';
-$heroBtnText = !empty($category->display_hero_btn_text) ? $category->display_hero_btn_text : 'Shop Now';
-$heroBtnLink = !empty($category->display_hero_btn_link) ? $category->display_hero_btn_link : storefront_url('shop');
+    : theme_setting($settings, 'hero_subtitle', store_ui('home.text_smart'));
+$heroKicker = !empty($category->display_hero_kicker) ? $category->display_hero_kicker : store_ui('home.kicker_living');
+$heroBtnText = !empty($category->display_hero_btn_text) ? $category->display_hero_btn_text : store_ui('cta.shop_now');
+$heroBtnLinkRaw = !empty($category->display_hero_btn_link) ? trim((string) $category->display_hero_btn_link) : '';
+$extraText = !isset($category->display_hero_extra_text) || (int) $category->display_hero_extra_text === 1;
+$heroBtnLink = $heroBtnLinkRaw;
+if ($extraText && $heroBtnLink === '') {
+    $heroBtnLink = storefront_url('shop');
+}
 if ($heroBtnLink !== '' && isset($heroBtnLink[0]) && $heroBtnLink[0] !== '#' && strpos($heroBtnLink, 'http') !== 0 && strpos($heroBtnLink, '//') !== 0) {
     $heroBtnLink = storefront_url(ltrim($heroBtnLink, '/'));
 }
-$discSmall = !empty($category->display_hero_disc_small) ? $category->display_hero_disc_small : 'UP TO';
+$discSmall = !empty($category->display_hero_disc_small) ? $category->display_hero_disc_small : store_ui('home.disc_upto');
 $discBig = !empty($category->display_hero_disc_big) ? $category->display_hero_disc_big : '50%';
-$discSpan = !empty($category->display_hero_disc_span) ? $category->display_hero_disc_span : 'OFF';
+$discSpan = !empty($category->display_hero_disc_span) ? $category->display_hero_disc_span : store_ui('home.disc_off');
 $showDisc = !empty($category->display_hero_disc_on) && trim($discSmall . $discBig . $discSpan) !== '';
-$extraText = !isset($category->display_hero_extra_text) || (int) $category->display_hero_extra_text === 1;
+$imageHref = (!$extraText && $heroBtnLink !== '') ? $heroBtnLink : '';
+$heroAlt = category_store_name($category);
 ?>
 <div class="container">
-  <section class="hero hero--static" aria-label="<?= htmlspecialchars(category_store_name($category)) ?>">
+  <section class="hero hero--static" aria-label="<?= htmlspecialchars($heroAlt) ?>">
     <div class="hero__track">
       <article class="hero__slide<?= $extraText ? '' : ' is-image-only' ?>">
-        <img class="hero__bg" src="<?= $hero ?>" alt="<?= htmlspecialchars(category_store_name($category)) ?>">
+        <?php if ($imageHref !== ''): ?>
+        <a class="hero__hit" href="<?= htmlspecialchars($imageHref) ?>">
+          <img class="hero__bg" src="<?= $hero ?>" alt="<?= htmlspecialchars($heroAlt) ?>">
+        </a>
+        <?php else: ?>
+        <img class="hero__bg" src="<?= $hero ?>" alt="<?= htmlspecialchars($heroAlt) ?>">
+        <?php endif; ?>
         <?php if ($extraText): ?>
         <div class="hero__body">
           <p class="hero__kicker"><?= htmlspecialchars($heroKicker) ?></p>
@@ -59,11 +71,11 @@ if (!empty($subcategories)) {
 }
 ?>
 <?php if (!empty($visibleSubs)): ?>
-<section class="container catstrip" aria-label="Sub categories">
+<section class="container catstrip" aria-label="<?= e_ui('shop.subcats') ?>">
   <div class="section-head" style="margin-bottom:1rem">
     <div>
-      <h2 class="section-title">Shop by sub-category</h2>
-      <p class="section-sub">Browse within <?= htmlspecialchars(category_store_name($category)) ?></p>
+      <h2 class="section-title"><?= e_ui('shop.shop_subcat') ?></h2>
+      <p class="section-sub"><?= e_ui('shop.browse_within', array('{name}' => category_store_name($category))) ?></p>
     </div>
   </div>
   <ul class="circles">
@@ -72,7 +84,7 @@ if (!empty($subcategories)) {
         $img = !empty($sub->display_image) ? $sub->display_image : $sub->image;
       ?>
       <li>
-        <a class="circle" href="<?= storefront_url('category/' . rawurlencode($sub->slug)) ?>">
+        <a class="circle" href="<?= category_url($sub) ?>">
           <?php if ($img): ?>
             <span class="circle__ring" aria-hidden="true" style="background-image:url('<?= storefront_asset_url($img) ?>');background-size:cover;background-position:center"></span>
           <?php else: ?>
@@ -89,20 +101,20 @@ if (!empty($subcategories)) {
 <section class="container section" id="category-products" aria-labelledby="cat-products">
   <div class="section-head">
     <div>
-      <h2 class="section-title" id="cat-products"><?= htmlspecialchars(category_store_name($category)) ?> products</h2>
-      <p class="section-sub"><?= (int) $products_total ?> item<?= ((int) $products_total === 1) ? '' : 's' ?></p>
+      <h2 class="section-title" id="cat-products"><?= e_ui('shop.category_products', array('{name}' => category_store_name($category))) ?></h2>
+      <p class="section-sub"><?= htmlspecialchars(storefront_ui_count('shop.item_one', 'shop.item_many', (int) $products_total)) ?></p>
     </div>
   </div>
   <div class="grid-4" id="category-product-grid" data-offset="<?= count($products) ?>" data-has-more="<?= !empty($has_more) ? '1' : '0' ?>" data-url="<?= htmlspecialchars($load_more_url) ?>">
     <?php if (empty($products)): ?>
-      <p class="section-sub">No products in this category yet.</p>
+        <p class="section-sub"><?= e_ui('shop.no_category') ?></p>
     <?php else: ?>
       <?php foreach ($products as $product): ?>
         <?php $this->load->view('frontend/zenvello/product_card', array('product' => $product, 'assets' => $assets, 'is_preview' => !empty($is_preview))); ?>
       <?php endforeach; ?>
     <?php endif; ?>
   </div>
-  <div id="category-load-status" class="section-sub" style="text-align:center;margin-top:1.5rem;display:none">Loading more…</div>
+  <div id="category-load-status" class="section-sub" style="text-align:center;margin-top:1.5rem;display:none"><?= e_ui('shop.loading_more') ?></div>
 </section>
 
 <script>

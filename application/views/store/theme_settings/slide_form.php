@@ -41,6 +41,12 @@ $presets = isset($season_presets) ? $season_presets : array();
         <div class="form-text">Leave unchecked to use only the image. Check to add kicker, title, button, and badge.</div>
       </div>
 
+      <div id="image-only-link" class="mb-3" <?= $extraOn ? 'hidden' : '' ?>>
+        <label class="form-label">URL</label>
+        <input type="text" name="image_link" class="form-control" value="<?= htmlspecialchars($val('image_link')) ?>" placeholder="shop, category/halloween, or https://example.com">
+        <div class="form-text">When someone clicks this image, they go to this link. Leave empty for no click.</div>
+      </div>
+
       <div id="extra-text-fields" <?= $extraOn ? '' : 'hidden' ?>>
         <div class="mb-3">
           <label class="form-label">Kicker</label>
@@ -170,11 +176,13 @@ $presets = isset($season_presets) ? $season_presets : array();
   }
   var extra = document.getElementById('extra_text');
   var fields = document.getElementById('extra-text-fields');
+  var imageLink = document.getElementById('image-only-link');
   var hint = document.getElementById('hero-image-hint');
   var title = document.querySelector('[name="title"]');
   function syncExtra() {
     var on = extra && extra.checked;
     if (fields) fields.hidden = !on;
+    if (imageLink) imageLink.hidden = !!on;
     if (hint) hint.textContent = on ? hint.getAttribute('data-with-text') : hint.getAttribute('data-just-img');
     if (title) title.required = !!on;
   }

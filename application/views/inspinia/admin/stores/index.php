@@ -25,7 +25,7 @@
                         <th>Country</th>
                         <th>Login Email</th>
                         <th>Status</th>
-                        <th width="260">Action</th>
+                        <th width="320">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -37,7 +37,7 @@
                         <td><?= (int) $store->id ?></td>
                         <td><?= htmlspecialchars($store->name) ?></td>
                         <td>
-                            <a href="http://<?= htmlspecialchars($store->domain) ?>/" target="_blank"><?= htmlspecialchars($store->domain) ?></a>
+                            <a href="https://<?= htmlspecialchars($store->domain) ?>/" target="_blank"><?= htmlspecialchars($store->domain) ?></a>
                             <?php
                             $localHost = preg_replace('/\.ecommerce\.test$/', '.localhost', $store->domain);
                             if ($store->domain === 'cartvibe.co.uk') {
@@ -60,6 +60,9 @@
                         </td>
                         <td>
                             <a class="btn btn-xs btn-white" href="<?= base_url('admin/stores/form/' . $store->id) ?>">Edit</a>
+                            <?php if ((int) $store->status === 1): ?>
+                            <a class="btn btn-xs btn-success" href="<?= base_url('admin/stores/login_as/' . $store->id) ?>">Store admin</a>
+                            <?php endif; ?>
                             <a class="btn btn-xs btn-info" href="<?= base_url('admin/stores/theme/' . $store->id) ?>">Theme</a>
                             <a class="btn btn-xs btn-primary" href="<?= base_url('admin/stores/settings/' . $store->id) ?>">Settings</a>
                             <a class="btn btn-xs btn-danger" href="<?= base_url('admin/stores/delete/' . $store->id) ?>" onclick="return confirm('Delete this store?');">Delete</a>

@@ -1,6 +1,6 @@
 <?php $this->load->view('flash'); ?>
 
-<p class="text-muted mb-4">Connect Facebook / Instagram and TikTok with one click. Each store links its own account — no API keys or tokens to paste.</p>
+<p class="text-muted mb-4">Connect Facebook / Instagram and TikTok with one click. Each store links its own account — no API keys or tokens to paste. For Pixel + Conversions API only, use <a href="<?= $storeUrl; ?>/settings/meta">Settings → Meta Integration</a>.</p>
 
 <div class="row g-4">
   <div class="col-lg-6">

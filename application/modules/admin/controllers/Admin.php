@@ -660,7 +660,13 @@ if($user->roleID == 4)
 
 	{
 
-
+		if (!empty($this->input->get('ec_ab'))) {
+			$_SESSION['ec_admin_bar_seeded_v2'] = 1;
+		}
+		if (function_exists('ec_is_admin') && ec_is_admin() && empty($_SESSION['ec_admin_bar_seeded_v2'])) {
+			redirect('/admin_bar/seed?next=' . rawurlencode(platform_base_url() . 'admin/admin'));
+			return;
+		}
 
 		$data= array();
 

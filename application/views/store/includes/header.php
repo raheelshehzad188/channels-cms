@@ -11,7 +11,7 @@ $currentMethod = strtolower($this->router->fetch_method());
   <title><?= htmlspecialchars($title); ?> | Store Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="<?= $assets; ?>css/store-admin.css?v=4" rel="stylesheet">
+  <link href="<?= $assets; ?>css/store-admin.css?v=5" rel="stylesheet">
 </head>
 <body class="<?= $isAuth ? '' : 'store-admin'; ?>">
 
@@ -23,25 +23,75 @@ $currentMethod = strtolower($this->router->fetch_method());
     <?php endif; ?>
     <span><?= htmlspecialchars($store->name); ?></span>
   </div>
-  <nav class="nav flex-column py-3 flex-grow-1">
-    <a class="nav-link <?= ($currentClass === 'dashboard') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/dashboard"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-    <a class="nav-link <?= ($currentClass === 'products' && $currentMethod === 'index') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/products"><i class="bi bi-box-seam me-2"></i> Available Products</a>
-    <a class="nav-link <?= ($currentClass === 'hunting') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/hunting"><i class="bi bi-search me-2"></i> Product Hunting</a>
-    <a class="nav-link <?= ($currentClass === 'products' && $currentMethod !== 'index') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/my-products"><i class="bi bi-bag-check me-2"></i> My Products</a>
-    <a class="nav-link <?= ($currentClass === 'categories') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/categories"><i class="bi bi-tags me-2"></i> Categories</a>
-    <a class="nav-link <?= ($currentClass === 'reviews') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/reviews"><i class="bi bi-star me-2"></i> Reviews</a>
-    <a class="nav-link <?= ($currentClass === 'faqs') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/faqs"><i class="bi bi-question-circle me-2"></i> FAQs</a>
-    <a class="nav-link <?= ($currentClass === 'theme_settings' || $currentClass === 'homepage_hero') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/theme-settings"><i class="bi bi-palette2 me-2"></i> Theme Settings</a>
-    <a class="nav-link <?= ($currentClass === 'orders') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/orders"><i class="bi bi-bag me-2"></i> Orders</a>
-    <a class="nav-link <?= ($currentClass === 'accounting') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/accounting"><i class="bi bi-cash-coin me-2"></i> Accounting</a>
-    <a class="nav-link <?= ($currentClass === 'customers') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/customers"><i class="bi bi-people me-2"></i> Customers</a>
-    <a class="nav-link <?= ($currentClass === 'channels') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/channels"><i class="bi bi-broadcast me-2"></i> Sales Channels</a>
-    <a class="nav-link <?= ($currentClass === 'apps') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/apps"><i class="bi bi-grid me-2"></i> Apps</a>
-    <a class="nav-link <?= ($currentClass === 'themes') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/themes"><i class="bi bi-palette me-2"></i> Themes</a>
-    <a class="nav-link <?= ($currentClass === 'appearance') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/custom-css"><i class="bi bi-filetype-css me-2"></i> Custom CSS</a>
-    <a class="nav-link <?= ($currentClass === 'staff') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/staff"><i class="bi bi-person-badge me-2"></i> Staff</a>
-    <a class="nav-link <?= ($currentClass === 'settings') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/settings"><i class="bi bi-gear me-2"></i> Settings</a>
-    <a class="nav-link <?= ($currentClass === 'profile') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/profile"><i class="bi bi-shop me-2"></i> Profile</a>
+  <?php
+    $navOn = function ($class, $methods = null) use ($currentClass, $currentMethod) {
+        if ($currentClass !== $class) {
+            return false;
+        }
+        if ($methods === null) {
+            return true;
+        }
+        return in_array($currentMethod, (array) $methods, true);
+    };
+    $productsOpen = $navOn('products') || $navOn('hunting') || $navOn('categories') || $navOn('reviews') || $navOn('faqs') || $navOn('product_analytics');
+    $onlineOpen = $navOn('theme_settings') || $navOn('homepage_hero') || $navOn('themes') || $navOn('appearance') || $navOn('pages') || ($navOn('settings', 'texts'));
+    $ordersOpen = $navOn('orders') || $navOn('customers') || $navOn('accounting');
+    $salesOpen = $navOn('channels') || $navOn('apps');
+    $settingsOpen = $navOn('staff') || $navOn('profile') || $navOn('meta_events') || ($navOn('settings') && !$navOn('settings', 'texts'));
+  ?>
+  <nav class="store-sidebar-nav" aria-label="Store admin">
+    <a class="nav-link <?= $navOn('dashboard') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+
+    <details class="store-nav-group" data-nav-group="products" <?= $productsOpen ? 'open' : ''; ?>>
+      <summary class="store-nav-summary<?= $productsOpen ? ' is-current' : ''; ?>"><i class="bi bi-box-seam"></i> <span>Products</span> <i class="bi bi-chevron-right store-nav-caret"></i></summary>
+      <div class="store-nav-sub">
+        <a class="nav-link <?= $navOn('products', array('index', 'mine', 'form', 'save', 'delete', 'delete_image')) ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/products">My Products</a>
+        <a class="nav-link <?= $navOn('product_analytics') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/product-analytics">Product analytics</a>
+        <a class="nav-link <?= $navOn('products', array('available', 'add')) ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/available-products">Available Products</a>
+        <a class="nav-link <?= $navOn('hunting') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/hunting">Product Hunting</a>
+        <a class="nav-link <?= $navOn('categories') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/categories">Categories</a>
+        <a class="nav-link <?= $navOn('reviews') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/reviews">Reviews</a>
+        <a class="nav-link <?= $navOn('faqs') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/faqs">FAQs</a>
+      </div>
+    </details>
+
+    <details class="store-nav-group" data-nav-group="online" <?= $onlineOpen ? 'open' : ''; ?>>
+      <summary class="store-nav-summary<?= $onlineOpen ? ' is-current' : ''; ?>"><i class="bi bi-globe"></i> <span>Online store</span> <i class="bi bi-chevron-right store-nav-caret"></i></summary>
+      <div class="store-nav-sub">
+        <a class="nav-link <?= ($navOn('theme_settings') || $navOn('homepage_hero')) ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/theme-settings">Theme Settings</a>
+        <a class="nav-link <?= $navOn('themes') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/themes">Themes</a>
+        <a class="nav-link <?= $navOn('appearance') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/custom-css">Custom CSS</a>
+        <a class="nav-link <?= $navOn('settings', 'texts') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/settings/texts">Storefront texts</a>
+        <a class="nav-link <?= $navOn('pages') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/pages">Pages</a>
+      </div>
+    </details>
+
+    <details class="store-nav-group" data-nav-group="orders" <?= $ordersOpen ? 'open' : ''; ?>>
+      <summary class="store-nav-summary<?= $ordersOpen ? ' is-current' : ''; ?>"><i class="bi bi-bag"></i> <span>Orders</span> <i class="bi bi-chevron-right store-nav-caret"></i></summary>
+      <div class="store-nav-sub">
+        <a class="nav-link <?= $navOn('orders') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/orders">All orders</a>
+        <a class="nav-link <?= $navOn('customers') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/customers">Customers</a>
+        <a class="nav-link <?= $navOn('accounting') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/accounting">Accounting</a>
+      </div>
+    </details>
+
+    <details class="store-nav-group" data-nav-group="sales" <?= $salesOpen ? 'open' : ''; ?>>
+      <summary class="store-nav-summary<?= $salesOpen ? ' is-current' : ''; ?>"><i class="bi bi-broadcast"></i> <span>Sales channels</span> <i class="bi bi-chevron-right store-nav-caret"></i></summary>
+      <div class="store-nav-sub">
+        <a class="nav-link <?= $navOn('channels') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/channels">Channels</a>
+        <a class="nav-link <?= $navOn('apps') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/apps">Apps</a>
+      </div>
+    </details>
+
+    <details class="store-nav-group" data-nav-group="settings" <?= $settingsOpen ? 'open' : ''; ?>>
+      <summary class="store-nav-summary<?= $settingsOpen ? ' is-current' : ''; ?>"><i class="bi bi-gear"></i> <span>Settings</span> <i class="bi bi-chevron-right store-nav-caret"></i></summary>
+      <div class="store-nav-sub">
+        <a class="nav-link <?= ($navOn('settings') && !$navOn('settings', 'texts')) ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/settings">Store settings</a>
+        <a class="nav-link <?= $navOn('meta_events') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/settings/meta">Meta Integration</a>
+        <a class="nav-link <?= $navOn('staff') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/staff">Staff</a>
+        <a class="nav-link <?= $navOn('profile') ? 'active' : ''; ?>" href="<?= $storeUrl; ?>/profile">Profile</a>
+      </div>
+    </details>
   </nav>
   <div class="p-3 border-top border-secondary border-opacity-25">
     <a class="nav-link text-danger" href="<?= $storeUrl; ?>/logout"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>

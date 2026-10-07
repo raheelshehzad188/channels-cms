@@ -81,7 +81,12 @@ $approval = isset($filters['approval_status']) ? $filters['approval_status'] : '
         <tbody>
           <?php foreach (!empty($items) ? $items : array() as $item): ?>
           <tr>
-            <td class="fw-medium"><?= htmlspecialchars($item->customer_name) ?></td>
+            <td class="fw-medium">
+              <?= htmlspecialchars($item->customer_name) ?>
+              <?php if (isset($item->source) && $item->source === 'ai_generated'): ?>
+                <div><span class="badge text-bg-info">AI sample</span></div>
+              <?php endif; ?>
+            </td>
             <td><?= htmlspecialchars($item->product_name ? $item->product_name : '—') ?></td>
             <td><?= (int) $item->rating ?>/5</td>
             <td>

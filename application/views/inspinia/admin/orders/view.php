@@ -18,16 +18,34 @@
                 </div>
                 <div class="ibox-content">
                     <table class="table">
-                        <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Platform</th><th>Commission</th><th>Total</th></tr></thead>
+                        <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Platform</th><th>Commission</th><th>Total</th><th>Status</th><th></th></tr></thead>
                         <tbody>
-                            <?php foreach ($items as $item): ?>
+                            <?php
+                            $itemStatuses = isset($item_statuses) ? $item_statuses : Ec_order_model::item_statuses();
+                            $ecommerceUserId = isset($ecommerce_user_id) ? (int) $ecommerce_user_id : 0;
+                            foreach ($items as $item):
+                                $itemStatus = !empty($item->fulfillment_status) ? $item->fulfillment_status : 'pending';
+                                $canProcess = !empty($is_admin) || (int) $item->ecommerce_user_id === $ecommerceUserId;
+                            ?>
                             <tr>
-                                <td><?= htmlspecialchars($item->product_name) ?></td>
+                                <td><?= htmlspecialchars($item->product_name) ?><?php if (!empty($item->sku)):
+                                    $editProductId = !empty($item->product_id) ? (int) $item->product_id : (!empty($item->linked_product_id) ? (int) $item->linked_product_id : 0);
+                                ?><br><small class="text-muted">SKU: <?php if ($editProductId > 0): ?><a href="<?= base_url('admin/products/form/' . $editProductId) ?>"><?= htmlspecialchars($item->sku) ?></a><?php else: ?><?= htmlspecialchars($item->sku) ?><?php endif; ?></small><?php endif; ?></td>
                                 <td><?= (int) $item->qty ?></td>
                                 <td><?= format_money((float) $item->unit_price, $order->currency) ?></td>
                                 <td><?= format_money((float) $item->platform_fee, $order->currency) ?></td>
                                 <td><?= format_money((float) $item->commission, $order->currency) ?></td>
                                 <td><?= format_money((float) $item->line_total, $order->currency) ?></td>
+                                <td><?= htmlspecialchars(isset($itemStatuses[$itemStatus]) ? $itemStatuses[$itemStatus] : $itemStatus) ?></td>
+                                <td>
+                                    <?php $this->load->view('inspinia/admin/orders/_item_fulfill', array(
+                                        'item' => $item,
+                                        'can_process' => $canProcess,
+                                        'is_admin' => !empty($is_admin),
+                                        'redirect' => 'view',
+                                        'shipping_companies' => isset($shipping_companies) ? $shipping_companies : Ec_order_model::shipping_companies(),
+                                    )); ?>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -52,6 +70,9 @@
                     <p><strong>Store:</strong> <?= htmlspecialchars($order->store_name) ?></p>
                     <p><strong>Customer:</strong> <?= htmlspecialchars($order->customer_name) ?><br><?= htmlspecialchars($order->customer_email) ?></p>
                     <p><strong>Subtotal:</strong> <?= format_money((float) $order->subtotal, $order->currency) ?></p>
+                    <?php if (!empty($order->shipping_amount) && ((float) $order->shipping_amount > 0 || (int) (isset($order->shipping_qty) ? $order->shipping_qty : 0) > 0)): ?>
+                    <p><strong>Shipping × <?= (int) (isset($order->shipping_qty) ? $order->shipping_qty : 0) ?>:</strong> <?= format_money((float) $order->shipping_amount, $order->currency) ?></p>
+                    <?php endif; ?>
                     <?php if (!empty($order->vat_amount) && (float) $order->vat_amount > 0): ?>
                     <p><strong>VAT (<?= number_format((float) $order->vat_percent, 2) ?>%):</strong> <?= format_money((float) $order->vat_amount, $order->currency) ?></p>
                     <?php endif; ?>
@@ -78,6 +99,9 @@
                     </p>
                     <p><strong>Payout:</strong> <?= htmlspecialchars($order->payout_status) ?></p>
                     <p><?= nl2br(htmlspecialchars($order->shipping_address)) ?></p>
+                    <?php if (!empty($order->billing_address)): ?>
+                    <p><strong>Billing</strong><br><?= nl2br(htmlspecialchars($order->billing_address)) ?></p>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php if ($is_admin): ?>

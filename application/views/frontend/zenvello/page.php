@@ -1,21 +1,22 @@
-<nav class="container breadcrumb" aria-label="Breadcrumb">
+<?php
+$pageTitle = isset($page_title) ? $page_title : 'Page';
+$pageDetail = isset($page_detail) ? $page_detail : '';
+?>
+<nav class="container breadcrumb" aria-label="<?= e_ui('nav.breadcrumb') ?>">
   <ol>
-    <li><a href="<?= storefront_url('shop/index') ?>">Home</a></li>
-    <li aria-current="page"><?= htmlspecialchars(isset($page_title) ? $page_title : 'Contact') ?></li>
+    <li><a href="<?= storefront_url('') ?>"><?= e_ui('nav.home') ?></a></li>
+    <li aria-current="page"><?= htmlspecialchars($pageTitle) ?></li>
   </ol>
 </nav>
 
-<section class="container section">
-  <div class="section-head">
-    <div>
-      <h1 class="section-title"><?= htmlspecialchars(isset($page_title) ? $page_title : 'Contact') ?></h1>
-      <p class="section-sub">Get in touch with <?= htmlspecialchars($store->name) ?>.</p>
-    </div>
-  </div>
-  <div class="simple-card" style="max-width:640px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px">
-    <p><strong>Email:</strong> <?= htmlspecialchars(theme_setting($settings, 'email', $store->email ?: 'hello@' . $store->domain)) ?></p>
-    <p><strong>Phone:</strong> <?= htmlspecialchars(theme_setting($settings, 'phone', '')) ?></p>
-    <p><strong>Address:</strong> <?= htmlspecialchars(theme_setting($settings, 'address', '')) ?></p>
-    <p class="section-sub" style="margin-top:16px"><?= htmlspecialchars(theme_setting($settings, 'footer_about', 'We would love to hear from you.')) ?></p>
-  </div>
-</section>
+<div class="container">
+  <header class="pagehead">
+    <h1><?= htmlspecialchars($pageTitle) ?></h1>
+  </header>
+</div>
+
+<div class="container content content--single">
+  <article class="simple-card page-body prose-block">
+    <?= function_exists('store_page_html') ? store_page_html($pageDetail) : nl2br(htmlspecialchars($pageDetail)) ?>
+  </article>
+</div>

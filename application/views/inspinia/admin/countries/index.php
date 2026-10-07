@@ -27,13 +27,14 @@
                                     <th>ISO3</th>
                                     <th>Phone</th>
                                     <th>Currency</th>
+                                    <th>Symbol</th>
                                     <th>Status</th>
                                     <th width="160">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                             <?php if (empty($countries)): ?>
-                                <tr><td colspan="8" class="text-center">No countries found.</td></tr>
+                                <tr><td colspan="9" class="text-center">No countries found.</td></tr>
                             <?php endif; ?>
                             <?php foreach ($countries as $country): ?>
                                 <tr>
@@ -43,6 +44,7 @@
                                     <td><?= htmlspecialchars($country->iso3) ?></td>
                                     <td><?= htmlspecialchars($country->phone_code) ?></td>
                                     <td><?= htmlspecialchars($country->currency) ?></td>
+                                    <td><?= htmlspecialchars(isset($country->currency_symbol) && $country->currency_symbol !== '' ? $country->currency_symbol : $country->currency) ?></td>
                                     <td>
                                         <span class="label label-<?= ((int)$country->status === 1) ? 'primary' : 'default' ?>">
                                             <?= ec_status_label($country->status) ?>

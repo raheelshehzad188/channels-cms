@@ -259,13 +259,34 @@ class Store_listing_model extends CI_Model {
         if (!empty($filters['store_id'])) {
             $parts[] = 'products.store_id = ' . (int) $filters['store_id'];
         }
+        if (!empty($filters['catalog_ids'])) {
+            $ids = array();
+            foreach ((array) $filters['catalog_ids'] as $id) {
+                $id = (int) $id;
+                if ($id > 0) {
+                    $ids[$id] = $id;
+                }
+            }
+            if ($ids) {
+                $list = implode(',', $ids);
+                $parts[] = "(products.source_product_id IN ({$list}) OR catalog.id IN ({$list}))";
+            }
+        }
         $q = isset($filters['q']) ? trim((string) $filters['q']) : '';
         if ($q !== '') {
             $like = $this->db->escape_like_str($q);
             $parts[] = "(products.name LIKE '%{$like}%' ESCAPE '!'
                 OR products.sku LIKE '%{$like}%' ESCAPE '!'
+                OR catalog.sku LIKE '%{$like}%' ESCAPE '!'
+                OR catalog.analyzer_code LIKE '%{$like}%' ESCAPE '!'
                 OR stores.name LIKE '%{$like}%' ESCAPE '!'
                 OR stores.domain LIKE '%{$like}%' ESCAPE '!')";
+        }
+        if (!empty($filters['product_id'])) {
+            $parts[] = 'products.source_product_id = ' . (int) $filters['product_id'];
+        }
+        if (!empty($filters['listing_id'])) {
+            $parts[] = 'products.id = ' . (int) $filters['listing_id'];
         }
         return implode(' AND ', $parts);
     }
@@ -287,6 +308,19 @@ class Store_listing_model extends CI_Model {
             'id' => 'id',
         );
         return isset($map[$sort]) ? $map[$sort] : 'id';
+    }
+
+    public function listings_for_catalog_ids($catalogIds)
+    {
+        $catalogIds = array_values(array_unique(array_filter(array_map('intval', (array) $catalogIds))));
+        if (!$this->is_ready() || !$catalogIds) {
+            return array();
+        }
+        return $this->all(array(
+            'catalog_ids' => $catalogIds,
+            'sort' => 'id',
+            'dir' => 'desc',
+        ));
     }
 
     protected function ensure_sources_table()

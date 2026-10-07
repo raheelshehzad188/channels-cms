@@ -16,7 +16,7 @@
                 <div class="ibox">
                     <div class="ibox-title"><h5>Mode &amp; active credentials</h5></div>
                     <div class="ibox-content">
-                        <p class="text-muted">One PayPal account for every store. Card and wallet checkout both use these credentials. Charge currency comes from the store’s country (set on the store). Super Admin earnings currency is set under Pricing.</p>
+                        <p class="text-muted">One PayPal account for every store. Card and wallet checkout both use these credentials. Charge currency comes from the store’s country (set on the store). Super Admin earnings currency is set under Pricing. Card request/response logs: <a href="<?= base_url('admin/paypal/logs') ?>">View PayPal logs</a>.</p>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Mode</label>
                             <div class="col-sm-4">
@@ -96,6 +96,7 @@
                 <div class="ibox">
                     <div class="ibox-title"><h5>Live credentials</h5></div>
                     <div class="ibox-content">
+                        <p class="text-muted">Saved separately from sandbox. Checkout uses these only when Mode is Live.</p>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Client ID</label>
                             <div class="col-sm-8">
@@ -106,6 +107,13 @@
                             <label class="col-sm-3 control-label">Secret</label>
                             <div class="col-sm-8">
                                 <input type="text" name="paypal_live_secret" class="form-control" value="<?= htmlspecialchars($paypal_live_secret) ?>" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Secret 2</label>
+                            <div class="col-sm-8">
+                                <input type="text" name="paypal_live_secret_2" class="form-control" value="<?= htmlspecialchars($paypal_live_secret_2) ?>" autocomplete="off">
+                                <span class="help-block">Optional PayPal backup secret. Used only if Secret fails.</span>
                             </div>
                         </div>
                         <div class="form-group">
@@ -120,7 +128,7 @@
                 <div class="ibox">
                     <div class="ibox-title"><h5>Sandbox buyer (reference only)</h5></div>
                     <div class="ibox-content">
-                        <p class="text-muted">Not used by the API — handy when testing PayPal wallet login on sandbox.paypal.com.</p>
+                        <p class="text-muted">Reference only for sandbox.paypal.com login. Checkout auto-forces <strong>sandbox</strong> when the buyer email is exactly <code>raheel@zenvello.se</code>; everyone else uses the Live/Sandbox mode selected above.</p>
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Buyer email</label>
                             <div class="col-sm-8">

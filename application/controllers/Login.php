@@ -40,6 +40,11 @@ class Login extends CI_Controller {
             return;
         }
 
+        if ((int) $user->roleID === ROLE_ADMIN) {
+            redirect('/admin_bar/seed');
+            return;
+        }
+
         redirect('/admin/admin');
     }
 

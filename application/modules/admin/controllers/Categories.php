@@ -93,6 +93,8 @@ class Categories extends CI_Controller {
         }
 
         $slug = url_title(trim((string) $this->input->post('slug')) ?: $name, 'dash', true);
+        $used = array();
+        $slug = $this->Ec_category_model->unique_slug($countryId, $slug !== '' ? $slug : $name, $used, (int) $id);
         $parentId = (int) $this->input->post('parent_id');
         if ($parentId && $id && $parentId === (int) $id) {
             $parentId = 0;
@@ -495,5 +497,68 @@ class Categories extends CI_Controller {
         $data = $this->upload->data();
         $converted = ec_convert_image_to_webp($data['full_path']);
         return ec_public_upload_path($converted);
+    }
+
+    public function json_export()
+    {
+        $this->load->model('Store_model');
+        $stores = $this->Store_model->all();
+        $storeId = (int) $this->input->get('store_id');
+        $store = null;
+        if ($storeId > 0) {
+            $store = $this->Store_model->get($storeId);
+        } elseif (!empty($stores)) {
+            $store = $stores[0];
+            $storeId = (int) $store->id;
+        }
+
+        $categories = array();
+        $subcategories = array();
+        $tree = array();
+        if ($store) {
+            $countryId = (int) $store->country_id;
+            $parents = $this->Ec_category_model->roots_for_country($countryId);
+            foreach ($parents as $parent) {
+                $parentName = function_exists('category_store_name') ? category_store_name($parent) : $parent->name;
+                $parentName = trim((string) $parentName);
+                $categories[] = array(
+                    'id' => (int) $parent->id,
+                    'name' => $parentName,
+                );
+                $kids = array();
+                foreach ($this->Ec_category_model->children($parent->id) as $child) {
+                    $childName = function_exists('category_store_name') ? category_store_name($child) : $child->name;
+                    $childName = trim((string) $childName);
+                    $sub = array(
+                        'id' => (int) $child->id,
+                        'name' => $childName,
+                        'parent_id' => (int) $parent->id,
+                    );
+                    $subcategories[] = $sub;
+                    $kids[] = array(
+                        'id' => (int) $child->id,
+                        'name' => $childName,
+                    );
+                }
+                $tree[] = array(
+                    'id' => (int) $parent->id,
+                    'name' => $parentName,
+                    'subcategories' => $kids,
+                );
+            }
+        }
+
+        $flags = JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT;
+        $this->template->admin('categories/json_export', array(
+            'title' => 'Category JSON',
+            'stores' => $stores,
+            'store' => $store,
+            'store_id' => $storeId,
+            'categories_json' => json_encode($categories, $flags),
+            'subcategories_json' => json_encode($subcategories, $flags),
+            'tree_json' => json_encode($tree, $flags),
+            'category_count' => count($categories),
+            'subcategory_count' => count($subcategories),
+        ));
     }
 }

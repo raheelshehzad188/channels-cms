@@ -14,6 +14,10 @@ $value = isset($tracking['value']) ? (float) $tracking['value'] : 0;
 $ids = isset($tracking['content_ids']) && is_array($tracking['content_ids']) ? $tracking['content_ids'] : array();
 $contentName = isset($tracking['content_name']) ? $tracking['content_name'] : '';
 $orderId = isset($tracking['order_id']) ? $tracking['order_id'] : '';
+$pageViewId = isset($tracking['pageview_event_id']) ? $tracking['pageview_event_id'] : '';
+$contents = isset($tracking['contents']) && is_array($tracking['contents']) ? $tracking['contents'] : array();
+$numItems = isset($tracking['num_items']) ? (int) $tracking['num_items'] : count($ids);
+$contentsJs = $contents ? '  contents: ' . json_encode($contents) . ",\n" : '';
 ?>
 <?php if ($metaPixel !== ''): ?>
 <script>
@@ -23,31 +27,46 @@ n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', <?= json_encode($metaPixel) ?>);
+<?php if ($pageViewId !== ''): ?>
+fbq('track', 'PageView', {}, {eventID: <?= json_encode($pageViewId) ?>});
+<?php else: ?>
 fbq('track', 'PageView');
+<?php endif; ?>
 <?php if ($event === 'ViewContent'): ?>
 fbq('track', 'ViewContent', {
   content_ids: <?= json_encode($ids) ?>,
   content_type: 'product',
   content_name: <?= json_encode($contentName) ?>,
   currency: <?= json_encode($currency) ?>,
-  value: <?= json_encode($value) ?>
-}, {eventID: <?= json_encode($eventId) ?>});
+  value: <?= json_encode($value) ?>,
+<?= $contentsJs ?>}, {eventID: <?= json_encode($eventId) ?>});
 <?php elseif ($event === 'AddToCart'): ?>
 fbq('track', 'AddToCart', {
   content_ids: <?= json_encode($ids) ?>,
   content_type: 'product',
   content_name: <?= json_encode($contentName) ?>,
   currency: <?= json_encode($currency) ?>,
-  value: <?= json_encode($value) ?>
-}, {eventID: <?= json_encode($eventId) ?>});
+  value: <?= json_encode($value) ?>,
+  num_items: <?= json_encode(max(1, $numItems)) ?>,
+<?= $contentsJs ?>}, {eventID: <?= json_encode($eventId) ?>});
+<?php elseif ($event === 'InitiateCheckout'): ?>
+fbq('track', 'InitiateCheckout', {
+  content_ids: <?= json_encode($ids) ?>,
+  content_type: 'product',
+  content_name: <?= json_encode($contentName) ?>,
+  currency: <?= json_encode($currency) ?>,
+  value: <?= json_encode($value) ?>,
+  num_items: <?= json_encode(max(1, $numItems)) ?>,
+<?= $contentsJs ?>}, {eventID: <?= json_encode($eventId) ?>});
 <?php elseif ($event === 'Purchase'): ?>
 fbq('track', 'Purchase', {
   content_ids: <?= json_encode($ids) ?>,
   content_type: 'product',
   currency: <?= json_encode($currency) ?>,
   value: <?= json_encode($value) ?>,
-  order_id: <?= json_encode($orderId) ?>
-}, {eventID: <?= json_encode($eventId) ?>});
+  num_items: <?= json_encode(max(1, $numItems)) ?>,
+  order_id: <?= json_encode($orderId) ?>,
+<?= $contentsJs ?>}, {eventID: <?= json_encode($eventId) ?>});
 <?php endif; ?>
 </script>
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=<?= rawurlencode($metaPixel) ?>&ev=PageView&noscript=1" alt=""></noscript>
@@ -77,6 +96,14 @@ fbq('track', 'Purchase', {
   }, { event_id: <?= json_encode($eventId) ?> });
 <?php elseif ($event === 'AddToCart'): ?>
   ttq.track('AddToCart', {
+    content_id: <?= json_encode(isset($ids[0]) ? $ids[0] : '') ?>,
+    content_type: 'product',
+    content_name: <?= json_encode($contentName) ?>,
+    currency: <?= json_encode($currency) ?>,
+    value: <?= json_encode($value) ?>
+  }, { event_id: <?= json_encode($eventId) ?> });
+<?php elseif ($event === 'InitiateCheckout'): ?>
+  ttq.track('InitiateCheckout', {
     content_id: <?= json_encode(isset($ids[0]) ? $ids[0] : '') ?>,
     content_type: 'product',
     content_name: <?= json_encode($contentName) ?>,
